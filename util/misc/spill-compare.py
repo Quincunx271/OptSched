@@ -3,16 +3,11 @@
 # allocation enabled. Find instances where a reduction in cost does not
 # correspond with a reduction in spills.
 
-import sys
-import re
+import os, sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-RE_REGION_DELIMITER = re.compile(r'INFO: \*{4,}? Opt Scheduling \*{4,}?')
-
-RE_REGION_COST_LOWER_BOUND = re.compile(r'INFO: Lower bound of cost before scheduling: (\d+)')
-RE_REGION_COST_BEST = re.compile(r"INFO: Best schedule for DAG (.*) has cost (\d+) and length (\d+). The schedule is (.*) \(Time")
-RE_REGION_COST_HEURISTIC = re.compile(r"INFO: The list schedule is of length (\d+) and spill cost (\d+). Tot cost = (\d+) \(Time")
-RE_REGION_SPILLS_BEST = re.compile(r"INFO: OPT_SCHED LOCAL RA: DAG Name: (\S+) Number of spills: (\d+) \(Time")
-RE_REGION_SPILLS_HEURISTIC= re.compile(r"INFO: OPT_SCHED LOCAL RA: DAG Name: (.*) \*\*\*heuristic_schedule\*\*\* Number of spills: (\d+) \(Time")
+import regexs
+from regexs import block as block_re
 
 regions = {}
 totalBlocks = 0
@@ -24,30 +19,30 @@ foundRegion = False
 
 with open(str(sys.argv[1])) as logfile:
     log1 = logfile.read()
-    blocks = [block for block in RE_REGION_DELIMITER.split(log1) if RE_REGION_COST_BEST.search(block)]
+    blocks = [block for block in block_re.BLOCK_DELIMITER.split(log1) if block_re.COST_LOWER_BOUND.search(block)]
     for block in blocks:
-        if not RE_REGION_COST_LOWER_BOUND.search(block):
+        if not block_re.COST_LOWER_BOUND.search(block):
             print("WARNING: Block does not have a logged lower bound.", out=sys.stderr)
 
         totalBlocks += 1
 
-        lowerBound = int(RE_REGION_COST_LOWER_BOUND.search(block).group(1))
-        regionCostMatchB = RE_REGION_COST_BEST.findall(block)
-        regionName = regionCostMatchB[0][0]
-        regionCostBest = int(regionCostMatchB[0][1])
-        regionLengthBest = int(regionCostMatchB[0][2])
+        lowerBound = int(block_re.COST_LOWER_BOUND.search(block).group(1))
+        regionCostMatchB = block_re.COST_BEST.findall(block)
+        regionName = regionCostMatchB[0]['name']
+        regionCostBest = int(regionCostMatchB[0]['cost'])
+        regionLengthBest = int(regionCostMatchB[0]['length'])
 
-        if (len(RE_REGION_SPILLS_BEST.findall(block)) == 0):
+        if not block_re.SPILLS_BEST.search(block):
             print(regionName)
 
-        regionCostMatchH = RE_REGION_COST_HEURISTIC.findall(block)
-        regionCostHeuristic = int(regionCostMatchH[0][2])
+        regionCostMatchH = block_re.COST_HEURISTIC.findall(block)
+        regionCostHeuristic = int(regionCostMatchH[0]['spill_cost'])
 
-        regionSpillsMatchB = RE_REGION_SPILLS_BEST.findall(block)
-        regionSpillsBest = int(regionSpillsMatchB[0][1])
+        regionSpillsMatchB = block_re.SPILLS_BEST.findall(block)
+        regionSpillsBest = int(regionSpillsMatchB[0]['count'])
 
-        regionSpillsMatchH = RE_REGION_SPILLS_HEURISTIC.findall(block)
-        regionSpillsHeuristic = int(regionSpillsMatchH[0][1])
+        regionSpillsMatchH = block_re.SPILLS_HEURISTIC.findall(block)
+        regionSpillsHeuristic = int(regionSpillsMatchH[0]['count'])
 
         if (regionCostBest < regionCostHeuristic and regionSpillsBest > regionSpillsHeuristic):
             totalMismatches+=1

@@ -1,11 +1,11 @@
 #!/bin/python3
 # Find the number of functions that are compiled more than once by LLVM.
 
-import sys
-import re
+import os, sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-RE_NEW_BENCH = re.compile(r'(\d+)\.(.*) base \.exe default')
-RE_BLOCK = re.compile(r'INFO: Processing DAG (.*) with (\d+) insts')
+import regexs
+from regexs import block as block_re
 
 if __name__ == "__main__":
     with open(sys.argv[1]) as logfile:
@@ -14,10 +14,10 @@ if __name__ == "__main__":
         totalRepeats = 0
         totalMismatches = 0
         for line in logfile.readlines():
-            matchBench = RE_NEW_BENCH.findall(line)
-            matchBlock = RE_BLOCK.findall(line)
+            matchBench = regexs.NEW_BENCH.findall(line)
+            matchBlock = block_re.DAG_NAME_SIZE_LATENCY.findall(line)
 
-            if matchBench != []:
+            if matchBench:
                 if bench:
                     print('In bench ' + bench + '  found ' + str(totalRepeats) + ' repeat blocks and ' + str(totalMismatches) + ' mismatches in length.')
                 funcs = {}
@@ -25,9 +25,9 @@ if __name__ == "__main__":
                 totalMismatches = 0
                 bench = matchBench[0][1]
 
-            elif matchBlock != []:
-                name = matchBlock[0][0]
-                insts = matchBlock[0][1]
+            if matchBlock:
+                name = matchBlock[0]['name']
+                insts = matchBlock[0]['size']
 
                 if name in blocks:
                     if blocks[name] != insts:

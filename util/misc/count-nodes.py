@@ -1,17 +1,18 @@
-import re
 import mmap
 import optparse
-import os
 
-regex = re.compile("Examined (\d+) nodes")
+import os, sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+import regexs
 
 def getNodeCount(fileName):
   count = 0
   with open(fileName) as bff:
     bffm = mmap.mmap(bff.fileno(), 0, access=mmap.ACCESS_READ)
 
-    for match in regex.finditer(bffm):
-      count += int(match.group(1))
+    for match in regexs.NUM_EXAMINED.finditer(bffm):
+      count += int(match['count'])
       
     bffm.close()
 

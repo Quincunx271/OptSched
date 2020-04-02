@@ -5,14 +5,12 @@
 # 3: Add option to print out x number of blocks with largest mismatches.
 # 4: Add option to print out x number of mismatches with smallest number of instructions.
 
-import sys
-import re
 import itertools
+import os, sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-RE_COST_LOWER_BOUND = re.compile(r'INFO: Lower bound of cost before scheduling: (\d+)')
-RE_DAG_COST = re.compile(r"INFO: Best schedule for DAG (?P<name>.*) has cost (?P<cost>\d+) and length (?P<length>\d+). The schedule is (?P<optimal>.*) \(Time")
-
-RE_REGION_DELIMITER = re.compile(r'INFO: \*{4,}? Opt Scheduling \*{4,}?')
+import regexs
+from regexs import block as block_re
 
 # Explain this many of the blocks missing a lower bound
 MISSING_LOWER_BOUND_DUMP_COUNT = 3
@@ -24,8 +22,8 @@ dags2 = {}
 def dags_info(logtext):
     dags = {}
 
-    unfiltered = RE_REGION_DELIMITER.split(logtext)[1:]
-    blocks = [block for block in unfiltered if RE_COST_LOWER_BOUND.search(block)]
+    unfiltered = block_re.BLOCK_DELIMITER.split(logtext)[1:]
+    blocks = [block for block in unfiltered if block_re.COST_LOWER_BOUND.search(block)]
 
     if len(blocks) != len(unfiltered):
         print('WARNING: Missing a logged lower bound for {missing}/{total} blocks.'
@@ -39,8 +37,8 @@ def dags_info(logtext):
                   file=sys.stderr)
 
     for block in blocks:
-        lowerBound = int(RE_COST_LOWER_BOUND.search(block).group(1))
-        blockInfo = RE_DAG_COST.search(block).groupdict()
+        lowerBound = int(block_re.COST_LOWER_BOUND.search(block).group(1))
+        blockInfo = block_re.COST_BEST.search(block)
         dagName = blockInfo['name']
         dags[dagName] = {
             'lowerBound': lowerBound,
