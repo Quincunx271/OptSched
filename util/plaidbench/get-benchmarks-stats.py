@@ -34,14 +34,14 @@ Example:
         ...
 '''
 
-import os       # Used for scanning directories, getting paths, and checking files.
-import re       # Used for parsing log file
+import os, sys
 from openpyxl import Workbook
 from openpyxl.styles import Font
 import argparse
 
-RE_DAG_INFO = re.compile(r'Processing DAG (.*) with (\d+) insts and max latency (\d+)')
-RE_PASS_NUM = re.compile(r'End of (.*) pass through')
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from regexs import block as block_re
+from regexs import plaidbench as plaid_re
 
 # Contains all of the stats
 benchStats = {}
@@ -103,16 +103,16 @@ def parseStats(inputFolder):
                 for block in blocks:
                 # Ignore second pass since it should
                 # have the same stats as first
-                    getPassNum = RE_PASS_NUM.search(block)
+                    getPassNum = plaid_re.PASS_NUM.search(block)
                     if (getPassNum):
-                        passNum = getPassNum.group(1)
+                        passNum = getPassNum['pass']
                         if passNum == 'second':
                             continue
 
                     # Get DAG stats
-                    dagStats = RE_DAG_INFO.search(block)
-                    dagName = dagStats.group(1)
-                    inst = dagStats.group(2)
+                    dagStats = block_re.DAG_NAME_SIZE_LATENCY.search(block)
+                    dagName = dagStats['name']
+                    inst = dagStats['size']
 
                     # Split kernel name from its region number
                     names = dagName.split(':')

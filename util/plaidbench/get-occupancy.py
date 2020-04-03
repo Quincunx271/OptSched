@@ -38,13 +38,14 @@ Example:
         ...
 '''
 
-import os
+import os, sys
 import re
 from openpyxl import Workbook
 from openpyxl.styles import Font
 import argparse
 
-RE_OCCUPANCY = re.compile('Final occupancy for function (.*):(\d+)')
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from regexs import plaidbench as plaid_re
 
 # Contains all of the stats
 benchStats = {}
@@ -68,7 +69,7 @@ benchmarks = [
 
 # Ignore these functions
 # They are outputted before scheduling
-ignore = [
+ignore = set(
     'copyBufferRect',
     'copyBufferRectAligned',
     'copyBuffer',
@@ -80,7 +81,7 @@ ignore = [
     'copyImage1DA',
     'fillImage',
     'scheduler'
-]
+)
 
 def parseStats(inputFolder, ignoreFolders):
     scanDirPath = os.path.abspath(inputFolder)
@@ -123,17 +124,16 @@ def parseStats(inputFolder, ignoreFolders):
                 with open(currentLogFile) as file:
                     for line in file:
                         # Match the line that contain occupancy stats
-                        getOccupancyStats = RE_OCCUPANCY.match(line)
-                        if (getOccupancyStats):
+                        getOccupancyStats = plaid_re.OCCUPANCY.search(line)
+                        if getOccupancyStats:
                             # Get the kernel name
-                            kernelName = getOccupancyStats.group(1)
+                            kernelName = getOccupancyStats['name']
 
                             # Ignore these function
-                            if (kernelName in ignore):
-                                continue
+                            if kernelName in ignore: continue
 
                             # Get occupancy
-                            occupancy = int(getOccupancyStats.group(2))
+                            occupancy = int(getOccupancyStats['count'])
                             
                             # Used for averaging
                             stats['total'] += occupancy

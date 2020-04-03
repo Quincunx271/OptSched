@@ -25,10 +25,12 @@ HOW TO USE:
     2.) Enter in the path to those directories as arguments to this script
 '''
 
-import sys
-import re
-import os
+import os, sys
 import argparse
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from regexs import block as block_re
+from regexs import plaidbench as plaid_re
 
 # List of benchmark names
 benchmarks = [
@@ -46,12 +48,6 @@ benchmarks = [
     'xception',
     'imdb_lstm',
 ]
-
-# Parse for DAG stats
-RE_DAG_COST_LOWER_BOUND = re.compile(r'Lower bound of cost before scheduling: (\d+)')
-RE_DAG_COST = re.compile(r'INFO: Best schedule for DAG (.*) has cost (\d+) and length (\d+). The schedule is (.*) \(Time')
-# Parse for passthrough number
-RE_PASS_NUM = re.compile(r'End of (.*) pass through')
 
 # Store DAGs stats for each benchmark and passes
 dags = []
@@ -196,18 +192,18 @@ def main(args):
                 blocks = log.split('********** Opt Scheduling **********')[1:]
                 for block in blocks:
                     # Get pass num
-                    getPass = RE_PASS_NUM.search(block)
-                    passNum = getPass.group(1)
+                    getPass = plaid_re.PASS_NUM.search(block)
+                    passNum = getPass['pass']
                     
                     # Get DAG stats
-                    dagLwrBound = RE_DAG_COST_LOWER_BOUND.search(block)
-                    dagStats = RE_DAG_COST.search(block)
+                    dagLwrBound = block_re.COST_LOWER_BOUND.search(block)
+                    dagStats = block_re.COST_BEST.search(block)
                     dag = {}
-                    dagName = dagStats.group(1)
+                    dagName = dagStats['name']
                     dag['dagName'] = dagName
-                    dag['cost'] = int(dagStats.group(2)) + int(dagLwrBound.group(1))
-                    dag['length'] = dagStats.group(3)
-                    dag['isOptimal'] = (dagStats.group(4) == 'optimal')
+                    dag['cost'] = int(dagStats['cost']) + int(dagLwrBound.group(1))
+                    dag['length'] = dagStats['length']
+                    dag['isOptimal'] = (dagStats['optimal'] == 'optimal')
                     
                     # Add this DAG's stats to temp stats container 
                     benchStats[bench][passNum][dagName] = dag

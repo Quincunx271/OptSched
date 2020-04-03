@@ -37,19 +37,14 @@ Example:
         ...
 '''
 
-import os
-import re
+import os, sys
 import argparse
 from openpyxl import Workbook
 from openpyxl.styles import Font
 
-# For AMD 
-RE_DAG_NAME = re.compile(r'Processing DAG (.*) with')
-RE_SCHED_LENGTH = re.compile(r'The list schedule is of length (\d+) and')
-
-# For OptSched
-RE_PASS_NUM = re.compile(r'End of (.*) pass through')
-RE_DAG_INFO = re.compile(r'INFO: Best schedule for DAG (.*) has cost (\d+) and length (\d+). The schedule is (.*) \(Time')
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from regexs import block as block_re
+from regexs import plaidbench as plaid_re
 
 # Contains all of the stats
 benchStats = {}
@@ -132,24 +127,17 @@ def parseStats(inputFolder, ignoreFolders):
 
                         # Skip first pass because it isn't the
                         # final schedule
-                        getPassNum = RE_PASS_NUM.search(block)
-                        if getPassNum:
-                            passNum = getPassNum.group(1)
-                            if passNum == 'first':
-                                continue
+                        getPassNum = plaid_re.PASS_NUM.search(block)
+                        if getPassNum and getPassNum.group(1) == 'first': continue
 
                         # First check if B&B is enabled because
                         # with B&B enabled, the final output will
                         # be different.
                         # If B&B is not enabled, check for
                         # schedule from heuristic.
-                        DAGInfo = RE_DAG_INFO.search(block)
-                        if (DAGInfo):
-                            dagName = DAGInfo.group(1)
-                            schedLength = int(DAGInfo.group(3))
-                        else:
-                            getSchedLength = RE_SCHED_LENGTH.search(block)
-                            schedLength = int(getSchedLength.group(1))
+                        DAGInfo = block_re.COST_BEST.search(block)
+                        if not DAGInfo: DAGInfo = block_re.COST_HEURISTIC.search(block)
+                        schedLength = int(DAGInfo['length'])
 
                         stats['total'] += schedLength
                         stats['numRegions'] += 1

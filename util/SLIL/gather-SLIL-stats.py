@@ -1,10 +1,9 @@
 import optparse
-import os
+import os, sys
 import mmap
-import re
 
-regex = re.compile("SLIL stats: DAG (.*?) static LB (\d+) gap size (\d+) enumerated (.*?) optimal (.*?) PERP higher (.*?) \(")
-
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from regexs import slil as slil_re
 
 def debugPrint(msg):
   #print(msg)
@@ -21,21 +20,21 @@ def getStatsFromLogFile(filename, path):
   with open(os.path.join(path,filename)) as f:
     m = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
 
-    for match in regex.finditer(m):
+    for match in slil_re.STATS.finditer(m):
       debugPrint("Found match: %s" % match.group(0))
       blockStats = {}
-      dagName = match.group(1)
+      dagName = match['name']
 
       functionName = dagName.split(':')[0]
       if not functionName in functions:
         debugPrint("Found function %s" % functionName)
         functions[functionName] = {}
 
-      blockStats['staticLB'] = int(match.group(2))
-      blockStats['gapSize'] = int(match.group(3))
-      blockStats['isEnumerated'] = getBool(match.group(4))
-      blockStats['isOptimal'] = getBool(match.group(5))
-      blockStats['isPerpHigher'] = getBool(match.group(6))
+      blockStats['staticLB'] = int(match['static_lb'])
+      blockStats['gapSize'] = int(match['gap_size'])
+      blockStats['isEnumerated'] = getBool(match['enumerated'])
+      blockStats['isOptimal'] = getBool(match['optimal'])
+      blockStats['isPerpHigher'] = getBool(match['perp_higher'])
 
       blockName = dagName.split(':')[1]
       if blockName in functions[functionName]:

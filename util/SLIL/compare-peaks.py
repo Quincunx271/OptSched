@@ -1,16 +1,15 @@
-import sys
-import os
-import re
+import os, sys
 import mmap
 
-Regex = re.compile('DAG (.*?) PEAK (\d+)')
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from regexs import slil as slil_re
 
 def readPeakCosts(logFile):
   peakCosts = {}
   with open(logFile) as f:
     m = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
-    for match in Regex.finditer(m):
-      peakCosts[match.group(1)] = int(match.group(2))
+    for match in slil_re.PEAK.finditer(m):
+      peakCosts[match['name']] = int(match['peak'])
     m.close()
   return peakCosts
   

@@ -18,11 +18,11 @@ IS_OPTIMAL = re.compile(r'The schedule is optimal')
 COST_LOWER_BOUND = re.compile(r'Lower bound of cost before scheduling: (\d+)')
 COST_BEST = re.compile(r'Best schedule for DAG (?P<name>.*) has cost (?P<cost>\d+) and length (?P<length>\d+). The schedule is (?P<optimal>not optimal|optimal)')
 COST_HEURISTIC = re.compile(r'list schedule is of length (?P<length>\d+) and spill cost (?P<spill_cost>\d+). Tot cost = (?P<total_cost>\d+)')
+COST_IMPROVEMENT = re.compile(r'cost imp=(?P<improvement>\d+)')
 
 SPILLS_BEST = re.compile(r'OPT_SCHED LOCAL RA: DAG Name: (?P<name>\S+) Number of spills: (?P<count>\d+)')
 SPILLS_HEURISTIC= re.compile(r'OPT_SCHED LOCAL RA: DAG Name: (?P<name>.*) \*\*\*heuristic_schedule\*\*\* Number of spills: (?P<count>\d+)')
 
-IMPROVEMENT = re.compile(r'cost imp=(?P<improvement>\d+)')
 START_TIME = re.compile(r'-{20} \(Time = (?P<time>\d+) ms\)')
 END_TIME = re.compile(r'verified successfully \(Time = (?P<time>\d+) ms\)')
 PEAK_REG_PRESSURE = re.compile(r'PeakRegPresAfter Index (?P<index>\d+) Name (?P<name>.*) Peak (?P<peak>\d+) Limit (?P<limit>\d+)')

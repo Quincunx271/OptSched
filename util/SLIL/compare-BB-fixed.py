@@ -1,7 +1,9 @@
-import re
 import mmap
 import optparse
-import os
+import os, sys
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from regexs import slil as slil_re
 
 parser = optparse.OptionParser(
     description='Wrapper around runspec for collecting spill counts.')
@@ -24,8 +26,6 @@ if not os.path.isfile(bruteForceFile):
 if not os.path.isfile(bbFile):
   raise Error("Please specify a valid dynamic log file.")
 
-regex = re.compile(r'Dag (.*?) (.*?) absolute cost (\d+?) time (\d+)')
-
 results = {}
 
 SUCCESS = "optimal"
@@ -39,25 +39,26 @@ goodCount = 0
 with open(bruteForceFile) as bff:
   bffm = mmap.mmap(bff.fileno(), 0, access=mmap.ACCESS_READ)
 
-  for match in regex.finditer(bffm):
+  for match in slil_re.ABSOLUTE_COST.finditer(bffm):
     dagResult = {}
     dagResult['bf'] = {}
-    dagResult['bf']['result'] = match.group(2)
-    dagResult['bf']['cost'] = int(match.group(3))
-    dagResult['bf']['time'] = int(match.group(4))
-    results[match.group(1)] = dagResult
+    dagResult['bf']['result'] = match['result']
+    dagResult['bf']['cost'] = int(match['cost'])
+    dagResult['bf']['time'] = int(match['time'])
+    results[match['name']] = dagResult
     
   bffm.close()
 
 with open(bbFile) as bbf:
   bbfm = mmap.mmap(bbf.fileno(), 0, access=mmap.ACCESS_READ)
-  for match in regex.finditer(bbfm):
-    if not match.group(1) in results:
-      results[match.group(1)] = {}
-    results[match.group(1)]['bb'] = {}
-    results[match.group(1)]['bb']['result'] = match.group(2)
-    results[match.group(1)]['bb']['cost'] = int(match.group(3))
-    results[match.group(1)]['bb']['time'] = int(match.group(4))
+  for match in slil_re.ABSOLUTE_COST.finditer(bbfm):
+    dagName = match['name']
+    if not dagName in results:
+      results[dagName] = {}
+    results[dagName]['bb'] = {}
+    results[dagName]['bb']['result'] = match['result']
+    results[dagName]['bb']['cost'] = int(match['cost'])
+    results[dagName]['bb']['time'] = int(match['time'])
   bbfm.close()
 
   

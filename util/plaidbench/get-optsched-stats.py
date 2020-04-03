@@ -34,18 +34,16 @@ Example:
         ...
 '''
 
-import os       # Used for scanning directories, getting paths, and checking files.
+import os, sys
 import re
 from openpyxl import Workbook
 from openpyxl.styles import Font
 from openpyxl.styles import Alignment
 import argparse
 
-REGEX_DAG_INFO = re.compile(r'Processing DAG (.*) with (\d+) insts and max latency (\d+)')
-REGEX_LIST_OPTIMAL = re.compile(r'list schedule (.?)* is optimal')
-REGEX_COST_IMPROV = re.compile(r'cost imp=(\d+).')
-REGEX_OPTIMAL = re.compile(r'The schedule is optimal')
-REGEX_PASS_NUM = re.compile(r'End of (.*) pass through')
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from regexs import block as block_re
+from regexs import plaidbench as plaid_re
 
 # Contains all of the stats
 benchStats = {}
@@ -116,11 +114,8 @@ def parseStats(inputFolder):
                 for block in blocks:
                     # Get pass num, if none is found then
                     # use third as default.
-                    getPass = REGEX_PASS_NUM.search(block)
-                    if getPass:
-                        passNum = getPass.group(1)
-                    else:
-                        passNum = "third"
+                    getPass = plaid_re.PASS_NUM.search(block)
+                    passNum = getPass['pass'] if getPass else 'third'
 
                     stats[passNum]['TotalProcessed'] += 1
 
@@ -129,15 +124,15 @@ def parseStats(inputFolder):
                     if 'Enumerating' in block:
                         stats[passNum]['EnumCnt'] += 1
                         # Get cost
-                        searchCost = REGEX_COST_IMPROV.search(block)
+                        searchCost = block_re.COST_IMPROVEMENT.search(block)
                         cost = int(searchCost.group(1))
 
                         # Get DAG stats
-                        dagInfo = REGEX_DAG_INFO.search(block)
-                        numOfInstr = int(dagInfo.group(2))
+                        dagInfo = block_re.DAG_NAME_SIZE_LATENCY.search(block)
+                        numOfInstr = int(dagInfo['size'])
                         stats[passNum]['TotalInstr'] += numOfInstr
 
-                        if REGEX_OPTIMAL.search(block):
+                        if block_re.IS_OPTIMAL.search(block):
                             # Optimal and improved
                             if cost > 0:
                                 stats[passNum]['OptImpr'] += 1
