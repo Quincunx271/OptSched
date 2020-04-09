@@ -63,34 +63,34 @@ ACOScheduler::ACOScheduler(DataDepGraph *dataDepGraph,
   std::cerr << "decay_factor===="<<decay_factor<<"\n\n";
   std::cerr << "ants_per_iteration===="<<ants_per_iteration<<"\n\n";
   */
-  int pheremone_size = (count_ + 1) * count_;
-  pheremone_.resize(pheremone_size);
+  int pheromone_size = (count_ + 1) * count_;
+  pheromone_.resize(pheromone_size);
   InitialSchedule = nullptr;
 }
 
 ACOScheduler::~ACOScheduler() { delete rdyLst_; }
 
-// Pheremone table lookup
-// -1 means no instruction, so e.g. pheremone(-1, 10) gives pheremone on path
+// Pheromone table lookup
+// -1 means no instruction, so e.g. pheromone(-1, 10) gives pheromone on path
 // from empty schedule to schedule only containing instruction 10
-pheremone_t &ACOScheduler::Pheremone(SchedInstruction *from,
+pheromone_t &ACOScheduler::Pheromone(SchedInstruction *from,
                                      SchedInstruction *to) {
   assert(to != NULL);
   int fromNum = -1;
   if (from != NULL)
     fromNum = from->GetNum();
-  return Pheremone(fromNum, to->GetNum());
+  return Pheromone(fromNum, to->GetNum());
 }
 
-pheremone_t &ACOScheduler::Pheremone(InstCount from, InstCount to) {
+pheromone_t &ACOScheduler::Pheromone(InstCount from, InstCount to) {
   int row = 0;
   if (from != -1)
     row = from + 1;
-  return pheremone_[(row * count_) + to];
+  return pheromone_[(row * count_) + to];
 }
 
 double ACOScheduler::Score(SchedInstruction *from, Choice choice) {
-  return Pheremone(from, choice.inst) *
+  return Pheromone(from, choice.inst) *
          pow(choice.heuristic, heuristicImportance_);
 }
 
@@ -107,7 +107,7 @@ ACOScheduler::SelectInstruction(const llvm::ArrayRef<Choice> &ready,
   if (RandDouble(0, 1) < choose_best_chance) {
     if (print_aco_trace)
       std::cerr << "choose_best, use fixed bias: " << use_fixed_bias << "\n";
-    pheremone_t max = -1;
+    pheromone_t max = -1;
     Choice maxChoice;
     for (auto &choice : ready) {
       if (Score(lastInst, choice) > max) {
@@ -146,10 +146,10 @@ ACOScheduler::SelectInstruction(const llvm::ArrayRef<Choice> &ready,
     else
       return s.inst;
   }
-  pheremone_t sum = 0;
+  pheromone_t sum = 0;
   for (auto choice : ready)
     sum += Score(lastInst, choice);
-  pheremone_t point = RandDouble(0, sum);
+  pheromone_t point = RandDouble(0, sum);
   for (auto choice : ready) {
     point -= Score(lastInst, choice);
     if (point <= 0)
@@ -204,9 +204,9 @@ std::unique_ptr<InstSchedule> ACOScheduler::FindOneSchedule() {
       inst = SelectInstruction(ready, lastInst);
     if (inst != NULL) {
 #ifdef USE_ACS
-      // local pheremone decay
-      pheremone_t *pheremone = &Pheremone(lastInst, inst);
-      *pheremone = (1 - local_decay) * *pheremone + local_decay * initialValue_;
+      // local pheromone decay
+      pheromone_t *pheromone = &Pheromone(lastInst, inst);
+      *pheromone = (1 - local_decay) * *pheromone + local_decay * initialValue_;
 #endif
       lastInst = inst;
     }
@@ -245,11 +245,11 @@ FUNC_RESULT ACOScheduler::FindSchedule(InstSchedule *schedule_out,
                                        SchedRegion *region) {
   rgn_ = region;
 
-  // initialize pheremone
+  // initialize pheromone
   // for this, we need the cost of the pure heuristic schedule
-  int pheremone_size = (count_ + 1) * count_;
-  for (int i = 0; i < pheremone_size; i++)
-    pheremone_[i] = 1;
+  int pheromone_size = (count_ + 1) * count_;
+  for (int i = 0; i < pheromone_size; i++)
+    pheromone_[i] = 1;
   initialValue_ = 1;
   std::unique_ptr<InstSchedule> heuristicSched = FindOneSchedule();
   InstCount heuristicCost =
@@ -260,13 +260,13 @@ FUNC_RESULT ACOScheduler::FindSchedule(InstSchedule *schedule_out,
 #else
   initialValue_ = (double)ants_per_iteration / heuristicCost;
 #endif
-  for (int i = 0; i < pheremone_size; i++)
-    pheremone_[i] = initialValue_;
+  for (int i = 0; i < pheromone_size; i++)
+    pheromone_[i] = initialValue_;
   std::cerr << "initialValue_" << initialValue_ << std::endl;
 
   std::unique_ptr<InstSchedule> bestSchedule = std::move(InitialSchedule);
   if (bestSchedule) {
-    UpdatePheremone(bestSchedule.get());
+    UpdatePheromone(bestSchedule.get());
   }
   Config &schedIni = SchedulerOptions::getInstance();
   int noImprovementMax = schedIni.GetInt("ACO_STOP_ITERATIONS");
@@ -284,7 +284,7 @@ FUNC_RESULT ACOScheduler::FindSchedule(InstSchedule *schedule_out,
       }
     }
 #if !USE_ACS
-    UpdatePheremone(iterationBest);
+    UpdatePheromone(iterationBest);
 #endif
     /* PrintSchedule(iterationBest); */
     /* std::cout << iterationBest->GetCost() << std::endl; */
@@ -309,7 +309,7 @@ FUNC_RESULT ACOScheduler::FindSchedule(InstSchedule *schedule_out,
         break;
     }
 #if USE_ACS
-    UpdatePheremone(bestSchedule.get());
+    UpdatePheromone(bestSchedule.get());
 #endif
     iterations++;
   }
@@ -320,7 +320,7 @@ FUNC_RESULT ACOScheduler::FindSchedule(InstSchedule *schedule_out,
   return RES_SUCCESS;
 }
 
-void ACOScheduler::UpdatePheremone(InstSchedule *schedule) {
+void ACOScheduler::UpdatePheromone(InstSchedule *schedule) {
   // I wish InstSchedule allowed you to just iterate over it, but it's got this
   // cycle and slot thing which needs to be accounted for
   InstCount instNum, cycleNum, slotNum;
@@ -330,14 +330,14 @@ void ACOScheduler::UpdatePheremone(InstSchedule *schedule) {
   while (instNum != INVALID_VALUE) {
     SchedInstruction *inst = dataDepGraph_->GetInstByIndx(instNum);
 
-    pheremone_t *pheremone = &Pheremone(lastInst, inst);
+    pheromone_t *pheromone = &Pheromone(lastInst, inst);
 #if USE_ACS
     // ACS update rule includes decay
     // only the arcs on the current solution are decayed
-    *pheremone = (1 - decay_factor) * *pheremone +
+    *pheromone = (1 - decay_factor) * *pheromone +
                  decay_factor / (schedule->GetCost() + 1);
 #else
-    *pheremone = *pheremone + 1 / (schedule->GetCost() + 1);
+    *pheromone = *pheromone + 1 / (schedule->GetCost() + 1);
 #endif
     lastInst = inst;
 
@@ -346,15 +346,15 @@ void ACOScheduler::UpdatePheremone(InstSchedule *schedule) {
   schedule->ResetInstIter();
 
 #if !USE_ACS
-  // decay pheremone
+  // decay pheromone
   for (int i = 0; i < count_; i++) {
     for (int j = 0; j < count_; j++) {
-      Pheremone(i, j) *= (1 - decay_factor);
+      Pheromone(i, j) *= (1 - decay_factor);
     }
   }
 #endif
   if (print_aco_trace)
-    PrintPheremone();
+    PrintPheromone();
 }
 
 // copied from Enumerator
@@ -383,10 +383,10 @@ inline void ACOScheduler::UpdtRdyLst_(InstCount cycleNum, int slotNum) {
   }
 }
 
-void ACOScheduler::PrintPheremone() {
+void ACOScheduler::PrintPheromone() {
   for (int i = 0; i < count_; i++) {
     for (int j = 0; j < count_; j++) {
-      std::cerr << std::scientific << std::setprecision(8) << Pheremone(i, j)
+      std::cerr << std::scientific << std::setprecision(8) << Pheromone(i, j)
                 << " ";
     }
     std::cerr << std::endl;
