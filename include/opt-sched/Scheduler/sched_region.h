@@ -76,7 +76,7 @@ public:
   virtual int CmputCostLwrBound() = 0;
   // TODO(max): Document.
   virtual InstCount UpdtOptmlSched(InstSchedule *crntSched,
-                                   LengthCostEnumerator *enumrtr) = 0;
+                                   LengthCostEnumerator *enumerator) = 0;
   // TODO(max): Document.
   virtual bool ChkCostFsblty(InstCount trgtLngth, EnumTreeNode *treeNode) = 0;
   // TODO(max): Document.
@@ -187,7 +187,7 @@ protected:
   // TODO(max): Document.
   bool CmputUprBounds_(InstSchedule *schedule, bool useFileBounds);
   // Handle the enumerator's result
-  void HandlEnumrtrRslt_(FUNC_RESULT rslt, InstCount trgtLngth);
+  void HandlEnumeratorRslt_(FUNC_RESULT rslt, InstCount trgtLngth);
 
   // Simulate local register allocation.
   void RegAlloc_(InstSchedule *&bestSched, InstSchedule *&lstSched);
@@ -206,7 +206,7 @@ protected:
   // TODO(max): Document.
   virtual void CmputSchedUprBound_() = 0;
   // TODO(max): Document.
-  virtual Enumerator *AllocEnumrtr_(Milliseconds timeout) = 0;
+  virtual Enumerator *AllocEnumerator_(Milliseconds timeout) = 0;
   // Wrapper for the enumerator
   virtual FUNC_RESULT Enumerate_(Milliseconds startTime,
                                  Milliseconds rgnTimeout,

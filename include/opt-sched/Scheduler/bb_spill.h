@@ -28,7 +28,7 @@ class BitVector;
 
 class BBWithSpill : public SchedRegion {
 private:
-  LengthCostEnumerator *enumrtr_;
+  LengthCostEnumerator *enumerator_;
 
   InstCount crntSpillCost_;
   InstCount optmlSpillCost_;
@@ -87,7 +87,7 @@ private:
   InstCount CmputCost_(InstSchedule *sched, COST_COMP_MODE compMode,
                        InstCount &execCost, bool trackCnflcts);
   void CmputSchedUprBound_();
-  Enumerator *AllocEnumrtr_(Milliseconds timeout);
+  Enumerator *AllocEnumerator_(Milliseconds timeout);
   FUNC_RESULT Enumerate_(Milliseconds startTime, Milliseconds rgnDeadline,
                          Milliseconds lngthDeadline);
   void SetupForSchdulng_();
@@ -122,7 +122,7 @@ public:
   int CmputCostLwrBound();
 
   InstCount UpdtOptmlSched(InstSchedule *crntSched,
-                           LengthCostEnumerator *enumrtr);
+                           LengthCostEnumerator *enumerator);
   bool ChkCostFsblty(InstCount trgtLngth, EnumTreeNode *treeNode);
   void SchdulInst(SchedInstruction *inst, InstCount cycleNum, InstCount slotNum,
                   bool trackCnflcts);

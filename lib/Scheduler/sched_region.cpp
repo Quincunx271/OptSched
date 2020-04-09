@@ -610,22 +610,22 @@ FUNC_RESULT SchedRegion::FindOptimalSchedule(
 FUNC_RESULT SchedRegion::Optimize_(Milliseconds startTime,
                                    Milliseconds rgnTimeout,
                                    Milliseconds lngthTimeout) {
-  Enumerator *enumrtr;
+  Enumerator *enumerator;
   FUNC_RESULT rslt = RES_SUCCESS;
 
   enumCrntSched_ = AllocNewSched_();
   enumBestSched_ = AllocNewSched_();
 
   InstCount initCost = bestCost_;
-  enumrtr = AllocEnumrtr_(lngthTimeout);
+  enumerator = AllocEnumerator_(lngthTimeout);
   rslt = Enumerate_(startTime, rgnTimeout, lngthTimeout);
 
   Milliseconds solnTime = Utilities::GetProcessorTime() - startTime;
 
 #ifdef IS_DEBUG_NODES
-  Logger::Info("Examined %lld nodes.", enumrtr->GetNodeCnt());
+  Logger::Info("Examined %lld nodes.", enumerator->GetNodeCnt());
 #endif
-  stats::nodeCount.Record(enumrtr->GetNodeCnt());
+  stats::nodeCount.Record(enumerator->GetNodeCnt());
   stats::solutionTime.Record(solnTime);
 
   InstCount imprvmnt = initCost - bestCost_;
@@ -725,7 +725,7 @@ void SchedRegion::UpdateScheduleCost(InstSchedule *schedule) {
 
 SPILL_COST_FUNCTION SchedRegion::GetSpillCostFunc() { return spillCostFunc_; }
 
-void SchedRegion::HandlEnumrtrRslt_(FUNC_RESULT rslt, InstCount trgtLngth) {
+void SchedRegion::HandlEnumeratorRslt_(FUNC_RESULT rslt, InstCount trgtLngth) {
   switch (rslt) {
   case RES_FAIL:
     //    #ifdef IS_DEBUG_ENUM_ITERS

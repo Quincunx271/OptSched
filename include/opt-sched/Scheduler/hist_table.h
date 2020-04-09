@@ -40,14 +40,14 @@ public:
   void Clean();
   void ReplaceParent(HistEnumTreeNode *newParent);
   // Does the scheduled inst. list of this node match that of the given node
-  bool DoesMatch(EnumTreeNode *node, Enumerator *enumrtr);
+  bool DoesMatch(EnumTreeNode *node, Enumerator *enumerator);
   // Is the sub-problem at this node dominated by the given node's?
-  bool IsDominated(EnumTreeNode *node, Enumerator *enumrtr);
+  bool IsDominated(EnumTreeNode *node, Enumerator *enumerator);
   // Does the sub-problem at this node dominate the given node's?
-  virtual bool DoesDominate(EnumTreeNode *node, Enumerator *enumrtr);
+  virtual bool DoesDominate(EnumTreeNode *node, Enumerator *enumerator);
   virtual void Construct(EnumTreeNode *node, bool isTemp);
   virtual void SetCostInfo(EnumTreeNode *node, bool isTemp,
-                           Enumerator *enumrtr);
+                           Enumerator *enumerator);
   const std::shared_ptr<std::vector<SchedInstruction *>> &GetSuffix() const;
   void
   SetSuffix(const std::shared_ptr<std::vector<SchedInstruction *>> &suffix);
@@ -77,19 +77,19 @@ protected:
   void SetInstsSchduld_(BitVector *instsSchduld);
   // Does this history node dominate the given node or history node?
   bool DoesDominate_(EnumTreeNode *node, HistEnumTreeNode *othrHstry,
-                     ENUMTREE_NODEMODE mode, Enumerator *enumrtr,
+                     ENUMTREE_NODEMODE mode, Enumerator *enumerator,
                      InstCount shft);
   void SetLwrBounds_(InstCount lwrBounds[], SchedInstruction *lastInsts[],
                      InstCount thisTime, InstCount minTimeToExmn,
-                     Enumerator *enumrtr);
-  void CmputNxtAvlblCycles_(Enumerator *enumrtr, InstCount instsPerType[],
+                     Enumerator *enumerator);
+  void CmputNxtAvlblCycles_(Enumerator *enumerator, InstCount instsPerType[],
                             InstCount nxtAvlblCycles[]);
 
   virtual void Init_();
   void AllocLastInsts_(ArrayMemAlloc<SchedInstruction *> *lastInstsAlctr,
-                       Enumerator *enumrtr);
+                       Enumerator *enumerator);
   bool IsAbslutDmnnt_();
-  InstCount GetMinTimeToExmn_(InstCount nodeTime, Enumerator *enumrtr);
+  InstCount GetMinTimeToExmn_(InstCount nodeTime, Enumerator *enumerator);
   InstCount GetLwrBound_(SchedInstruction *inst, int16_t issuRate);
   void SetRsrvSlots_(EnumTreeNode *node);
 };
@@ -101,8 +101,8 @@ public:
 
   void Construct(EnumTreeNode *node, bool isTemp);
   // Does the sub-problem at this node dominate the given node's?
-  bool DoesDominate(EnumTreeNode *node, Enumerator *enumrtr);
-  void SetCostInfo(EnumTreeNode *node, bool isTemp, Enumerator *enumrtr);
+  bool DoesDominate(EnumTreeNode *node, Enumerator *enumerator);
+  void SetCostInfo(EnumTreeNode *node, bool isTemp, Enumerator *enumerator);
 
 protected:
   // Why do we need to copy this data from region->tree_node->hist_node
@@ -120,8 +120,8 @@ protected:
   bool costInfoSet_;
 #endif
 
-  bool ChkCostDmntnForBBSpill_(EnumTreeNode *node, Enumerator *enumrtr);
-  bool ChkCostDmntn_(EnumTreeNode *node, Enumerator *enumrtr,
+  bool ChkCostDmntnForBBSpill_(EnumTreeNode *node, Enumerator *enumerator);
+  bool ChkCostDmntn_(EnumTreeNode *node, Enumerator *enumerator,
                      InstCount &maxShft);
   virtual void Init_();
 };

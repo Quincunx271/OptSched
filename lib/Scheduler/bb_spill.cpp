@@ -40,7 +40,7 @@ BBWithSpill::BBWithSpill(const OptSchedTarget *OST_, DataDepGraph *dataDepGraph,
                   HeurSchedType),
       OST(OST_) {
   costLwrBound_ = 0;
-  enumrtr_ = NULL;
+  enumerator_ = NULL;
   optmlSpillCost_ = INVALID_VALUE;
 
   crntCycleNum_ = INVALID_VALUE;
@@ -73,8 +73,8 @@ BBWithSpill::BBWithSpill(const OptSchedTarget *OST_, DataDepGraph *dataDepGraph,
 /****************************************************************************/
 
 BBWithSpill::~BBWithSpill() {
-  if (enumrtr_ != NULL) {
-    delete enumrtr_;
+  if (enumerator_ != NULL) {
+    delete enumerator_;
   }
 
   delete[] liveRegs_;
@@ -771,17 +771,17 @@ void BBWithSpill::FinishOptml_() {
 }
 /*****************************************************************************/
 
-Enumerator *BBWithSpill::AllocEnumrtr_(Milliseconds timeout) {
+Enumerator *BBWithSpill::AllocEnumerator_(Milliseconds timeout) {
   bool enblStallEnum = enblStallEnum_;
   /*  if (!dataDepGraph_->IncludesUnpipelined()) {
       enblStallEnum = false;
     }*/
 
-  enumrtr_ = new LengthCostEnumerator(
+  enumerator_ = new LengthCostEnumerator(
       dataDepGraph_, machMdl_, schedUprBound_, sigHashSize_, enumPrirts_,
       prune_, SchedForRPOnly_, enblStallEnum, timeout, spillCostFunc_, 0, NULL);
 
-  return enumrtr_;
+  return enumerator_;
 }
 /*****************************************************************************/
 
@@ -806,11 +806,11 @@ FUNC_RESULT BBWithSpill::Enumerate_(Milliseconds startTime,
     //#ifdef IS_DEBUG_ENUM_ITERS
     Logger::Info("Enumerating at target length %d", trgtLngth);
     //#endif
-    rslt = enumrtr_->FindFeasibleSchedule(enumCrntSched_, trgtLngth, this,
+    rslt = enumerator_->FindFeasibleSchedule(enumCrntSched_, trgtLngth, this,
                                           costLwrBound, lngthDeadline);
     if (rslt == RES_TIMEOUT)
       timeout = true;
-    HandlEnumrtrRslt_(rslt, trgtLngth);
+    HandlEnumeratorRslt_(rslt, trgtLngth);
 
     if (bestCost_ == 0 || rslt == RES_ERROR ||
         (lngthDeadline == rgnDeadline && rslt == RES_TIMEOUT) ||
@@ -828,7 +828,7 @@ FUNC_RESULT BBWithSpill::Enumerate_(Milliseconds startTime,
       break;
     }
 
-    enumrtr_->Reset();
+    enumerator_->Reset();
     enumCrntSched_->Reset();
 
     if (!isSecondPass)
@@ -843,7 +843,7 @@ FUNC_RESULT BBWithSpill::Enumerate_(Milliseconds startTime,
 
 #ifdef IS_DEBUG_ITERS
   stats::iterations.Record(iterCnt);
-  stats::enumerations.Record(enumrtr_->GetSearchCnt());
+  stats::enumerations.Record(enumerator_->GetSearchCnt());
   stats::lengths.Record(iterCnt);
 #endif
 

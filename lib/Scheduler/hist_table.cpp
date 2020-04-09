@@ -39,7 +39,7 @@ void HistEnumTreeNode::SetRsrvSlots_(EnumTreeNode *node) {
   if (node->rsrvSlots_ == NULL)
     return;
 
-  int issuRate = node->enumrtr_->machMdl_->GetIssueRate();
+  int issuRate = node->enumerator_->machMdl_->GetIssueRate();
 
   rsrvSlots_ = new ReserveSlot[issuRate];
 
@@ -108,8 +108,8 @@ void HistEnumTreeNode::SetLwrBounds_(InstCount lwrBounds[],
                                      SchedInstruction *lastInsts[],
                                      InstCount thisTime,
                                      InstCount minTimeToExmn,
-                                     Enumerator *enumrtr) {
-  InstCount instCnt = enumrtr->totInstCnt_;
+                                     Enumerator *enumerator) {
+  InstCount instCnt = enumerator->totInstCnt_;
 
   for (InstCount i = 0; i < instCnt; i++) {
     lwrBounds[i] = 0;
@@ -119,7 +119,7 @@ void HistEnumTreeNode::SetLwrBounds_(InstCount lwrBounds[],
 
   for (InstCount indx = 0; indx < entryCnt; indx++) {
     InstCount time = thisTime - indx;
-    InstCount cycleNum = enumrtr->GetCycleNumFrmTime_(time);
+    InstCount cycleNum = enumerator->GetCycleNumFrmTime_(time);
     SchedInstruction *inst = lastInsts[indx];
 
     // If an instruction is scheduled after its static lower bound then its
@@ -144,11 +144,11 @@ void HistEnumTreeNode::SetLwrBounds_(InstCount lwrBounds[],
 }
 
 InstCount HistEnumTreeNode::GetMinTimeToExmn_(InstCount nodeTime,
-                                              Enumerator *enumrtr) {
-  int issuRate = enumrtr->issuRate_;
-  DataDepGraph *dataDepGraph = enumrtr->dataDepGraph_;
+                                              Enumerator *enumerator) {
+  int issuRate = enumerator->issuRate_;
+  DataDepGraph *dataDepGraph = enumerator->dataDepGraph_;
   UDT_GLABEL maxLtncy = dataDepGraph->GetMaxLtncy();
-  InstCount crntCycleNum = enumrtr->GetCycleNumFrmTime_(nodeTime);
+  InstCount crntCycleNum = enumerator->GetCycleNumFrmTime_(nodeTime);
   InstCount nxtCycleNum = crntCycleNum + 1;
   InstCount minCycleNumToExmn = std::max(nxtCycleNum - maxLtncy, 0);
   InstCount minTimeToExmn = minCycleNumToExmn * issuRate + 1;
@@ -158,14 +158,14 @@ InstCount HistEnumTreeNode::GetMinTimeToExmn_(InstCount nodeTime,
 bool HistEnumTreeNode::DoesDominate_(EnumTreeNode *node,
                                      HistEnumTreeNode *othrHstry,
                                      ENUMTREE_NODEMODE mode,
-                                     Enumerator *enumrtr, InstCount shft) {
+                                     Enumerator *enumerator, InstCount shft) {
   InstCount indx, time;
   InstCount *othrLwrBounds = NULL;
   InstCount thisTime, othrTime;
-  SchedInstruction **lastInsts = enumrtr->lastInsts_;
-  SchedInstruction **othrLastInsts = enumrtr->othrLastInsts_;
-  InstCount *instsPerType = enumrtr->histInstsPerType_;
-  InstCount *nxtAvlblCycles = enumrtr->histNxtAvlblCycles_;
+  SchedInstruction **lastInsts = enumerator->lastInsts_;
+  SchedInstruction **othrLastInsts = enumerator->othrLastInsts_;
+  InstCount *instsPerType = enumerator->histInstsPerType_;
+  InstCount *nxtAvlblCycles = enumerator->histNxtAvlblCycles_;
   bool othrCrntCycleBlkd;
 
   assert(othrHstry != this);
@@ -178,8 +178,8 @@ bool HistEnumTreeNode::DoesDominate_(EnumTreeNode *node,
     othrCrntCycleBlkd = node->crntCycleBlkd_;
   } else {
     assert(mode == ETN_HISTORY);
-    assert(othrHstry != NULL && node == NULL && enumrtr != NULL);
-    othrLwrBounds = enumrtr->tmpLwrBounds_;
+    assert(othrHstry != NULL && node == NULL && enumerator != NULL);
+    othrLwrBounds = enumerator->tmpLwrBounds_;
     othrTime = othrHstry->GetTime();
     othrCrntCycleBlkd = othrHstry->crntCycleBlkd_;
   }
@@ -202,7 +202,7 @@ bool HistEnumTreeNode::DoesDominate_(EnumTreeNode *node,
     if (node->rsrvSlots_ == NULL)
       return false;
 
-    int issuRate = node->enumrtr_->machMdl_->GetIssueRate();
+    int issuRate = node->enumerator_->machMdl_->GetIssueRate();
     for (int i = 0; i < issuRate; i++) {
       if (rsrvSlots_[i].strtCycle != INVALID_VALUE) {
         if (node->rsrvSlots_[i].strtCycle == INVALID_VALUE ||
@@ -213,7 +213,7 @@ bool HistEnumTreeNode::DoesDominate_(EnumTreeNode *node,
   }
 
   InstCount entryCnt;
-  InstCount minTimeToExmn = GetMinTimeToExmn_(thisTime, enumrtr);
+  InstCount minTimeToExmn = GetMinTimeToExmn_(thisTime, enumerator);
 
   entryCnt = SetLastInsts_(lastInsts, thisTime, minTimeToExmn);
   assert(entryCnt == thisTime - minTimeToExmn + 1);
@@ -223,14 +223,14 @@ bool HistEnumTreeNode::DoesDominate_(EnumTreeNode *node,
 
   if (othrHstry != NULL) {
     othrHstry->SetLwrBounds_(othrLwrBounds, othrLastInsts, othrTime,
-                             minTimeToExmn, enumrtr);
+                             minTimeToExmn, enumerator);
   }
 
-  CmputNxtAvlblCycles_(enumrtr, instsPerType, nxtAvlblCycles);
+  CmputNxtAvlblCycles_(enumerator, instsPerType, nxtAvlblCycles);
 
   for (indx = 0; indx < entryCnt; indx++) {
     time = thisTime - indx;
-    InstCount cycleNum = enumrtr->GetCycleNumFrmTime_(time);
+    InstCount cycleNum = enumerator->GetCycleNumFrmTime_(time);
     SchedInstruction *inst = lastInsts[indx];
 
     // If an inst. is scheduled after its static lower bound then its
@@ -272,20 +272,20 @@ bool HistEnumTreeNode::DoesDominate_(EnumTreeNode *node,
   if (isAbslutDmnnt)
     stats::absoluteDominationHits++;
 
-  // PrntPartialSched(enumrtr);
+  // PrntPartialSched(enumerator);
   return true;
 }
 
-void HistEnumTreeNode::CmputNxtAvlblCycles_(Enumerator *enumrtr,
+void HistEnumTreeNode::CmputNxtAvlblCycles_(Enumerator *enumerator,
                                             InstCount instsPerType[],
                                             InstCount nxtAvlblCycles[]) {
   InstCount thisTime = GetTime();
-  InstCount crntCycle = enumrtr->GetCycleNumFrmTime_(thisTime);
+  InstCount crntCycle = enumerator->GetCycleNumFrmTime_(thisTime);
   HistEnumTreeNode *crntNode;
   InstCount time;
   InstCount cycleNum = crntCycle;
 
-  MachineModel *machMdl = enumrtr->machMdl_;
+  MachineModel *machMdl = enumerator->machMdl_;
   int issuTypeCnt = machMdl->GetIssueTypeCnt();
 
   for (int i = 0; i < issuTypeCnt; i++) {
@@ -298,7 +298,7 @@ void HistEnumTreeNode::CmputNxtAvlblCycles_(Enumerator *enumrtr,
        crntNode = crntNode->prevNode_, time--) {
     assert(crntNode->prevNode_ != NULL);
     SchedInstruction *inst = crntNode->inst_;
-    cycleNum = enumrtr->GetCycleNumFrmTime_(time);
+    cycleNum = enumerator->GetCycleNumFrmTime_(time);
 
     if (inst == NULL)
       continue;
@@ -313,12 +313,13 @@ void HistEnumTreeNode::CmputNxtAvlblCycles_(Enumerator *enumrtr,
   }
 }
 
-bool HistEnumTreeNode::DoesDominate(EnumTreeNode *node, Enumerator *enumrtr) {
+bool HistEnumTreeNode::DoesDominate(EnumTreeNode *node,
+                                    Enumerator *enumerator) {
 #ifdef IS_DEBUG
   assert(isCnstrctd_);
 #endif
   InstCount shft = 0;
-  return DoesDominate_(node, NULL, ETN_ACTIVE, enumrtr, shft);
+  return DoesDominate_(node, NULL, ETN_ACTIVE, enumerator, shft);
 }
 
 void HistEnumTreeNode::PrntPartialSched(std::ostream &out) {
@@ -403,9 +404,9 @@ void CostHistEnumTreeNode::Init_() {
 }
 
 bool CostHistEnumTreeNode::DoesDominate(EnumTreeNode *node,
-                                        Enumerator *enumrtr) {
+                                        Enumerator *enumerator) {
   assert(isCnstrctd_);
-  assert(enumrtr->IsCostEnum());
+  assert(enumerator->IsCostEnum());
 
   InstCount shft = 0;
 
@@ -414,8 +415,8 @@ bool CostHistEnumTreeNode::DoesDominate(EnumTreeNode *node,
 
   // (Chris): If scheduling for RP only, automatically assume all nodes are
   // feasible and just check for cost domination.
-  if (!enumrtr->IsSchedForRPOnly()) {
-    if (DoesDominate_(node, NULL, ETN_ACTIVE, enumrtr, shft) == false)
+  if (!enumerator->IsSchedForRPOnly()) {
+    if (DoesDominate_(node, NULL, ETN_ACTIVE, enumerator, shft) == false)
       return false;
 
     // if the history node dominates the current node, and there is
@@ -428,13 +429,13 @@ bool CostHistEnumTreeNode::DoesDominate(EnumTreeNode *node,
   // if the hist node dominates the current node, and the hist node
   // had at least one feasible sched below it, domination will be
   // determined by the cost domination condition
-  return ChkCostDmntn_(node, enumrtr, shft);
+  return ChkCostDmntn_(node, enumerator, shft);
 }
 
 bool CostHistEnumTreeNode::ChkCostDmntn_(EnumTreeNode *node,
-                                         Enumerator *enumrtr,
+                                         Enumerator *enumerator,
                                          InstCount &maxShft) {
-  return ChkCostDmntnForBBSpill_(node, enumrtr);
+  return ChkCostDmntnForBBSpill_(node, enumerator);
 }
 
 // For the SLIL cost function the improvement in cost when comparing the other
@@ -530,9 +531,9 @@ InstCount HistEnumTreeNode::GetInstNum() {
   return inst_ == NULL ? SCHD_STALL : inst_->GetNum();
 }
 
-bool HistEnumTreeNode::DoesMatch(EnumTreeNode *node, Enumerator *enumrtr) {
-  BitVector *instsSchduld = enumrtr->bitVctr1_;
-  BitVector *othrInstsSchduld = enumrtr->bitVctr2_;
+bool HistEnumTreeNode::DoesMatch(EnumTreeNode *node, Enumerator *enumerator) {
+  BitVector *instsSchduld = enumerator->bitVctr1_;
+  BitVector *othrInstsSchduld = enumerator->bitVctr2_;
 
   assert(instsSchduld != NULL && othrInstsSchduld != NULL);
   SetInstsSchduld_(instsSchduld);
@@ -541,10 +542,10 @@ bool HistEnumTreeNode::DoesMatch(EnumTreeNode *node, Enumerator *enumrtr) {
   return *othrInstsSchduld == *instsSchduld;
 }
 
-bool HistEnumTreeNode::IsDominated(EnumTreeNode *node, Enumerator *enumrtr) {
+bool HistEnumTreeNode::IsDominated(EnumTreeNode *node, Enumerator *enumerator) {
   assert(node != NULL);
   InstCount shft = 0;
-  return node->hstry_->DoesDominate_(NULL, this, ETN_HISTORY, enumrtr, shft);
+  return node->hstry_->DoesDominate_(NULL, this, ETN_HISTORY, enumerator, shft);
 }
 
 HistEnumTreeNode *HistEnumTreeNode::GetParent() { return prevNode_; }

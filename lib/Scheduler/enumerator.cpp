@@ -73,7 +73,7 @@ void EnumTreeNode::Init_() {
 /*****************************************************************************/
 
 void EnumTreeNode::Construct(EnumTreeNode *prevNode, SchedInstruction *inst,
-                             Enumerator *enumrtr) {
+                             Enumerator *enumerator) {
   if (isCnstrctd_) {
     if (isClean_ == false) {
       Clean();
@@ -84,10 +84,10 @@ void EnumTreeNode::Construct(EnumTreeNode *prevNode, SchedInstruction *inst,
 
   prevNode_ = prevNode;
   inst_ = inst;
-  enumrtr_ = enumrtr;
+  enumerator_ = enumerator;
   time_ = prevNode_ == NULL ? 0 : prevNode_->time_ + 1;
 
-  InstCount instCnt = enumrtr_->totInstCnt_;
+  InstCount instCnt = enumerator_->totInstCnt_;
 
   if (isCnstrctd_ == false) {
     exmndInsts_ = new LinkedList<ExaminedInst>(instCnt);
@@ -95,7 +95,7 @@ void EnumTreeNode::Construct(EnumTreeNode *prevNode, SchedInstruction *inst,
     frwrdLwrBounds_ = new InstCount[instCnt];
   }
 
-  if (enumrtr_->IsHistDom()) {
+  if (enumerator_->IsHistDom()) {
     CreateTmpHstry_();
   }
 
@@ -173,7 +173,7 @@ void EnumTreeNode::SetLwrBounds(DIRECTION dir) {
   assert(dir == DIR_FRWRD);
   InstCount *&nodeLwrBounds = frwrdLwrBounds_;
   assert(nodeLwrBounds != NULL);
-  DataDepGraph *dataDepGraph = enumrtr_->dataDepGraph_;
+  DataDepGraph *dataDepGraph = enumerator_->dataDepGraph_;
   dataDepGraph->GetCrntLwrBounds(dir, nodeLwrBounds);
 }
 /*****************************************************************************/
@@ -186,7 +186,7 @@ void EnumTreeNode::SetRsrvSlots(int16_t rsrvSlotCnt, ReserveSlot *rsrvSlots) {
     return;
   }
 
-  int issuRate = enumrtr_->machMdl_->GetIssueRate();
+  int issuRate = enumerator_->machMdl_->GetIssueRate();
 
   rsrvSlots_ = new ReserveSlot[issuRate];
 
@@ -232,11 +232,11 @@ void EnumTreeNode::NewBranchExmnd(SchedInstruction *inst, bool isLegal,
                                   bool isLngthFsbl) {
   if (inst != NULL) {
     InstCount deadline = inst->GetCrntDeadline();
-    InstCount cycleNum = enumrtr_->GetCycleNumFrmTime_(time_ + 1);
-    InstCount slotNum = enumrtr_->GetSlotNumFrmTime_(time_ + 1);
+    InstCount cycleNum = enumerator_->GetCycleNumFrmTime_(time_ + 1);
+    InstCount slotNum = enumerator_->GetSlotNumFrmTime_(time_ + 1);
 
     if (dir == DIR_FRWRD && cycleNum == deadline &&
-        slotNum == enumrtr_->issuRate_ - 1) {
+        slotNum == enumerator_->issuRate_ - 1) {
       // If that was the last issue slot in the instruction's deadline
       // then this instruction has just missed its deadline
       // and we don't need to consider this tree node any further
@@ -246,11 +246,11 @@ void EnumTreeNode::NewBranchExmnd(SchedInstruction *inst, bool isLegal,
     if (isLegal) {
       legalInstCnt_++;
 
-      if (enumrtr_->prune_.nodeSup) {
+      if (enumerator_->prune_.nodeSup) {
         if (!isNodeDmntd) {
           ExaminedInst *exmndInst;
-          exmndInst =
-              new ExaminedInst(inst, wasRlxInfsbl, enumrtr_->dirctTightndLst_);
+          exmndInst = new ExaminedInst(inst, wasRlxInfsbl,
+                                       enumerator_->dirctTightndLst_);
           exmndInsts_->InsrtElmnt(exmndInst);
         }
       }
@@ -398,8 +398,8 @@ bool EnumTreeNode::IsBranchDominated(SchedInstruction *cnddtInst) {
 void EnumTreeNode::Archive() {
   assert(isArchivd_ == false);
 
-  if (enumrtr_->IsCostEnum()) {
-    hstry_->SetCostInfo(this, false, enumrtr_);
+  if (enumerator_->IsCostEnum()) {
+    hstry_->SetCostInfo(this, false, enumerator_);
   }
 
   isArchivd_ = true;

@@ -91,7 +91,7 @@ private:
 
   EnumTreeNode *prevNode_;
 
-  Enumerator *enumrtr_;
+  Enumerator *enumerator_;
 
   bool isEmpty_;
 
@@ -170,7 +170,7 @@ public:
   ~EnumTreeNode();
 
   void Construct(EnumTreeNode *prevNode, SchedInstruction *inst,
-                 Enumerator *enumrtr);
+                 Enumerator *enumerator);
   void Clean();
   void Reset();
 
@@ -305,7 +305,7 @@ public:
   inline EnumTreeNodeAlloc(int maxSize);
   inline ~EnumTreeNodeAlloc();
   inline EnumTreeNode *Alloc(EnumTreeNode *prevNode, SchedInstruction *inst,
-                             Enumerator *enumrtr);
+                             Enumerator *enumerator);
   inline void Free(EnumTreeNode *node);
 };
 /*****************************************************************************/
@@ -648,7 +648,7 @@ void EnumTreeNode::LegalInstFound() {
 
 inline void EnumTreeNode::SetSlotAvlblty(InstCount avlblSlots[],
                                          int16_t avlblSlotsInCrntCycle[]) {
-  int16_t issuTypeCnt = enumrtr_->issuTypeCnt_;
+  int16_t issuTypeCnt = enumerator_->issuTypeCnt_;
 
   for (int16_t i = 0; i < issuTypeCnt; i++) {
     avlblSlots_[i] = avlblSlots[i];
@@ -659,7 +659,7 @@ inline void EnumTreeNode::SetSlotAvlblty(InstCount avlblSlots[],
 
 inline void EnumTreeNode::GetSlotAvlblty(InstCount avlblSlots[],
                                          int16_t avlblSlotsInCrntCycle[]) {
-  int16_t issuTypeCnt = enumrtr_->issuTypeCnt_;
+  int16_t issuTypeCnt = enumerator_->issuTypeCnt_;
 
   for (int16_t i = 0; i < issuTypeCnt; i++) {
     avlblSlots[i] = avlblSlots_[i];
@@ -680,7 +680,7 @@ InstCount EnumTreeNode::GetBranchCnt() { return brnchCnt_; }
 void EnumTreeNode::GetLwrBounds(DIRECTION dir, InstCount lwrBounds[]) {
   InstCount i;
   InstCount *nodeLwrBounds;
-  InstCount instCnt = enumrtr_->totInstCnt_;
+  InstCount instCnt = enumerator_->totInstCnt_;
 
   assert(dir == DIR_FRWRD);
   nodeLwrBounds = frwrdLwrBounds_;
@@ -774,12 +774,12 @@ inline SchedInstruction *EnumTreeNode::ExaminedInst::GetInst() { return inst_; }
 /**************************************************************************/
 
 inline void EnumTreeNode::CreateHistory() {
-  hstry_ = enumrtr_->AllocHistNode_(this);
+  hstry_ = enumerator_->AllocHistNode_(this);
 }
 /**************************************************************************/
 
 inline void EnumTreeNode::CreateTmpHstry_() {
-  hstry_ = enumrtr_->AllocTempHistNode_(this);
+  hstry_ = enumerator_->AllocTempHistNode_(this);
 }
 /**************************************************************************/
 
@@ -852,12 +852,12 @@ InstCount EnumTreeNode::GetSpillCostSum() { return spillCostSum_; }
 /*****************************************************************************/
 
 bool EnumTreeNode::IsNxtCycleNew_() {
-  if (enumrtr_->issuRate_ == 1) {
+  if (enumerator_->issuRate_ == 1) {
     return true;
   }
 
-  InstCount crntCycle = enumrtr_->GetCycleNumFrmTime_(time_);
-  InstCount nxtCycle = enumrtr_->GetCycleNumFrmTime_(time_ + 1);
+  InstCount crntCycle = enumerator_->GetCycleNumFrmTime_(time_);
+  InstCount nxtCycle = enumerator_->GetCycleNumFrmTime_(time_ + 1);
   assert(nxtCycle >= crntCycle);
   return (nxtCycle > crntCycle);
 }
@@ -1014,9 +1014,9 @@ inline EnumTreeNodeAlloc::~EnumTreeNodeAlloc() {}
 
 inline EnumTreeNode *EnumTreeNodeAlloc::Alloc(EnumTreeNode *prevNode,
                                               SchedInstruction *inst,
-                                              Enumerator *enumrtr) {
+                                              Enumerator *enumerator) {
   EnumTreeNode *node = GetObject();
-  node->Construct(prevNode, inst, enumrtr);
+  node->Construct(prevNode, inst, enumerator);
   return node;
 }
 /****************************************************************************/
