@@ -433,7 +433,7 @@ EnumTreeNode::ExaminedInst::~ExaminedInst() {
 Enumerator::Enumerator(DataDepGraph *dataDepGraph, MachineModel *machMdl,
                        InstCount schedUprBound, int16_t sigHashSize,
                        SchedPriorities prirts, Pruning PruningStrategy,
-                       bool SchedForRPOnly, bool enblStallEnum,
+                       bool SchedForRPOnly, bool enableStallEnum,
                        Milliseconds timeout, InstCount preFxdInstCnt,
                        SchedInstruction *preFxdInsts[])
     : ConstrainedScheduler(dataDepGraph, machMdl, schedUprBound) {
@@ -453,7 +453,7 @@ Enumerator::Enumerator(DataDepGraph *dataDepGraph, MachineModel *machMdl,
   prirts_ = prirts;
   prune_ = PruningStrategy;
   SchedForRPOnly_ = SchedForRPOnly;
-  enblStallEnum_ = enblStallEnum;
+  enableStallEnum_ = enableStallEnum;
 
   isEarlySubProbDom_ = true;
 
@@ -1847,16 +1847,16 @@ void Enumerator::PrintLog_() {
 }
 /*****************************************************************************/
 
-bool Enumerator::EnumStall_() { return enblStallEnum_; }
+bool Enumerator::EnumStall_() { return enableStallEnum_; }
 /*****************************************************************************/
 
 LengthEnumerator::LengthEnumerator(
     DataDepGraph *dataDepGraph, MachineModel *machMdl, InstCount schedUprBound,
     int16_t sigHashSize, SchedPriorities prirts, Pruning PruningStrategy,
-    bool SchedForRPOnly, bool enblStallEnum, Milliseconds timeout,
+    bool SchedForRPOnly, bool enableStallEnum, Milliseconds timeout,
     InstCount preFxdInstCnt, SchedInstruction *preFxdInsts[])
     : Enumerator(dataDepGraph, machMdl, schedUprBound, sigHashSize, prirts,
-                 PruningStrategy, SchedForRPOnly, enblStallEnum, timeout,
+                 PruningStrategy, SchedForRPOnly, enableStallEnum, timeout,
                  preFxdInstCnt, preFxdInsts) {
   SetupAllocators_();
   tmpHstryNode_ = new HistEnumTreeNode;
@@ -1940,11 +1940,11 @@ void LengthEnumerator::FreeHistNode_(HistEnumTreeNode *histNode) {
 LengthCostEnumerator::LengthCostEnumerator(
     DataDepGraph *dataDepGraph, MachineModel *machMdl, InstCount schedUprBound,
     int16_t sigHashSize, SchedPriorities prirts, Pruning PruningStrategy,
-    bool SchedForRPOnly, bool enblStallEnum, Milliseconds timeout,
+    bool SchedForRPOnly, bool enableStallEnum, Milliseconds timeout,
     SPILL_COST_FUNCTION spillCostFunc, InstCount preFxdInstCnt,
     SchedInstruction *preFxdInsts[])
     : Enumerator(dataDepGraph, machMdl, schedUprBound, sigHashSize, prirts,
-                 PruningStrategy, SchedForRPOnly, enblStallEnum, timeout,
+                 PruningStrategy, SchedForRPOnly, enableStallEnum, timeout,
                  preFxdInstCnt, preFxdInsts) {
   SetupAllocators_();
 
@@ -2163,8 +2163,8 @@ void LengthCostEnumerator::CreateRootNode_() {
 /*****************************************************************************/
 
 bool LengthCostEnumerator::EnumStall_() {
-  // Logger::Info("enblStallEnum_ = %d", enblStallEnum_);
-  if (!enblStallEnum_)
+  // Logger::Info("enableStallEnum_ = %d", enableStallEnum_);
+  if (!enableStallEnum_)
     return false;
   if (crntNode_->IsNxtSlotStall())
     return true;

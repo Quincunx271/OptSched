@@ -30,13 +30,13 @@ class BBWithSpill : public SchedRegion {
 private:
   LengthCostEnumerator *enumerator_;
 
-  InstCount crntSpillCost_;
-  InstCount optmlSpillCost_;
+  InstCount currentSpillCost_;
+  InstCount optimalSpillCost_;
 
   // The target machine
   const OptSchedTarget *OST;
 
-  bool enblStallEnum_;
+  bool enableStallEnum_;
   int SCW_;
   int schedCostFactor_;
 
@@ -106,7 +106,7 @@ private:
   void UpdateSpillInfoForSchdul_(SchedInstruction *inst, bool trackCnflcts);
   void UpdateSpillInfoForUnSchdul_(SchedInstruction *inst);
   void SetupPhysRegs_();
-  void CmputCrntSpillCost_();
+  void CmputCurrentSpillCost_();
   bool ChkSchedule_(InstSchedule *bestSched, InstSchedule *lstSched);
   void CmputCnflcts_(InstSchedule *sched);
 
@@ -115,7 +115,7 @@ public:
               long rgnNum, int16_t sigHashSize, LB_ALG lbAlg,
               SchedPriorities hurstcPrirts, SchedPriorities enumPrirts,
               bool verifySched, Pruning PruningStrategy, bool SchedForRPOnly,
-              bool enblStallEnum, int SCW, SPILL_COST_FUNCTION spillCostFunc,
+              bool enableStallEnum, int SCW, SPILL_COST_FUNCTION spillCostFunc,
               SchedulerType HeurSchedType);
   ~BBWithSpill();
 

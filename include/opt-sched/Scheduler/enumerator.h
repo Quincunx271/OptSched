@@ -321,7 +321,7 @@ protected:
   bool isCnstrctd_;
 
   Pruning prune_;
-  bool enblStallEnum_;
+  bool enableStallEnum_;
   EnumTreeNode *rootNode_;
   EnumTreeNode *crntNode_;
 
@@ -507,7 +507,7 @@ public:
   Enumerator(DataDepGraph *dataDepGraph, MachineModel *machMdl,
              InstCount schedUprBound, int16_t sigHashSize,
              SchedPriorities prirts, Pruning PruningStrategy,
-             bool SchedForRPOnly, bool enblStallEnum, Milliseconds timeout,
+             bool SchedForRPOnly, bool enableStallEnum, Milliseconds timeout,
              InstCount preFxdInstCnt = 0,
              SchedInstruction *preFxdInsts[] = NULL);
   virtual ~Enumerator();
@@ -552,7 +552,7 @@ public:
   LengthEnumerator(DataDepGraph *dataDepGraph, MachineModel *machMdl,
                    InstCount schedUprBound, int16_t sigHashSize,
                    SchedPriorities prirts, Pruning PruningStrategy,
-                   bool SchedForRPOnly, bool enblStallEnum,
+                   bool SchedForRPOnly, bool enableStallEnum,
                    Milliseconds timeout, InstCount preFxdInstCnt = 0,
                    SchedInstruction *preFxdInsts[] = NULL);
   virtual ~LengthEnumerator();
@@ -601,7 +601,7 @@ public:
   LengthCostEnumerator(DataDepGraph *dataDepGraph, MachineModel *machMdl,
                        InstCount schedUprBound, int16_t sigHashSize,
                        SchedPriorities prirts, Pruning PruningStrategy,
-                       bool SchedForRPOnly, bool enblStallEnum,
+                       bool SchedForRPOnly, bool enableStallEnum,
                        Milliseconds timeout, SPILL_COST_FUNCTION spillCostFunc,
                        InstCount preFxdInstCnt = 0,
                        SchedInstruction *preFxdInsts[] = NULL);

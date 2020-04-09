@@ -32,7 +32,7 @@ BBWithSpill::BBWithSpill(const OptSchedTarget *OST_, DataDepGraph *dataDepGraph,
                          SchedPriorities hurstcPrirts,
                          SchedPriorities enumPrirts, bool verifySched,
                          Pruning PruningStrategy, bool SchedForRPOnly,
-                         bool enblStallEnum, int SCW,
+                         bool enableStallEnum, int SCW,
                          SPILL_COST_FUNCTION spillCostFunc,
                          SchedulerType HeurSchedType)
     : SchedRegion(OST_->MM, dataDepGraph, rgnNum, sigHashSize, lbAlg,
@@ -41,15 +41,15 @@ BBWithSpill::BBWithSpill(const OptSchedTarget *OST_, DataDepGraph *dataDepGraph,
       OST(OST_) {
   costLwrBound_ = 0;
   enumerator_ = NULL;
-  optmlSpillCost_ = INVALID_VALUE;
+  optimalSpillCost_ = INVALID_VALUE;
 
   crntCycleNum_ = INVALID_VALUE;
   crntSlotNum_ = INVALID_VALUE;
-  crntSpillCost_ = INVALID_VALUE;
+  currentSpillCost_ = INVALID_VALUE;
 
   SchedForRPOnly_ = SchedForRPOnly;
 
-  enblStallEnum_ = enblStallEnum;
+  enableStallEnum_ = enableStallEnum;
   SCW_ = SCW;
   schedCostFactor_ = COST_WGHT_BASE;
   spillCostFunc_ = spillCostFunc;
@@ -331,7 +331,7 @@ void BBWithSpill::InitForCostCmputtn_() {
 
   crntCycleNum_ = 0;
   crntSlotNum_ = 0;
-  crntSpillCost_ = 0;
+  currentSpillCost_ = 0;
   crntStepNum_ = -1;
   peakSpillCost_ = 0;
   totSpillCost_ = 0;
@@ -382,41 +382,41 @@ InstCount BBWithSpill::CmputCost_(InstSchedule *sched, COST_COMP_MODE compMode,
       LocalRegAlloc regAlloc(sched, dataDepGraph_);
       regAlloc.SetupForRegAlloc();
       regAlloc.AllocRegs();
-      crntSpillCost_ = regAlloc.GetCost();
+      currentSpillCost_ = regAlloc.GetCost();
     }
   }
 
   assert(sched->IsComplete());
   InstCount cost = sched->GetCrntLngth() * schedCostFactor_;
   execCost = cost;
-  cost += crntSpillCost_ * SCW_;
+  cost += currentSpillCost_ * SCW_;
   sched->SetSpillCosts(spillCosts_);
   sched->SetPeakRegPressures(peakRegPressures_);
-  sched->SetSpillCost(crntSpillCost_);
+  sched->SetSpillCost(currentSpillCost_);
   return cost;
 }
 /*****************************************************************************/
 
-void BBWithSpill::CmputCrntSpillCost_() {
+void BBWithSpill::CmputCurrentSpillCost_() {
   switch (spillCostFunc_) {
   case SCF_PERP:
   case SCF_PRP:
   case SCF_PEAK_PER_TYPE:
   case SCF_TARGET:
-    crntSpillCost_ = peakSpillCost_;
+    currentSpillCost_ = peakSpillCost_;
     break;
   case SCF_SUM:
-    crntSpillCost_ = totSpillCost_;
+    currentSpillCost_ = totSpillCost_;
     break;
   case SCF_PEAK_PLUS_AVG:
-    crntSpillCost_ =
+    currentSpillCost_ =
         peakSpillCost_ + totSpillCost_ / dataDepGraph_->GetInstCnt();
     break;
   case SCF_SLIL:
-    crntSpillCost_ = slilSpillCost_;
+    currentSpillCost_ = slilSpillCost_;
     break;
   default:
-    crntSpillCost_ = peakSpillCost_;
+    currentSpillCost_ = peakSpillCost_;
     break;
   }
 }
@@ -600,7 +600,7 @@ void BBWithSpill::UpdateSpillInfoForSchdul_(SchedInstruction *inst,
 
   peakSpillCost_ = std::max(peakSpillCost_, newSpillCost);
 
-  CmputCrntSpillCost_();
+  CmputCurrentSpillCost_();
 
   schduldInstCnt_++;
   if (inst->MustBeInBBEntry())
@@ -749,7 +749,7 @@ void BBWithSpill::UnschdulInst(SchedInstruction *inst, InstCount cycleNum,
 
   UpdateSpillInfoForUnSchdul_(inst);
   peakSpillCost_ = trgtNode->GetPeakSpillCost();
-  CmputCrntSpillCost_();
+  CmputCurrentSpillCost_();
 }
 /*****************************************************************************/
 
@@ -772,14 +772,15 @@ void BBWithSpill::FinishOptml_() {
 /*****************************************************************************/
 
 Enumerator *BBWithSpill::AllocEnumerator_(Milliseconds timeout) {
-  bool enblStallEnum = enblStallEnum_;
+  bool enableStallEnum = enableStallEnum_;
   /*  if (!dataDepGraph_->IncludesUnpipelined()) {
-      enblStallEnum = false;
+      enableStallEnum = false;
     }*/
 
   enumerator_ = new LengthCostEnumerator(
       dataDepGraph_, machMdl_, schedUprBound_, sigHashSize_, enumPrirts_,
-      prune_, SchedForRPOnly_, enblStallEnum, timeout, spillCostFunc_, 0, NULL);
+      prune_, SchedForRPOnly_, enableStallEnum, timeout, spillCostFunc_, 0,
+      NULL);
 
   return enumerator_;
 }
@@ -880,7 +881,7 @@ InstCount BBWithSpill::UpdtOptmlSched(InstSchedule *crntSched,
       Logger::Info("$$$ GOOD_HIT: Better spill cost for a longer schedule");
 
     bestCost_ = crntCost;
-    optmlSpillCost_ = crntSpillCost_;
+    optimalSpillCost_ = currentSpillCost_;
     bestSchedLngth_ = crntSched->GetCrntLngth();
     enumBestSched_->Copy(crntSched);
     bestSched_ = enumBestSched_;
@@ -917,7 +918,7 @@ bool BBWithSpill::ChkCostFsblty(InstCount trgtLngth, EnumTreeNode *node) {
   if (spillCostFunc_ == SCF_SLIL) {
     crntCost = dynamicSlilLowerBound_ * SCW_ + trgtLngth * schedCostFactor_;
   } else {
-    crntCost = crntSpillCost_ * SCW_ + trgtLngth * schedCostFactor_;
+    crntCost = currentSpillCost_ * SCW_ + trgtLngth * schedCostFactor_;
   }
   crntCost -= costLwrBound_;
   dynmcCostLwrBound = crntCost;
