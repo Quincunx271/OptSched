@@ -28,10 +28,10 @@ class ACOScheduler : public ConstrainedScheduler {
 public:
   ACOScheduler(DataDepGraph *dataDepGraph, MachineModel *machineModel,
                InstCount upperBound, SchedPriorities priorities,
-               bool vrfySched);
+               bool verifySched);
   virtual ~ACOScheduler();
   FUNC_RESULT FindSchedule(InstSchedule *schedule, SchedRegion *region);
-  inline void UpdtRdyLst_(InstCount cycleNum, int slotNum);
+  inline void UpdateReadyList_(InstCount cycleNum, int slotNum) override;
   // Set the initial schedule for ACO
   // Default is NULL if none are set.
   void setInitialSched(InstSchedule *Sched);
@@ -61,7 +61,7 @@ private:
   int ants_per_iteration;
   bool print_aco_trace;
   std::unique_ptr<InstSchedule> InitialSchedule;
-  bool VrfySched_;
+  bool VerifySched_;
 };
 
 } // namespace opt_sched

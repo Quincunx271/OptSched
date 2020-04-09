@@ -38,7 +38,7 @@ FUNC_RESULT ListScheduler::FindSchedule(InstSchedule *sched, SchedRegion *rgn) {
   Initialize_();
 
   while (!IsSchedComplete_()) {
-    UpdtRdyLst_(crntCycleNum_, crntSlotNum_);
+    UpdateReadyList_(crntCycleNum_, crntSlotNum_);
     rdyLst_->ResetIterator();
 
     iterCnt++;
@@ -125,7 +125,7 @@ bool SequentialListScheduler::IsSequentialInstruction(
   return crntSched_->GetSchedCycle(Inst->GetNum() - 1) != SCHD_UNSCHDULD;
 }
 
-void ListScheduler::UpdtRdyLst_(InstCount cycleNum, int slotNum) {
+void ListScheduler::UpdateReadyList_(InstCount cycleNum, int slotNum) {
   InstCount prevCycleNum = cycleNum - 1;
   LinkedList<SchedInstruction> *lst1 = NULL;
   LinkedList<SchedInstruction> *lst2 = frstRdyLstPerCycle_[cycleNum];

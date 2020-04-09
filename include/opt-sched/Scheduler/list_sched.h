@@ -30,7 +30,7 @@ protected:
   bool isDynmcPrirty_;
   // Adds the instructions that have just become ready at this cycle to the
   // ready list.
-  void UpdtRdyLst_(InstCount cycleNum, int slotNum);
+  void UpdateReadyList_(InstCount cycleNum, int slotNum) override;
 
   // Pick next instruction to be scheduled. Returns NULL if no instructions are
   // ready.

@@ -30,13 +30,13 @@ static const int COST_WGHT_BASE = 10;
 BBWithSpill::BBWithSpill(const OptSchedTarget *OST_, DataDepGraph *dataDepGraph,
                          long rgnNum, int16_t sigHashSize, LB_ALG lbAlg,
                          SchedPriorities hurstcPrirts,
-                         SchedPriorities enumPrirts, bool vrfySched,
+                         SchedPriorities enumPrirts, bool verifySched,
                          Pruning PruningStrategy, bool SchedForRPOnly,
                          bool enblStallEnum, int SCW,
                          SPILL_COST_FUNCTION spillCostFunc,
                          SchedulerType HeurSchedType)
     : SchedRegion(OST_->MM, dataDepGraph, rgnNum, sigHashSize, lbAlg,
-                  hurstcPrirts, enumPrirts, vrfySched, PruningStrategy,
+                  hurstcPrirts, enumPrirts, verifySched, PruningStrategy,
                   HeurSchedType),
       OST(OST_) {
   costLwrBound_ = 0;

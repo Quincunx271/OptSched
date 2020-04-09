@@ -17,10 +17,12 @@ static void PrintInstruction(SchedInstruction *inst);
 #endif
 void PrintSchedule(InstSchedule *schedule);
 
+namespace {
 double RandDouble(double min, double max) {
   double rand = (double)RandomGen::GetRand32() / INT32_MAX;
   return (rand * (max - min)) + min;
 }
+} // namespace
 
 #define USE_ACS 1
 //#define BIASED_CHOICES 10000000
@@ -36,9 +38,9 @@ double RandDouble(double min, double max) {
 
 ACOScheduler::ACOScheduler(DataDepGraph *dataDepGraph,
                            MachineModel *machineModel, InstCount upperBound,
-                           SchedPriorities priorities, bool vrfySched)
+                           SchedPriorities priorities, bool verifySched)
     : ConstrainedScheduler(dataDepGraph, machineModel, upperBound) {
-  VrfySched_ = vrfySched;
+  VerifySched_ = verifySched;
   prirts_ = priorities;
   rdyLst_ = new ReadyList(dataDepGraph_, priorities);
   count_ = dataDepGraph->GetInstCnt();
@@ -174,7 +176,7 @@ std::unique_ptr<InstSchedule> ACOScheduler::FindOneSchedule() {
   while (!IsSchedComplete_()) {
     // convert the ready list from a custom priority queue to a std::vector,
     // much nicer for this particular scheduler
-    UpdtRdyLst_(crntCycleNum_, crntSlotNum_);
+    UpdateReadyList_(crntCycleNum_, crntSlotNum_);
     unsigned long heuristic;
     ready.reserve(rdyLst_->GetInstCnt());
     SchedInstruction *inst = rdyLst_->GetNextPriorityInst(heuristic);
@@ -358,7 +360,7 @@ void ACOScheduler::UpdatePheromone(InstSchedule *schedule) {
 }
 
 // copied from Enumerator
-inline void ACOScheduler::UpdtRdyLst_(InstCount cycleNum, int slotNum) {
+inline void ACOScheduler::UpdateReadyList_(InstCount cycleNum, int slotNum) {
   InstCount prevCycleNum = cycleNum - 1;
   LinkedList<SchedInstruction> *lst1 = NULL;
   LinkedList<SchedInstruction> *lst2 = frstRdyLstPerCycle_[cycleNum];
@@ -435,7 +437,7 @@ void PrintSchedule(InstSchedule *schedule) {
 void ACOScheduler::setInitialSched(InstSchedule *Sched) {
   if (Sched) {
     InitialSchedule =
-      llvm::make_unique<InstSchedule>(machMdl_, dataDepGraph_, VrfySched_);
+        llvm::make_unique<InstSchedule>(machMdl_, dataDepGraph_, VerifySched_);
     InitialSchedule->Copy(Sched);
   }
 }

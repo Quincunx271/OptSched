@@ -46,7 +46,7 @@ public:
   // TODO(max): Document.
   SchedRegion(MachineModel *machMdl, DataDepGraph *dataDepGraph, long rgnNum,
               int16_t sigHashSize, LB_ALG lbAlg, SchedPriorities hurstcPrirts,
-              SchedPriorities enumPrirts, bool vrfySched,
+              SchedPriorities enumPrirts, bool verifySched,
               Pruning PruningStrategy, SchedulerType HeurSchedType);
   // Destroys the region. Must be overriden by child classes.
   virtual ~SchedRegion() {}
@@ -116,7 +116,7 @@ protected:
   // The number of instructions in this region.
   InstCount instCnt_;
   // Whether to verify the schedule after calculating it.
-  bool vrfySched_;
+  bool verifySched_;
   // What list scheduler should be used to find an initial feasible schedule.
   SchedulerType HeurSchedType_;
 

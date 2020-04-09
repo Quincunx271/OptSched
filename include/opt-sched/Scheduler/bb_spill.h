@@ -114,7 +114,7 @@ public:
   BBWithSpill(const OptSchedTarget *OST_, DataDepGraph *dataDepGraph,
               long rgnNum, int16_t sigHashSize, LB_ALG lbAlg,
               SchedPriorities hurstcPrirts, SchedPriorities enumPrirts,
-              bool vrfySched, Pruning PruningStrategy, bool SchedForRPOnly,
+              bool verifySched, Pruning PruningStrategy, bool SchedForRPOnly,
               bool enblStallEnum, int SCW, SPILL_COST_FUNCTION spillCostFunc,
               SchedulerType HeurSchedType);
   ~BBWithSpill();

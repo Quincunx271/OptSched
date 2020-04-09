@@ -22,7 +22,7 @@ using namespace llvm::opt_sched;
 SchedRegion::SchedRegion(MachineModel *machMdl, DataDepGraph *dataDepGraph,
                          long rgnNum, int16_t sigHashSize, LB_ALG lbAlg,
                          SchedPriorities hurstcPrirts,
-                         SchedPriorities enumPrirts, bool vrfySched,
+                         SchedPriorities enumPrirts, bool verifySched,
                          Pruning PruningStrategy, SchedulerType HeurSchedType) {
   machMdl_ = machMdl;
   dataDepGraph_ = dataDepGraph;
@@ -31,7 +31,7 @@ SchedRegion::SchedRegion(MachineModel *machMdl, DataDepGraph *dataDepGraph,
   lbAlg_ = lbAlg;
   hurstcPrirts_ = hurstcPrirts;
   enumPrirts_ = enumPrirts;
-  vrfySched_ = vrfySched;
+  verifySched_ = verifySched;
   prune_ = PruningStrategy;
   HeurSchedType_ = HeurSchedType;
   isSecondPass = false;
@@ -64,7 +64,7 @@ void SchedRegion::UseFileBounds_() {
 
 InstSchedule *SchedRegion::AllocNewSched_() {
   InstSchedule *newSched =
-      new InstSchedule(machMdl_, dataDepGraph_, vrfySched_);
+      new InstSchedule(machMdl_, dataDepGraph_, verifySched_);
   return newSched;
 }
 
@@ -191,7 +191,7 @@ FUNC_RESULT SchedRegion::FindOptimalSchedule(
   // the schedule found in the first pass.
   if (HeuristicSchedulerEnabled || isSecondPass) {
     Milliseconds hurstcStart = Utilities::GetProcessorTime();
-    lstSched = new InstSchedule(machMdl_, dataDepGraph_, vrfySched_);
+    lstSched = new InstSchedule(machMdl_, dataDepGraph_, verifySched_);
 
     lstSchdulr = AllocHeuristicScheduler_();
 
@@ -246,7 +246,7 @@ FUNC_RESULT SchedRegion::FindOptimalSchedule(
   // yet to be found.
   if (AcoBeforeEnum && !isLstOptml) {
     AcoStart = Utilities::GetProcessorTime();
-    AcoSchedule = new InstSchedule(machMdl_, dataDepGraph_, vrfySched_);
+    AcoSchedule = new InstSchedule(machMdl_, dataDepGraph_, verifySched_);
 
     rslt = runACO(AcoSchedule, lstSched);
     if (rslt != RES_SUCCESS) {
@@ -439,7 +439,7 @@ FUNC_RESULT SchedRegion::FindOptimalSchedule(
   if (bestCost_ != 0 && AcoAfterEnum) {
     Logger::Info("Final cost is not optimal, running ACO.");
     InstSchedule *AcoAfterEnumSchedule =
-        new InstSchedule(machMdl_, dataDepGraph_, vrfySched_);
+        new InstSchedule(machMdl_, dataDepGraph_, verifySched_);
 
     FUNC_RESULT acoRslt = runACO(AcoAfterEnumSchedule, bestSched);
     if (acoRslt != RES_SUCCESS) {
@@ -466,7 +466,7 @@ FUNC_RESULT SchedRegion::FindOptimalSchedule(
   }
 
   Milliseconds vrfyStart = Utilities::GetProcessorTime();
-  if (vrfySched_) {
+  if (verifySched_) {
     bool isValidSchdul = bestSched->Verify(machMdl_, dataDepGraph_);
 
     if (isValidSchdul == false) {
@@ -810,8 +810,9 @@ void SchedRegion::InitSecondPass() { isSecondPass = true; }
 FUNC_RESULT SchedRegion::runACO(InstSchedule *ReturnSched,
                                 InstSchedule *InitSched) {
   InitForSchdulng();
-  ACOScheduler *AcoSchdulr = new ACOScheduler(
-      dataDepGraph_, machMdl_, abslutSchedUprBound_, hurstcPrirts_, vrfySched_);
+  ACOScheduler *AcoSchdulr =
+      new ACOScheduler(dataDepGraph_, machMdl_, abslutSchedUprBound_,
+                       hurstcPrirts_, verifySched_);
   AcoSchdulr->setInitialSched(InitSched);
   FUNC_RESULT Rslt = AcoSchdulr->FindSchedule(ReturnSched, this);
   delete AcoSchdulr;

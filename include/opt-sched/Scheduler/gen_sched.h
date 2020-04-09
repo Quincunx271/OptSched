@@ -215,7 +215,7 @@ protected:
 
   // A pure virtual function for updating the ready list. Each concrete
   // scheduler should define its own version.
-  virtual void UpdtRdyLst_(InstCount cycleNum, int slotNum) = 0;
+  virtual void UpdateReadyList_(InstCount cycleNum, int slotNum) = 0;
 };
 
 } // namespace opt_sched

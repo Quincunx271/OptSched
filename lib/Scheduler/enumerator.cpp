@@ -1291,7 +1291,7 @@ void Enumerator::InitNewNode_(EnumTreeNode *newNode) {
 
   crntNode_->SetSlotAvlblty(avlblSlots_, avlblSlotsInCrntCycle_);
 
-  UpdtRdyLst_(crntCycleNum_, crntSlotNum_);
+  UpdateReadyList_(crntCycleNum_, crntSlotNum_);
   bool isLeaf = schduldInstCnt_ == totInstCnt_;
 
   crntNode_->SetBranchCnt(rdyLst_->GetInstCnt(), isLeaf);

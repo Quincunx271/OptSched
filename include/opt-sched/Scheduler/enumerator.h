@@ -443,7 +443,7 @@ protected:
   // slot will break feasiblity from issue slot availbility point of view
   bool ProbeIssuSlotFsblty_(SchedInstruction *inst);
 
-  inline void UpdtRdyLst_(InstCount cycleNum, int slotNum);
+  inline void UpdateReadyList_(InstCount cycleNum, int slotNum) override;
 
   // Identify the current position in the schedule by linearizing the cycle
   // number and slot number into a single figure
@@ -912,7 +912,7 @@ inline InstCount Enumerator::GetCrntCycleNum_() { return crntCycleNum_; }
 inline int Enumerator::GetCrntSlotNum_() { return crntSlotNum_; }
 /*****************************************************************************/
 
-inline void Enumerator::UpdtRdyLst_(InstCount cycleNum, int slotNum) {
+inline void Enumerator::UpdateReadyList_(InstCount cycleNum, int slotNum) {
   InstCount prevCycleNum = cycleNum - 1;
   LinkedList<SchedInstruction> *lst1 = NULL;
   LinkedList<SchedInstruction> *lst2 = frstRdyLstPerCycle_[cycleNum];
