@@ -147,7 +147,7 @@ unsigned OptSchedDDGWrapperGCN::getRegKind(unsigned Reg) const {
 }
 
 void OptSchedDDGWrapperGCN::convertRegFiles() {
-  for (int i = 0; i < MM->GetRegTypeCnt(); i++)
+  for (int i = 0; i < MM->GetRegTypeCount(); i++)
     RegFiles[i].SetRegType(i);
 
   // Add live-in subregs
@@ -174,10 +174,10 @@ void OptSchedDDGWrapperGCN::convertRegFiles() {
 
   // TODO: Count defined-and-not-used registers as live-out uses to avoid assert
   // errors in OptSched.
-  for (int16_t i = 0; i < MM->GetRegTypeCnt(); i++)
-    for (int j = 0; j < RegFiles[i].GetRegCnt(); j++) {
+  for (int16_t i = 0; i < MM->GetRegTypeCount(); i++)
+    for (int j = 0; j < RegFiles[i].GetRegCount(); j++) {
       Register *Reg = RegFiles[i].GetReg(j);
-      if (Reg->GetUseCnt() == 0)
+      if (Reg->GetUseCount() == 0)
         addDefAndNotUsed(Reg);
     }
 

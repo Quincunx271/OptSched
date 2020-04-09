@@ -37,7 +37,7 @@ public:
   // Returns the value of the bit at a given index.
   bool GetBit(int index) const;
   // Returns the number of one bits in the bit vector.
-  int GetOneCnt() const;
+  int GetOneCount() const;
   // Returns the number of bits in the vector.
   int GetSize() const;
   // Create a bit vector that is the "bitwise and" of this bit vector and
@@ -56,11 +56,11 @@ protected:
   // The buffer in which the bits are stored.
   Unit *vctr_;
   // The number of bits.
-  int bitCnt_;
+  int bitCount_;
   // The number of units of the actual integer data type used.
-  int unitCnt_;
+  int unitCount_;
   // The number of ones currently in the vector.
-  int oneCnt_;
+  int oneCount_;
 
   // Gets a Unit-sized bitmask for a given bit, inverted if val = false.
   static Unit GetMask_(int bitNum, bool val);
@@ -69,29 +69,29 @@ protected:
 };
 
 inline BitVector::BitVector(int length) {
-  bitCnt_ = 0;
-  unitCnt_ = 0;
-  oneCnt_ = 0;
+  bitCount_ = 0;
+  unitCount_ = 0;
+  oneCount_ = 0;
   vctr_ = NULL;
   Construct(length);
 }
 
 inline void BitVector::Construct(int length) {
-  bitCnt_ = length;
-  unitCnt_ = (bitCnt_ + BITS_IN_UNIT - 1) / BITS_IN_UNIT;
+  bitCount_ = length;
+  unitCount_ = (bitCount_ + BITS_IN_UNIT - 1) / BITS_IN_UNIT;
 
-  if (unitCnt_ == 0)
+  if (unitCount_ == 0)
     return;
 
   if (vctr_)
     delete[] vctr_;
-  vctr_ = new Unit[unitCnt_];
+  vctr_ = new Unit[unitCount_];
 
-  for (int i = 0; i < unitCnt_; i++) {
+  for (int i = 0; i < unitCount_; i++) {
     vctr_[i] = 0;
   }
 
-  oneCnt_ = 0;
+  oneCount_ = 0;
 }
 
 inline BitVector::~BitVector() {
@@ -100,35 +100,35 @@ inline BitVector::~BitVector() {
 }
 
 inline void BitVector::Reset() {
-  if (oneCnt_ == 0)
+  if (oneCount_ == 0)
     return;
 
-  for (int i = 0; i < unitCnt_; i++) {
+  for (int i = 0; i < unitCount_; i++) {
     vctr_[i] = 0;
   }
 
-  oneCnt_ = 0;
+  oneCount_ = 0;
 }
 
 inline void BitVector::SetBit(int index, bool bitVal) {
-  assert(index < bitCnt_);
+  assert(index < bitCount_);
   int unitNum = index / BITS_IN_UNIT;
   int bitNum = index - unitNum * BITS_IN_UNIT;
   Unit mask = GetMask_(bitNum, bitVal);
 
   if (bitVal) {
     if (GetBit(index) == false)
-      oneCnt_++;
+      oneCount_++;
     vctr_[unitNum] |= mask;
   } else {
     if (GetBit(index) == true)
-      oneCnt_--;
+      oneCount_--;
     vctr_[unitNum] &= mask;
   }
 }
 
 inline bool BitVector::GetBit(int index) const {
-  assert(index < bitCnt_);
+  assert(index < bitCount_);
   int unitNum = index / BITS_IN_UNIT;
   int bitNum = index - unitNum * BITS_IN_UNIT;
   return (vctr_[unitNum] & GetMask_(bitNum, true)) != 0;
@@ -137,10 +137,10 @@ inline bool BitVector::GetBit(int index) const {
 inline bool BitVector::IsSubVector(BitVector *other) const {
   assert(other != NULL);
   // The other vector must be at least as large as this vector.
-  if (unitCnt_ > other->unitCnt_)
+  if (unitCount_ > other->unitCount_)
     return false;
 
-  for (int i = 0; i < unitCnt_; i++) {
+  for (int i = 0; i < unitCount_; i++) {
     if ((vctr_[i] & other->vctr_[i]) != vctr_[i])
       return false;
   }
@@ -151,41 +151,42 @@ inline std::unique_ptr<BitVector>
 BitVector::And(BitVector *otherBitVector) const {
   assert(otherBitVector != NULL);
   // Set length to the larger of the two vectors
-  int bitCnt =
-      bitCnt_ > otherBitVector->bitCnt_ ? bitCnt_ : otherBitVector->bitCnt_;
-  std::unique_ptr<BitVector> andedVector(new BitVector(bitCnt));
+  int bitCount = bitCount_ > otherBitVector->bitCount_
+                     ? bitCount_
+                     : otherBitVector->bitCount_;
+  std::unique_ptr<BitVector> andedVector(new BitVector(bitCount));
 
-  for (int i = 0; i < andedVector->unitCnt_; i++) {
+  for (int i = 0; i < andedVector->unitCount_; i++) {
     andedVector->vctr_[i] = vctr_[i] & otherBitVector->vctr_[i];
 
     // TODO(austin) This may not be portable enough.
     // This is a built in gcc function for counting the number of 1 bits
     // in a number. When using x86 it should be inplemented as a single
     // instruction ie "popcnt %rdi, %rax"
-    andedVector->oneCnt_ += __builtin_popcountll(andedVector->vctr_[i]);
+    andedVector->oneCount_ += __builtin_popcountll(andedVector->vctr_[i]);
   }
 
   return andedVector;
 }
 
-inline int BitVector::GetSize() const { return bitCnt_; }
+inline int BitVector::GetSize() const { return bitCount_; }
 
-inline int BitVector::GetOneCnt() const { return oneCnt_; }
+inline int BitVector::GetOneCount() const { return oneCount_; }
 
 inline BitVector &BitVector::operator=(const BitVector &src) {
-  assert(bitCnt_ == src.bitCnt_);
-  int byteCnt = unitCnt_ * sizeof(Unit);
-  memcpy(vctr_, src.vctr_, byteCnt);
-  oneCnt_ = src.oneCnt_;
+  assert(bitCount_ == src.bitCount_);
+  int byteCount = unitCount_ * sizeof(Unit);
+  memcpy(vctr_, src.vctr_, byteCount);
+  oneCount_ = src.oneCount_;
   return *this;
 }
 
 inline bool BitVector::operator==(const BitVector &other) const {
-  assert(bitCnt_ == other.bitCnt_);
-  if (oneCnt_ != other.oneCnt_)
+  assert(bitCount_ == other.bitCount_);
+  if (oneCount_ != other.oneCount_)
     return false;
-  int byteCnt = unitCnt_ * sizeof(Unit);
-  return (memcmp(vctr_, other.vctr_, byteCnt) == 0);
+  int byteCount = unitCount_ * sizeof(Unit);
+  return (memcmp(vctr_, other.vctr_, byteCount) == 0);
 }
 
 inline BitVector::Unit BitVector::GetMask_(int bitNum, bool bitVal) {
@@ -210,54 +211,54 @@ public:
   WeightedBitVector(int lenght = 0);
   ~WeightedBitVector();
   void SetBit(int index, bool bitVal, int weight);
-  int GetWghtedCnt() const;
+  int GetWghtedCount() const;
   virtual void Reset() override;
 
 private:
   // The weighted sum of 1 in the vector times their weight
-  int wghtedCnt_;
+  int wghtedCount_;
 };
 
 inline WeightedBitVector::WeightedBitVector(int length) : BitVector(length) {
-  wghtedCnt_ = 0;
+  wghtedCount_ = 0;
 }
 
 inline WeightedBitVector::~WeightedBitVector() {}
 
 inline void WeightedBitVector::SetBit(int index, bool bitVal, int weight) {
-  assert(index < bitCnt_);
+  assert(index < bitCount_);
   int unitNum = index / BITS_IN_UNIT;
   int bitNum = index - unitNum * BITS_IN_UNIT;
   Unit mask = GetMask_(bitNum, bitVal);
 
   if (bitVal) {
     if (GetBit(index) == false) {
-      oneCnt_++;
-      wghtedCnt_ += weight;
+      oneCount_++;
+      wghtedCount_ += weight;
     }
     vctr_[unitNum] |= mask;
   } else {
     if (GetBit(index) == true) {
-      oneCnt_--;
-      wghtedCnt_ -= weight;
+      oneCount_--;
+      wghtedCount_ -= weight;
     }
     vctr_[unitNum] &= mask;
   }
 }
 
-inline int WeightedBitVector::GetWghtedCnt() const { return wghtedCnt_; }
+inline int WeightedBitVector::GetWghtedCount() const { return wghtedCount_; }
 
 inline void WeightedBitVector::Reset() {
   BitVector::Reset();
-  wghtedCnt_ = 0;
+  wghtedCount_ = 0;
 }
 
 /*
 void BitVector::Print(FILE* file) {
-  fprintf(file, "Bit Vector (size=%d, unitCnt_=%d, oneCnt_=%d): ",
-          bitCnt_, unitCnt_, oneCnt_);
+  fprintf(file, "Bit Vector (size=%d, unitCount_=%d, oneCount_=%d): ",
+          bitCount_, unitCount_, oneCount_);
 
-  for (int i = 0; i < bitCnt_; i++) {
+  for (int i = 0; i < bitCount_; i++) {
     if (GetBit(i)) {
       fprintf(file, "1");
     } else {

@@ -22,12 +22,12 @@ MachineModel::MachineModel(const string &modelFile) {
 
   issueTypes_.resize(buf.ReadIntSpec("ISSUE_TYPE_COUNT:"));
   for (size_t j = 0; j < issueTypes_.size(); j++) {
-    int pieceCnt;
+    int pieceCount;
     char *strngs[INBUF_MAX_PIECES_PERLINE];
     int lngths[INBUF_MAX_PIECES_PERLINE];
-    buf.GetNxtVldLine(pieceCnt, strngs, lngths);
+    buf.GetNxtVldLine(pieceCount, strngs, lngths);
 
-    if (pieceCnt != 2)
+    if (pieceCount != 2)
       Logger::Fatal("Invalid issue type spec");
 
     issueTypes_[j].name = strngs[0];
@@ -45,12 +45,12 @@ MachineModel::MachineModel(const string &modelFile) {
   registerTypes_.resize(buf.ReadIntSpec("REG_TYPE_COUNT:"));
 
   for (size_t i = 0; i < registerTypes_.size(); i++) {
-    int pieceCnt;
+    int pieceCount;
     char *strngs[INBUF_MAX_PIECES_PERLINE];
     int lngths[INBUF_MAX_PIECES_PERLINE];
-    buf.GetNxtVldLine(pieceCnt, strngs, lngths);
+    buf.GetNxtVldLine(pieceCount, strngs, lngths);
 
-    if (pieceCnt != 2) {
+    if (pieceCount != 2) {
       Logger::Fatal("Invalid register type spec");
     }
 
@@ -65,7 +65,7 @@ MachineModel::MachineModel(const string &modelFile) {
        it != instTypes_.end(); it++) {
     buf.ReadSpec("INST_TYPE:", buffer);
     it->name = buffer;
-    it->isCntxtDep = (it->name.find("_after_") != string::npos);
+    it->isCountxtDep = (it->name.find("_after_") != string::npos);
 
     buf.ReadSpec("ISSUE_TYPE:", buffer);
     IssueType issuType = GetIssueTypeByName(buffer);
@@ -87,9 +87,9 @@ InstType MachineModel::GetInstTypeByName(const string &typeName,
                                          const string &prevName) const {
   string composite = prevName.size() ? typeName + "_after_" + prevName : "";
   for (size_t i = 0; i < instTypes_.size(); i++) {
-    if (instTypes_[i].isCntxtDep && instTypes_[i].name == composite) {
+    if (instTypes_[i].isCountxtDep && instTypes_[i].name == composite) {
       return (InstType)i;
-    } else if (!instTypes_[i].isCntxtDep && instTypes_[i].name == typeName) {
+    } else if (!instTypes_[i].isCountxtDep && instTypes_[i].name == typeName) {
       return (InstType)i;
     }
   }
@@ -121,7 +121,7 @@ MachineModel::GetIssueTypeByName(char const *const issuTypeName) const {
   return INVALID_ISSUE_TYPE;
 }
 
-int MachineModel::GetPhysRegCnt(int16_t regType) const {
+int MachineModel::GetPhysRegCount(int16_t regType) const {
   return registerTypes_[regType].count;
 }
 
@@ -212,12 +212,12 @@ InstType MachineModel::getDefaultIssueType() const {
 
 const string &MachineModel::GetModelName() const { return mdlName_; }
 
-int MachineModel::GetInstTypeCnt() const { return instTypes_.size(); }
+int MachineModel::GetInstTypeCount() const { return instTypes_.size(); }
 
-int MachineModel::GetIssueTypeCnt() const { return issueTypes_.size(); }
+int MachineModel::GetIssueTypeCount() const { return issueTypes_.size(); }
 
 int MachineModel::GetIssueRate() const { return issueRate_; }
 
-int16_t MachineModel::GetRegTypeCnt() const {
+int16_t MachineModel::GetRegTypeCount() const {
   return (int16_t)registerTypes_.size();
 }

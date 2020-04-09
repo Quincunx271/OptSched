@@ -76,14 +76,14 @@ private:
   SchedInstruction *inst_;
 
   // Total number of branches at this node
-  InstCount brnchCnt_;
+  InstCount brnchCount_;
 
   // The number of the current branch to explore next
   // All branches with smaller numbers have been explored already
   InstCount crntBrnchNum_;
 
-  InstCount fsblBrnchCnt_;
-  InstCount lngthFsblBrnchCnt_;
+  InstCount fsblBrnchCount_;
+  InstCount lngthFsblBrnchCount_;
 
   // The current time or position (or step number) in the scheduling process
   // This is eqaul to the length of the path from the root node to this node
@@ -122,7 +122,7 @@ private:
   // temporarily scheduling that instruction
   LinkedList<ExaminedInst> *exmndInsts_;
 
-  InstCount legalInstCnt_;
+  InstCount legalInstCount_;
 
   // A list of nodes that are dominated by this node
   HistEnumTreeNode *dmntdNode_;
@@ -174,7 +174,7 @@ public:
   void Clean();
   void Reset();
 
-  void SetBranchCnt(InstCount rdyLstSize, bool isLeaf);
+  void SetBranchCount(InstCount rdyLstSize, bool isLeaf);
 
   // Notify this node that a new branch has been examined so that it advances
   // its branch pointer to the nex branch
@@ -192,8 +192,8 @@ public:
   inline void SetSlotAvlblty(InstCount avlblSlots[],
                              int16_t avlblSlotsInCrntCycle[]);
 
-  inline InstCount GetBranchCnt(bool &isEmpty);
-  inline InstCount GetBranchCnt();
+  inline InstCount GetBranchCount(bool &isEmpty);
+  inline InstCount GetBranchCount();
 
   // Return a pointer to the array of lower bounds
   inline InstCount *GetLwrBounds(DIRECTION dir);
@@ -227,7 +227,7 @@ public:
   void SetLwrBounds(DIRECTION dir);
   void SetLwrBounds();
 
-  void SetRsrvSlots(int16_t rsrvSlotCnt, ReserveSlot *rsrvSlots);
+  void SetRsrvSlots(int16_t rsrvSlotCount, ReserveSlot *rsrvSlots);
 
   // Add a node to the list of nodes dominated by this node
   inline void AddDmntdSubProb(HistEnumTreeNode *node);
@@ -243,9 +243,9 @@ public:
   // Is the given branch dominated by a previously examined branch?
   inline bool IsBranchDominated(SchedInstruction *inst);
 
-  inline InstCount GetLegalInstCnt();
+  inline InstCount GetLegalInstCount();
   inline void LegalInstFound();
-  inline InstCount GetChldrnCnt();
+  inline InstCount GetChldrnCount();
 
   inline void CreateHistory();
   inline void ReplaceHistory(HistEnumTreeNode *node);
@@ -348,9 +348,9 @@ protected:
   InstCount prevCycleNum_;
   InstCount prevSlotNum_;
 
-  uint64_t maxNodeCnt_;
-  uint64_t createdNodeCnt_;
-  uint64_t exmndNodeCnt_;
+  uint64_t maxNodeCount_;
+  uint64_t createdNodeCount_;
+  uint64_t exmndNodeCount_;
 
   InstCount minUnschduldTplgclOrdr_;
 
@@ -366,7 +366,7 @@ protected:
   // efficient unfixing
   LinkedList<SchedInstruction> *fxdLst_;
 
-  InstCount fxdInstCnt_;
+  InstCount fxdInstCount_;
 
   // A structure for keeping track of any temporarily modified states so that
   // they can be restored
@@ -381,12 +381,12 @@ protected:
   State state_;
 
   // The number of prefixed instructions
-  InstCount preFxdInstCnt_;
+  InstCount preFxdInstCount_;
   // An array of prefixed instructions
   SchedInstruction **preFxdInsts_;
 
   int iterNum_;
-  long backTrackCnt_;
+  long backTrackCount_;
 
   bool alctrsSetup_;
   MemAlloc<BinHashTblEntry<HistEnumTreeNode>> *hashTblEntryAlctr_;
@@ -403,8 +403,8 @@ protected:
   SchedInstruction **lastInsts_;
   SchedInstruction **othrLastInsts_;
 
-  int fsblSchedCnt_;
-  int imprvmntCnt_;
+  int fsblSchedCount_;
+  int imprvmntCount_;
   InstCount prevTrgtLngth_;
 
   LISTSCHED_HEURISTIC enumHurstc_;
@@ -508,15 +508,15 @@ public:
              InstCount schedUprBound, int16_t sigHashSize,
              SchedPriorities prirts, Pruning PruningStrategy,
              bool SchedForRPOnly, bool enblStallEnum, Milliseconds timeout,
-             InstCount preFxdInstCnt = 0,
+             InstCount preFxdInstCount = 0,
              SchedInstruction *preFxdInsts[] = NULL);
   virtual ~Enumerator();
   virtual void Reset();
 
   // Get the number of nodes that have been examined
-  inline uint64_t GetNodeCnt();
+  inline uint64_t GetNodeCount();
 
-  inline int GetSearchCnt();
+  inline int GetSearchCount();
 
   inline bool IsHistDom();
   inline bool IsRlxdPrnng();
@@ -553,7 +553,7 @@ public:
                    InstCount schedUprBound, int16_t sigHashSize,
                    SchedPriorities prirts, Pruning PruningStrategy,
                    bool SchedForRPOnly, bool enblStallEnum,
-                   Milliseconds timeout, InstCount preFxdInstCnt = 0,
+                   Milliseconds timeout, InstCount preFxdInstCount = 0,
                    SchedInstruction *preFxdInsts[] = NULL);
   virtual ~LengthEnumerator();
   void Reset();
@@ -568,8 +568,8 @@ public:
 
 class LengthCostEnumerator : public Enumerator {
 private:
-  int costChkCnt_;
-  int costPruneCnt_;
+  int costChkCount_;
+  int costPruneCount_;
   int costLwrBound_;
   MemAlloc<CostHistEnumTreeNode> *histNodeAlctr_;
   SPILL_COST_FUNCTION spillCostFunc_;
@@ -603,7 +603,7 @@ public:
                        SchedPriorities prirts, Pruning PruningStrategy,
                        bool SchedForRPOnly, bool enblStallEnum,
                        Milliseconds timeout, SPILL_COST_FUNCTION spillCostFunc,
-                       InstCount preFxdInstCnt = 0,
+                       InstCount preFxdInstCount = 0,
                        SchedInstruction *preFxdInsts[] = NULL);
   virtual ~LengthCostEnumerator();
   void Reset();
@@ -624,33 +624,33 @@ In line Functions
 ******************************************************************************/
 
 void EnumTreeNode::ChildInfsbl() {
-  assert(fsblBrnchCnt_ >= 1);
-  fsblBrnchCnt_--;
+  assert(fsblBrnchCount_ >= 1);
+  fsblBrnchCount_--;
 
-  if (fsblBrnchCnt_ == 0) {
+  if (fsblBrnchCount_ == 0) {
     isFsbl_ = false;
   }
 }
 /*****************************************************************************/
 
 void EnumTreeNode::AddChild() {
-  assert(fsblBrnchCnt_ == 0 && isFsbl_ == false);
-  fsblBrnchCnt_++;
+  assert(fsblBrnchCount_ == 0 && isFsbl_ == false);
+  fsblBrnchCount_++;
   isFsbl_ = true;
 }
 /*****************************************************************************/
 
 void EnumTreeNode::LegalInstFound() {
-  legalInstCnt_++;
-  assert(legalInstCnt_ > 0);
+  legalInstCount_++;
+  assert(legalInstCount_ > 0);
 }
 /*****************************************************************************/
 
 inline void EnumTreeNode::SetSlotAvlblty(InstCount avlblSlots[],
                                          int16_t avlblSlotsInCrntCycle[]) {
-  int16_t issuTypeCnt = enumrtr_->issuTypeCnt_;
+  int16_t issuTypeCount = enumrtr_->issuTypeCount_;
 
-  for (int16_t i = 0; i < issuTypeCnt; i++) {
+  for (int16_t i = 0; i < issuTypeCount; i++) {
     avlblSlots_[i] = avlblSlots[i];
     avlblSlotsInCrntCycle_[i] = avlblSlotsInCrntCycle[i];
   }
@@ -659,33 +659,33 @@ inline void EnumTreeNode::SetSlotAvlblty(InstCount avlblSlots[],
 
 inline void EnumTreeNode::GetSlotAvlblty(InstCount avlblSlots[],
                                          int16_t avlblSlotsInCrntCycle[]) {
-  int16_t issuTypeCnt = enumrtr_->issuTypeCnt_;
+  int16_t issuTypeCount = enumrtr_->issuTypeCount_;
 
-  for (int16_t i = 0; i < issuTypeCnt; i++) {
+  for (int16_t i = 0; i < issuTypeCount; i++) {
     avlblSlots[i] = avlblSlots_[i];
     avlblSlotsInCrntCycle[i] = avlblSlotsInCrntCycle_[i];
   }
 }
 /*****************************************************************************/
 
-inline InstCount EnumTreeNode::GetBranchCnt(bool &isEmpty) {
+inline InstCount EnumTreeNode::GetBranchCount(bool &isEmpty) {
   isEmpty = isEmpty_;
-  return brnchCnt_;
+  return brnchCount_;
 }
 /*****************************************************************************/
 
-InstCount EnumTreeNode::GetBranchCnt() { return brnchCnt_; }
+InstCount EnumTreeNode::GetBranchCount() { return brnchCount_; }
 /**************************************************************************/
 
 void EnumTreeNode::GetLwrBounds(DIRECTION dir, InstCount lwrBounds[]) {
   InstCount i;
   InstCount *nodeLwrBounds;
-  InstCount instCnt = enumrtr_->totInstCnt_;
+  InstCount instCount = enumrtr_->totInstCount_;
 
   assert(dir == DIR_FRWRD);
   nodeLwrBounds = frwrdLwrBounds_;
 
-  for (i = 0; i < instCnt; i++) {
+  for (i = 0; i < instCount; i++) {
     lwrBounds[i] = nodeLwrBounds[i];
   }
 }
@@ -767,7 +767,7 @@ inline ReadyList *EnumTreeNode::GetRdyLst() { return rdyLst_; }
 inline ENUMTREE_NODEMODE EnumTreeNode::GetMode() { return mode_; }
 /**************************************************************************/
 
-inline InstCount EnumTreeNode::GetLegalInstCnt() { return legalInstCnt_; }
+inline InstCount EnumTreeNode::GetLegalInstCount() { return legalInstCount_; }
 /**************************************************************************/
 
 inline SchedInstruction *EnumTreeNode::ExaminedInst::GetInst() { return inst_; }
@@ -894,7 +894,7 @@ inline bool Enumerator::WasSolnFound_() {
   bool isTrgt = crntSched_->GetCrntLngth() == trgtSchedLngth_;
 
   if (isCmplt && isTrgt) {
-    fsblSchedCnt_++;
+    fsblSchedCount_++;
   }
 
   return isCmplt && isTrgt;
@@ -955,10 +955,10 @@ inline bool Enumerator::IsStateClear_() {
 }
 /****************************************************************************/
 
-inline uint64_t Enumerator::GetNodeCnt() { return exmndNodeCnt_; }
+inline uint64_t Enumerator::GetNodeCount() { return exmndNodeCount_; }
 /****************************************************************************/
 
-inline int Enumerator::GetSearchCnt() { return iterNum_; }
+inline int Enumerator::GetSearchCount() { return iterNum_; }
 /****************************************************************************/
 
 inline void Enumerator::CreateNewRdyLst_() {

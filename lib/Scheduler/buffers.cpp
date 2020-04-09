@@ -254,8 +254,8 @@ int InputBuffer::skipCmnt() {
   return EOL;
 }
 
-NXTLINE_TYPE InputBuffer::GetNxtVldLine_(int &pieceCnt, char *strng[],
-                                         int lngth[], int maxPieceCnt) {
+NXTLINE_TYPE InputBuffer::GetNxtVldLine_(int &pieceCount, char *strng[],
+                                         int lngth[], int maxPieceCount) {
   crntLineOfst = crntOfst;
 
   // If the next line might not fit entirely into the buffer.
@@ -264,29 +264,29 @@ NXTLINE_TYPE InputBuffer::GetNxtVldLine_(int &pieceCnt, char *strng[],
     Reload();
   }
 
-  for (pieceCnt = 0, nxtLineRchd = false; !nxtLineRchd;) {
-    assert(pieceCnt < maxPieceCnt);
-    lngth[pieceCnt] = 0;
-    strng[pieceCnt] = buf + crntOfst;
+  for (pieceCount = 0, nxtLineRchd = false; !nxtLineRchd;) {
+    assert(pieceCount < maxPieceCount);
+    lngth[pieceCount] = 0;
+    strng[pieceCount] = buf + crntOfst;
 
     for (crntChar = buf[crntOfst]; !IsWhiteSpaceOrLineEnd(crntChar);
          crntChar = buf[crntOfst]) {
       // Assume comments are always preceded by space.
-      lngth[pieceCnt]++;
+      lngth[pieceCount]++;
 
       if (++crntOfst >= loadedByts && chckReload() == EOF) {
-        pieceCnt++;
+        pieceCount++;
         return NXT_EOF;
       }
     }
 
-    if (lngth[pieceCnt] > 0)
-      pieceCnt++;
+    if (lngth[pieceCount] > 0)
+      pieceCount++;
 
     // If crntChar is CR or LF this will just go to the next line.
     switch (skipSpace()) {
     case DATA:
-      if (pieceCnt == maxPieceCnt)
+      if (pieceCount == maxPieceCount)
         return NXT_ERR;
       break;
     case EOL:
@@ -319,11 +319,11 @@ void InputBuffer::Unload() {
   }
 }
 
-NXTLINE_TYPE InputBuffer::GetNxtVldLine(int &pieceCnt, char *strngs[],
+NXTLINE_TYPE InputBuffer::GetNxtVldLine(int &pieceCount, char *strngs[],
                                         int lngths[]) {
-  NXTLINE_TYPE retVal = GetNxtVldLine_(pieceCnt, strngs, lngths);
+  NXTLINE_TYPE retVal = GetNxtVldLine_(pieceCount, strngs, lngths);
 
-  for (int i = 0; i < pieceCnt; i++) {
+  for (int i = 0; i < pieceCount; i++) {
     (strngs[i])[lngths[i]] = 0;
   }
 
@@ -357,7 +357,7 @@ void InputBuffer::ReportFatalError(char *msg, char *lineStrt, int frstLngth) {
 void SpecsBuffer::ReadSpec(char const *const title, char *value) {
   int lngth[INBUF_MAX_PIECES_PERLINE];
   char *strPtr[INBUF_MAX_PIECES_PERLINE];
-  int pieceCnt;
+  int pieceCount;
   bool isMltplPieces = false;
   bool isMsng = false;
   int totLngth;
@@ -366,13 +366,13 @@ void SpecsBuffer::ReadSpec(char const *const title, char *value) {
     Logger::Fatal("End of Specs file unexpectedly encountered.");
   }
 
-  nxtLineType = GetNxtVldLine(pieceCnt, strPtr, lngth);
+  nxtLineType = GetNxtVldLine(pieceCount, strPtr, lngth);
 
-  if (pieceCnt == 1) {
+  if (pieceCount == 1) {
     isMsng = true;
   }
 
-  if (pieceCnt > 2) {
+  if (pieceCount > 2) {
     if (memcmp(strPtr[1], "\"", 1) == 0) {
       isMltplPieces = true;
     } else {
@@ -389,7 +389,7 @@ void SpecsBuffer::ReadSpec(char const *const title, char *value) {
   }
 
   if (isMltplPieces) {
-    CombinePieces_(lngth, strPtr, 1, pieceCnt - 1, value, totLngth);
+    CombinePieces_(lngth, strPtr, 1, pieceCount - 1, value, totLngth);
   } else if (isMsng) {
     strcpy(value, "unknown");
   } else {
@@ -416,15 +416,15 @@ void SpecsBuffer::CombinePieces_(int lngths[], char *strngs[], int startPiece,
 void SpecsBuffer::readLstElmnt(char *value) {
   int lngth[INBUF_MAX_PIECES_PERLINE];
   char *strPtr[INBUF_MAX_PIECES_PERLINE];
-  int pieceCnt;
+  int pieceCount;
 
   if (nxtLineType == NXT_EOF) {
     Logger::Fatal("Unexpectedly encountered end of file %s", fullPath);
   }
 
-  nxtLineType = GetNxtVldLine(pieceCnt, strPtr, lngth);
+  nxtLineType = GetNxtVldLine(pieceCount, strPtr, lngth);
 
-  if (pieceCnt != 1) {
+  if (pieceCount != 1) {
     Logger::Fatal("Invalid number of tockens in file %s", fullPath);
   }
 
@@ -438,20 +438,20 @@ int SpecsBuffer::readIntLstElmnt() {
   return atoi(strVal);
 }
 
-void SpecsBuffer::readLine(char *value, int maxPieceCnt) {
+void SpecsBuffer::readLine(char *value, int maxPieceCount) {
   int i, lngth[INBUF_MAX_PIECES_PERLINE];
   char *strPtr[INBUF_MAX_PIECES_PERLINE];
-  int pieceCnt, ofst;
+  int pieceCount, ofst;
 
-  assert(maxPieceCnt <= INBUF_MAX_PIECES_PERLINE);
+  assert(maxPieceCount <= INBUF_MAX_PIECES_PERLINE);
 
   if (nxtLineType == NXT_EOF) {
     Logger::Fatal("End of Specs file unexpectedly encountered.");
   }
 
-  nxtLineType = GetNxtVldLine(pieceCnt, strPtr, lngth);
+  nxtLineType = GetNxtVldLine(pieceCount, strPtr, lngth);
 
-  for (i = 0, ofst = 0; i < pieceCnt; i++) {
+  for (i = 0, ofst = 0; i < pieceCount; i++) {
     memcpy(value + ofst, strPtr[i], lngth[i]);
     ofst += lngth[i];
     *(value + ofst) = ' ';
@@ -552,16 +552,16 @@ void SpecsBuffer::ErrorHandle(char *value) {
 FUNC_RESULT SpecsBuffer::checkTitle(char const *const title) {
   int lngth[INBUF_MAX_PIECES_PERLINE];
   char *strPtr[INBUF_MAX_PIECES_PERLINE];
-  int pieceCnt;
+  int pieceCount;
 
   if (nxtLineType == NXT_EOF) {
     Logger::Error("Unexpectedly encountered end of file %s.", fullPath);
     return RES_ERROR;
   }
 
-  nxtLineType = GetNxtVldLine(pieceCnt, strPtr, lngth);
+  nxtLineType = GetNxtVldLine(pieceCount, strPtr, lngth);
 
-  if (pieceCnt != 1) {
+  if (pieceCount != 1) {
     Logger::Error("Invalid number of tockens in file %s. Expected %s.",
                   fullPath, title);
     return RES_ERROR;

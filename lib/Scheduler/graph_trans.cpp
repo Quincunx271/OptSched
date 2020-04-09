@@ -11,7 +11,7 @@ GraphTrans::GraphTrans(DataDepGraph *dataDepGraph) {
   assert(dataDepGraph != NULL);
 
   SetDataDepGraph(dataDepGraph);
-  SetNumNodesInGraph(dataDepGraph->GetInstCnt());
+  SetNumNodesInGraph(dataDepGraph->GetInstCount());
 }
 
 bool GraphTrans::AreNodesIndep_(SchedInstruction *inst1,
@@ -184,8 +184,8 @@ bool StaticNodeSupTrans::NodeIsSuperior_(SchedInstruction *nodeA,
   Register **usesA;
   Register **usesB;
   // Register **usesC;
-  int useCntA = nodeA->GetUses(usesA);
-  int useCntB = nodeB->GetUses(usesB);
+  int useCountA = nodeA->GetUses(usesA);
+  int useCountB = nodeB->GetUses(usesB);
   // Register used by B but not by A.
   std::list<Register *> usesOnlyB;
   // A list of registers that will have their live range lengthened
@@ -193,17 +193,17 @@ bool StaticNodeSupTrans::NodeIsSuperior_(SchedInstruction *nodeA,
   std::list<Register *> lengthenedLiveRegisters;
   // The number of registers that will be lengthened by
   // scheduling B after A. Indexed by register type.
-  std::vector<InstCount> lengthenedByB(graph->GetRegTypeCnt());
+  std::vector<InstCount> lengthenedByB(graph->GetRegTypeCount());
   std::fill(lengthenedByB.begin(), lengthenedByB.end(), 0);
   // The total number of live ranges that could be lengthened by
   // scheduling B after A.
   // InstCount totalLengthenedByB = 0;
 
-  for (int i = 0; i < useCntB; i++) {
+  for (int i = 0; i < useCountB; i++) {
     Register *useB = usesB[i];
     // Flag for determining whether useB is used by node A.
     bool usedByA = false;
-    for (int j = 0; j < useCntA; j++) {
+    for (int j = 0; j < useCountA; j++) {
       Register *useA = usesA[j];
       if (useA == useB) {
         usedByA = true;
@@ -237,7 +237,7 @@ bool StaticNodeSupTrans::NodeIsSuperior_(SchedInstruction *nodeA,
     }
   }
   /*
-    for (int j = 0; j < useCntA && totalLengthenedByB > 0; j++) {
+    for (int j = 0; j < useCountA && totalLengthenedByB > 0; j++) {
       Register *useA = usesA[j];
 
       if (lengthenedByB[useA->GetType()] < 1)
@@ -275,16 +275,16 @@ bool StaticNodeSupTrans::NodeIsSuperior_(SchedInstruction *nodeA,
   // or equal to the number of registers defined by B.
   Register **defsA;
   Register **defsB;
-  int defCntA = nodeA->GetDefs(defsA);
-  int defCntB = nodeB->GetDefs(defsB);
-  int regTypes = graph->GetRegTypeCnt();
+  int defCountA = nodeA->GetDefs(defsA);
+  int defCountB = nodeB->GetDefs(defsB);
+  int regTypes = graph->GetRegTypeCount();
   vector<InstCount> regTypeDefsA(regTypes);
   vector<InstCount> regTypeDefsB(regTypes);
 
-  for (int i = 0; i < defCntA; i++)
+  for (int i = 0; i < defCountA; i++)
     regTypeDefsA[defsA[i]->GetType()]++;
 
-  for (int i = 0; i < defCntB; i++)
+  for (int i = 0; i < defCountB; i++)
     regTypeDefsB[defsB[i]->GetType()]++;
 
   for (int i = 0; i < regTypes; i++) {

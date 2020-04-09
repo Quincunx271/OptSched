@@ -66,10 +66,10 @@ struct GraphEdge {
 // TODO(max): Refactor. This has far too much stuff for a simple node.
 class GraphNode {
 public:
-  // Creates a node with the number (label) num and with up to maxNodeCnt
+  // Creates a node with the number (label) num and with up to maxNodeCount
   // successors or predecessors. It is assumed that a single graph never
   // contains multiple nodes with the same number.
-  GraphNode(UDT_GNODES num, UDT_GNODES maxNodeCnt);
+  GraphNode(UDT_GNODES num, UDT_GNODES maxNodeCount);
   // Destroys the node.
   ~GraphNode();
   // Clears the node's predecessor list.
@@ -88,7 +88,7 @@ public:
   // the edge object. scsr must be the destination node of that edge.
   void RmvLastScsr(GraphNode *scsr, bool delEdg);
   // Returns the number of edges in this node's successor list.
-  UDT_GEDGES GetScsrCnt() const;
+  UDT_GEDGES GetScsrCount() const;
 
   // Adds a new edge to the predecessor list.
   void ApndPrdcsr(GraphEdge *edge);
@@ -101,7 +101,7 @@ public:
   // the edge object. scsr must be the destination node of that edge.
   void RmvLastPrdcsr(GraphNode *prdcsr, bool delEdg);
   // Returns the number of edges in this node's predecessor list.
-  UDT_GEDGES GetPrdcsrCnt() const;
+  UDT_GEDGES GetPrdcsrCount() const;
 
   // Sets the maximum outgoing edge label value to the maximum between the
   // current value and the provided argument.
@@ -191,7 +191,7 @@ public:
 
   // Allocates memory for the node's predecessor or successor list and bitset,
   // depending on the specified direction.
-  void AllocRcrsvInfo(DIRECTION dir, UDT_GNODES nodeCnt);
+  void AllocRcrsvInfo(DIRECTION dir, UDT_GNODES nodeCount);
   // Returns the node's recursive predecessor or successor list, depending on
   // the specified direction.
   LinkedList<GraphNode> *GetRcrsvNghbrLst(DIRECTION dir);
@@ -258,11 +258,11 @@ public:
   virtual ~DirAcycGraph();
 
   // Returns the total number of nodes in the graph.
-  inline UDT_GNODES GetNodeCnt() const { return nodeCnt_; }
+  inline UDT_GNODES GetNodeCount() const { return nodeCount_; }
   // Returns the total number of edges in the graph.
-  inline UDT_GEDGES GetEdgeCnt() const { return edgeCnt_; }
+  inline UDT_GEDGES GetEdgeCount() const { return edgeCount_; }
   // Returns the maximum number of successors for each nodes in the graph.
-  inline UDT_GEDGES GetMaxScsrCnt() const { return maxScsrCnt_; }
+  inline UDT_GEDGES GetMaxScsrCount() const { return maxScsrCount_; }
   // Returns a pointer to the root node of the graph.
   inline GraphNode *GetRoot() const { return root_; }
   // Returns a pointer to the leaf node of the graph.
@@ -291,13 +291,13 @@ protected:
   // Pointers to the root and leaf nodes of the graph.
   GraphNode *root_, *leaf_;
   // The total number of nodes in the graph.
-  UDT_GNODES nodeCnt_;
+  UDT_GNODES nodeCount_;
   // The total number of edges in the graph.
-  UDT_GEDGES edgeCnt_;
+  UDT_GEDGES edgeCount_;
   // An array of pointers to the graph's nodes.
   GraphNode **nodes_;
   // The maximum number of successors per node.
-  UDT_GEDGES maxScsrCnt_;
+  UDT_GEDGES maxScsrCount_;
 
   // An array holding the topological order of the graph's nodes.
   GraphNode **tplgclOrdr_;
@@ -313,9 +313,11 @@ protected:
   void CreateEdge_(UDT_GNODES frmNodeNum, UDT_GNODES toNodeNum, UDT_GLABEL lbl);
 };
 
-inline bool GraphNode::IsRoot() const { return prdcsrLst_->GetElmntCnt() == 0; }
+inline bool GraphNode::IsRoot() const {
+  return prdcsrLst_->GetElmntCount() == 0;
+}
 
-inline bool GraphNode::IsLeaf() const { return scsrLst_->GetElmntCnt() == 0; }
+inline bool GraphNode::IsLeaf() const { return scsrLst_->GetElmntCount() == 0; }
 
 inline void GraphNode::ApndScsr(GraphEdge *edge) {
   assert(edge->from == this);
@@ -324,7 +326,7 @@ inline void GraphNode::ApndScsr(GraphEdge *edge) {
 
 inline void GraphNode::AddScsr(GraphEdge *edge) {
   assert(edge->from == this);
-  UDT_GEDGES scsrNum = scsrLst_->GetElmntCnt();
+  UDT_GEDGES scsrNum = scsrLst_->GetElmntCount();
   scsrLst_->InsrtElmnt(edge, edge->to->GetNum(), true);
   edge->succOrder = scsrNum;
   scsrLblSum_ += edge->label;
@@ -350,7 +352,7 @@ inline void GraphNode::UpdtMaxEdgLbl(UDT_GLABEL label) {
 }
 
 inline void GraphNode::RmvLastScsr(GraphNode *scsr, bool delEdg) {
-  assert(scsrLst_->GetElmntCnt() > 0);
+  assert(scsrLst_->GetElmntCount() > 0);
   assert(scsrLst_->GetLastElmnt()->to == scsr);
   assert(scsrLst_->GetLastElmnt()->from == this);
   if (delEdg)
@@ -365,14 +367,14 @@ inline void GraphNode::ApndPrdcsr(GraphEdge *edge) {
 
 inline void GraphNode::AddPrdcsr(GraphEdge *edge) {
   assert(edge->to == this);
-  UDT_GEDGES prdcsrNum = prdcsrLst_->GetElmntCnt();
+  UDT_GEDGES prdcsrNum = prdcsrLst_->GetElmntCount();
   prdcsrLst_->InsrtElmnt(edge);
   edge->predOrder = prdcsrNum;
   prdcsrLblSum_ += edge->label;
 }
 
 inline void GraphNode::RmvLastPrdcsr(GraphNode *prdcsr, bool delEdg) {
-  assert(prdcsrLst_->GetElmntCnt() > 0);
+  assert(prdcsrLst_->GetElmntCount() > 0);
   assert(prdcsrLst_->GetLastElmnt()->from == prdcsr);
   assert(prdcsrLst_->GetLastElmnt()->to == this);
   if (delEdg)
@@ -382,12 +384,12 @@ inline void GraphNode::RmvLastPrdcsr(GraphNode *prdcsr, bool delEdg) {
 
 inline void GraphNode::SetColor(GNODE_COLOR color) { color_ = color; }
 
-inline UDT_GEDGES GraphNode::GetPrdcsrCnt() const {
-  return prdcsrLst_->GetElmntCnt();
+inline UDT_GEDGES GraphNode::GetPrdcsrCount() const {
+  return prdcsrLst_->GetElmntCount();
 }
 
-inline UDT_GEDGES GraphNode::GetScsrCnt() const {
-  return scsrLst_->GetElmntCnt();
+inline UDT_GEDGES GraphNode::GetScsrCount() const {
+  return scsrLst_->GetElmntCount();
 }
 
 inline GNODE_COLOR GraphNode::GetColor() const { return color_; }

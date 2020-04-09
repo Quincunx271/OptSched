@@ -24,8 +24,8 @@ void Register::SetPhysicalNumber(int physicalNumber) {
 }
 
 bool Register::IsLive() const {
-  assert(crntUseCnt_ <= useCnt_);
-  return crntUseCnt_ < useCnt_;
+  assert(crntUseCount_ <= useCount_);
+  return crntUseCount_ < useCount_;
 }
 
 bool Register::IsLiveIn() const { return liveIn_; }
@@ -36,35 +36,35 @@ void Register::SetIsLiveIn(bool liveIn) { liveIn_ = liveIn; }
 
 void Register::SetIsLiveOut(bool liveOut) { liveOut_ = liveOut; }
 
-void Register::ResetCrntUseCnt() { crntUseCnt_ = 0; }
+void Register::ResetCrntUseCount() { crntUseCount_ = 0; }
 
 void Register::AddUse(const SchedInstruction *inst) {
   uses_.insert(inst);
-  useCnt_++;
+  useCount_++;
 }
 
 void Register::AddDef(const SchedInstruction *inst) {
   defs_.insert(inst);
-  defCnt_++;
+  defCount_++;
 }
 
-int Register::GetUseCnt() const { return useCnt_; }
+int Register::GetUseCount() const { return useCount_; }
 
 const Register::InstSetType &Register::GetUseList() const { return uses_; }
 
 size_t Register::GetSizeOfUseList() const { return uses_.size(); }
 
-int Register::GetDefCnt() const { return defCnt_; }
+int Register::GetDefCount() const { return defCount_; }
 
 const Register::InstSetType &Register::GetDefList() const { return defs_; }
 
 size_t Register::GetSizeOfDefList() const { return defs_.size(); }
 
-int Register::GetCrntUseCnt() const { return crntUseCnt_; }
+int Register::GetCrntUseCount() const { return crntUseCount_; }
 
-void Register::AddCrntUse() { crntUseCnt_++; }
+void Register::AddCrntUse() { crntUseCount_++; }
 
-void Register::DelCrntUse() { crntUseCnt_--; }
+void Register::DelCrntUse() { crntUseCount_--; }
 
 void Register::ResetCrntLngth() { crntLngth_ = 0; }
 
@@ -83,7 +83,7 @@ const Register &Register::operator=(Register &rhs) {
   return *this;
 }
 
-void Register::SetupConflicts(int regCnt) { conflicts_.Construct(regCnt); }
+void Register::SetupConflicts(int regCount) { conflicts_.Construct(regCount); }
 
 void Register::ResetConflicts() {
   conflicts_.Reset();
@@ -97,7 +97,7 @@ void Register::AddConflict(int regNum, bool isSpillCnddt) {
   isSpillCnddt_ = isSpillCnddt_ || isSpillCnddt;
 }
 
-int Register::GetConflictCnt() const { return conflicts_.GetOneCnt(); }
+int Register::GetConflictCount() const { return conflicts_.GetOneCount(); }
 
 bool Register::IsSpillCandidate() const { return isSpillCnddt_; }
 
@@ -129,9 +129,9 @@ Register::Register(int16_t type, int num, int physicalNumber) {
   type_ = type;
   num_ = num;
   wght_ = 1;
-  defCnt_ = 0;
-  useCnt_ = 0;
-  crntUseCnt_ = 0;
+  defCount_ = 0;
+  useCount_ = 0;
+  crntUseCount_ = 0;
   physicalNumber_ = physicalNumber;
   isSpillCnddt_ = false;
   liveIn_ = false;
@@ -140,20 +140,20 @@ Register::Register(int16_t type, int num, int physicalNumber) {
 
 RegisterFile::RegisterFile() {
   regType_ = 0;
-  physRegCnt_ = 0;
+  physRegCount_ = 0;
 }
 
 RegisterFile::~RegisterFile() {}
 
-int RegisterFile::GetRegCnt() const { return getCount(); }
+int RegisterFile::GetRegCount() const { return getCount(); }
 
 int16_t RegisterFile::GetRegType() const { return regType_; }
 
 void RegisterFile::SetRegType(int16_t regType) { regType_ = regType; }
 
-void RegisterFile::ResetCrntUseCnts() {
+void RegisterFile::ResetCrntUseCounts() {
   for (int i = 0; i < getCount(); i++) {
-    Regs[i]->ResetCrntUseCnt();
+    Regs[i]->ResetCrntUseCount();
   }
 }
 
@@ -172,11 +172,11 @@ Register *RegisterFile::getNext() {
   return Regs[RegNum].get();
 }
 
-void RegisterFile::SetRegCnt(int regCnt) {
-  if (regCnt == 0)
+void RegisterFile::SetRegCount(int regCount) {
+  if (regCount == 0)
     return;
 
-  Regs.resize(regCnt);
+  Regs.resize(regCount);
   for (int i = 0; i < getCount(); i++) {
     auto Reg = llvm::make_unique<Register>();
     Reg->SetType(regType_);
@@ -201,7 +201,7 @@ Register *RegisterFile::FindLiveReg(int physNum) const {
   return NULL;
 }
 
-int RegisterFile::FindPhysRegCnt() {
+int RegisterFile::FindPhysRegCount() {
   int maxPhysNum = -1;
   for (int i = 0; i < getCount(); i++) {
     if (Regs[i]->GetPhysicalNumber() != INVALID_VALUE &&
@@ -211,11 +211,11 @@ int RegisterFile::FindPhysRegCnt() {
 
   // Assume that physical registers are given sequential numbers
   // starting from 0.
-  physRegCnt_ = maxPhysNum + 1;
-  return physRegCnt_;
+  physRegCount_ = maxPhysNum + 1;
+  return physRegCount_;
 }
 
-int RegisterFile::GetPhysRegCnt() const { return physRegCnt_; }
+int RegisterFile::GetPhysRegCount() const { return physRegCount_; }
 
 void RegisterFile::SetupConflicts() {
   for (int i = 0; i < getCount(); i++)
@@ -227,24 +227,24 @@ void RegisterFile::ResetConflicts() {
     Regs[i]->ResetConflicts();
 }
 
-int RegisterFile::GetConflictCnt() {
-  int cnflctCnt = 0;
+int RegisterFile::GetConflictCount() {
+  int cnflctCount = 0;
   for (int i = 0; i < getCount(); i++) {
-    cnflctCnt += Regs[i]->GetConflictCnt();
+    cnflctCount += Regs[i]->GetConflictCount();
   }
-  return cnflctCnt;
+  return cnflctCount;
 }
 
-void RegisterFile::AddConflictsWithLiveRegs(int regNum, int liveRegCnt) {
-  bool isSpillCnddt = (liveRegCnt + 1) > physRegCnt_;
-  int conflictCnt = 0;
+void RegisterFile::AddConflictsWithLiveRegs(int regNum, int liveRegCount) {
+  bool isSpillCnddt = (liveRegCount + 1) > physRegCount_;
+  int conflictCount = 0;
   for (int i = 0; i < getCount(); i++) {
     if (i != regNum && Regs[i]->IsLive() == true) {
       Regs[i]->AddConflict(regNum, isSpillCnddt);
       Regs[regNum]->AddConflict(i, isSpillCnddt);
-      conflictCnt++;
+      conflictCount++;
     }
-    if (conflictCnt == liveRegCnt)
+    if (conflictCount == liveRegCount)
       break;
   }
 }

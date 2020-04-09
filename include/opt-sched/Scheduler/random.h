@@ -25,7 +25,7 @@ uint32_t GetRand32WithinRange(uint32_t min, uint32_t max);
 uint64_t GetRand64();
 // Fill a buffer with a specified number of random bits, rounded to the
 // nearest byte boundary.
-void GetRandBits(uint16_t bitCnt, unsigned char *dest);
+void GetRandBits(uint16_t bitCount, unsigned char *dest);
 } // namespace RandomGen
 
 } // namespace opt_sched

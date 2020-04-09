@@ -42,19 +42,19 @@ public:
   void SetPhysicalNumber(int physicalNumber);
 
   void AddUse(const SchedInstruction *inst);
-  int GetUseCnt() const;
+  int GetUseCount() const;
   const InstSetType &GetUseList() const;
   size_t GetSizeOfUseList() const;
-  int GetCrntUseCnt() const;
+  int GetCrntUseCount() const;
 
   void AddDef(const SchedInstruction *inst);
-  int GetDefCnt() const;
+  int GetDefCount() const;
   const InstSetType &GetDefList() const;
   size_t GetSizeOfDefList() const;
 
   void AddCrntUse();
   void DelCrntUse();
-  void ResetCrntUseCnt();
+  void ResetCrntUseCount();
 
   void IncrmntCrntLngth();
   void DcrmntCrntLngth();
@@ -71,10 +71,10 @@ public:
 
   const Register &operator=(Register &rhs);
 
-  void SetupConflicts(int regCnt);
+  void SetupConflicts(int regCount);
   void ResetConflicts();
   void AddConflict(int regNum, bool isSpillCnddt);
-  int GetConflictCnt() const;
+  int GetConflictCount() const;
   bool IsSpillCandidate() const;
 
   // Returns true if an insertion actually occurred.
@@ -90,9 +90,9 @@ public:
 private:
   int16_t type_;
   int num_;
-  int defCnt_;
-  int useCnt_;
-  int crntUseCnt_;
+  int defCount_;
+  int useCount_;
+  int crntUseCount_;
   int crntLngth_;
   int physicalNumber_;
   BitVector conflicts_;
@@ -128,8 +128,8 @@ public:
   RegisterFile();
   ~RegisterFile();
 
-  int GetRegCnt() const;
-  void SetRegCnt(int regCnt);
+  int GetRegCount() const;
+  void SetRegCount(int regCount);
 
   int16_t GetRegType() const;
   void SetRegType(int16_t regType);
@@ -137,16 +137,16 @@ public:
   Register *GetReg(int num) const;
   Register *FindLiveReg(int physNum) const;
 
-  void ResetCrntUseCnts();
+  void ResetCrntUseCounts();
   void ResetCrntLngths();
 
-  int FindPhysRegCnt();
-  int GetPhysRegCnt() const;
+  int FindPhysRegCount();
+  int GetPhysRegCount() const;
 
   void SetupConflicts();
   void ResetConflicts();
-  void AddConflictsWithLiveRegs(int regNum, int liveRegCnt);
-  int GetConflictCnt();
+  void AddConflictsWithLiveRegs(int regNum, int liveRegCount);
+  int GetConflictCount();
 
   // The number of registers in this register file.
   int getCount() const { return static_cast<int>(Regs.size()); }
@@ -156,7 +156,7 @@ public:
 
 private:
   int16_t regType_;
-  int physRegCnt_;
+  int physRegCount_;
   mutable SmallVector<std::unique_ptr<Register>, 8> Regs;
 };
 

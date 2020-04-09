@@ -55,20 +55,20 @@ BBWithSpill::BBWithSpill(const OptSchedTarget *OST_, DataDepGraph *dataDepGraph,
   spillCostFunc_ = spillCostFunc;
   trackLiveRangeLngths_ = true;
 
-  regTypeCnt_ = OST->MM->GetRegTypeCnt();
+  regTypeCount_ = OST->MM->GetRegTypeCount();
   regFiles_ = dataDepGraph->getRegFiles();
-  liveRegs_ = new WeightedBitVector[regTypeCnt_];
-  livePhysRegs_ = new WeightedBitVector[regTypeCnt_];
-  spillCosts_ = new InstCount[dataDepGraph_->GetInstCnt()];
-  peakRegPressures_ = new InstCount[regTypeCnt_];
-  regPressures_.resize(regTypeCnt_);
-  sumOfLiveIntervalLengths_.resize(regTypeCnt_, 0);
+  liveRegs_ = new WeightedBitVector[regTypeCount_];
+  livePhysRegs_ = new WeightedBitVector[regTypeCount_];
+  spillCosts_ = new InstCount[dataDepGraph_->GetInstCount()];
+  peakRegPressures_ = new InstCount[regTypeCount_];
+  regPressures_.resize(regTypeCount_);
+  sumOfLiveIntervalLengths_.resize(regTypeCount_, 0);
 
-  entryInstCnt_ = 0;
-  exitInstCnt_ = 0;
-  schduldEntryInstCnt_ = 0;
-  schduldExitInstCnt_ = 0;
-  schduldInstCnt_ = 0;
+  entryInstCount_ = 0;
+  exitInstCount_ = 0;
+  schduldEntryInstCount_ = 0;
+  schduldExitInstCount_ = 0;
+  schduldInstCount_ = 0;
 }
 /****************************************************************************/
 
@@ -113,11 +113,11 @@ ConstrainedScheduler *BBWithSpill::AllocHeuristicScheduler_() {
 /*****************************************************************************/
 
 void BBWithSpill::SetupPhysRegs_() {
-  int physRegCnt;
-  for (int i = 0; i < regTypeCnt_; i++) {
-    physRegCnt = regFiles_[i].FindPhysRegCnt();
-    if (physRegCnt > 0)
-      livePhysRegs_[i].Construct(physRegCnt);
+  int physRegCount;
+  for (int i = 0; i < regTypeCount_; i++) {
+    physRegCount = regFiles_[i].FindPhysRegCount();
+    if (physRegCount > 0)
+      livePhysRegs_[i].Construct(physRegCount);
   }
 }
 /*****************************************************************************/
@@ -152,14 +152,14 @@ void BBWithSpill::CmputSchedUprBound_() {
 }
 /*****************************************************************************/
 
-static InstCount ComputeSLILStaticLowerBound(int64_t regTypeCnt_,
+static InstCount ComputeSLILStaticLowerBound(int64_t regTypeCount_,
                                              RegisterFile *regFiles_,
                                              DataDepGraph *dataDepGraph_) {
   // (Chris): To calculate a naive lower bound of the SLIL, count all the defs
   // and uses for each register.
   int naiveLowerBound = 0;
-  for (int i = 0; i < regTypeCnt_; ++i) {
-    for (int j = 0; j < regFiles_[i].GetRegCnt(); ++j) {
+  for (int i = 0; i < regTypeCount_; ++i) {
+    for (int j = 0; j < regFiles_[i].GetRegCount(); ++j) {
       const auto &reg = regFiles_[i].GetReg(j);
       for (const auto &instruction : reg->GetDefList()) {
         if (reg->AddToInterval(instruction)) {
@@ -184,7 +184,7 @@ static InstCount ComputeSLILStaticLowerBound(int64_t regTypeCnt_,
   // between A and B, where A defines a register that B uses. Then, the live
   // range length of A increases by 1.
   auto closureLowerBound = naiveLowerBound;
-  for (int i = 0; i < dataDepGraph_->GetInstCnt(); ++i) {
+  for (int i = 0; i < dataDepGraph_->GetInstCount(); ++i) {
     const auto &inst = dataDepGraph_->GetInstByIndx(i);
     // For each register this instruction defines, compute the intersection
     // between the recursive successor list of this instruction and the
@@ -220,7 +220,7 @@ static InstCount ComputeSLILStaticLowerBound(int64_t regTypeCnt_,
   // different instructions).
   int commonUseLowerBound = closureLowerBound;
   std::vector<std::pair<const SchedInstruction *, Register *>> usedInsts;
-  for (int i = 0; i < dataDepGraph_->GetInstCnt(); ++i) {
+  for (int i = 0; i < dataDepGraph_->GetInstCount(); ++i) {
     const auto &inst = dataDepGraph_->GetInstByIndx(i);
     Register **usedRegisters = nullptr;
     auto usedRegCount = inst->GetUses(usedRegisters);
@@ -294,12 +294,12 @@ InstCount BBWithSpill::CmputCostLwrBound() {
 
   if (spillCostFunc_ == SCF_SLIL) {
     spillCostLwrBound =
-        ComputeSLILStaticLowerBound(regTypeCnt_, regFiles_, dataDepGraph_);
+        ComputeSLILStaticLowerBound(regTypeCount_, regFiles_, dataDepGraph_);
     dynamicSlilLowerBound_ = spillCostLwrBound;
     staticSlilLowerBound_ = spillCostLwrBound;
   }
 
-  // for(InstCount i=0; i< dataDepGraph_->GetInstCnt(); i++) {
+  // for(InstCount i=0; i< dataDepGraph_->GetInstCount(); i++) {
   //   inst = dataDepGraph_->GetInstByIndx(i);
   // }
 
@@ -320,9 +320,9 @@ InstCount BBWithSpill::CmputCostLwrBound() {
 void BBWithSpill::InitForSchdulng() {
   InitForCostCmputtn_();
 
-  schduldEntryInstCnt_ = 0;
-  schduldExitInstCnt_ = 0;
-  schduldInstCnt_ = 0;
+  schduldEntryInstCount_ = 0;
+  schduldExitInstCount_ = 0;
+  schduldInstCount_ = 0;
 }
 /*****************************************************************************/
 
@@ -336,14 +336,14 @@ void BBWithSpill::InitForCostCmputtn_() {
   peakSpillCost_ = 0;
   totSpillCost_ = 0;
 
-  for (i = 0; i < regTypeCnt_; i++) {
-    regFiles_[i].ResetCrntUseCnts();
+  for (i = 0; i < regTypeCount_; i++) {
+    regFiles_[i].ResetCrntUseCounts();
     regFiles_[i].ResetCrntLngths();
   }
 
-  for (i = 0; i < regTypeCnt_; i++) {
+  for (i = 0; i < regTypeCount_; i++) {
     liveRegs_[i].Reset();
-    if (regFiles_[i].GetPhysRegCnt() > 0)
+    if (regFiles_[i].GetPhysRegCount() > 0)
       livePhysRegs_[i].Reset();
     //    if (chkCnflcts_)
     //      regFiles_[i].ResetConflicts();
@@ -351,7 +351,7 @@ void BBWithSpill::InitForCostCmputtn_() {
     regPressures_[i] = 0;
   }
 
-  for (i = 0; i < dataDepGraph_->GetInstCnt(); i++)
+  for (i = 0; i < dataDepGraph_->GetInstCount(); i++)
     spillCosts_[i] = 0;
 
   for (auto &i : sumOfLiveIntervalLengths_)
@@ -410,7 +410,7 @@ void BBWithSpill::CmputCrntSpillCost_() {
     break;
   case SCF_PEAK_PLUS_AVG:
     crntSpillCost_ =
-        peakSpillCost_ + totSpillCost_ / dataDepGraph_->GetInstCnt();
+        peakSpillCost_ + totSpillCost_ / dataDepGraph_->GetInstCount();
     break;
   case SCF_SLIL:
     crntSpillCost_ = slilSpillCost_;
@@ -425,14 +425,14 @@ void BBWithSpill::CmputCrntSpillCost_() {
 void BBWithSpill::UpdateSpillInfoForSchdul_(SchedInstruction *inst,
                                             bool trackCnflcts) {
   int16_t regType;
-  int defCnt, useCnt, regNum, physRegNum;
+  int defCount, useCount, regNum, physRegNum;
   Register **defs, **uses;
   Register *def, *use;
   int liveRegs;
   InstCount newSpillCost;
 
-  defCnt = inst->GetDefs(defs);
-  useCnt = inst->GetUses(uses);
+  defCount = inst->GetDefs(defs);
+  useCount = inst->GetUses(uses);
 
 #ifdef IS_DEBUG_REG_PRESSURE
   Logger::Info("Updating reg pressure after scheduling Inst %d",
@@ -440,7 +440,7 @@ void BBWithSpill::UpdateSpillInfoForSchdul_(SchedInstruction *inst,
 #endif
 
   // Update Live regs after uses
-  for (int i = 0; i < useCnt; i++) {
+  for (int i = 0; i < useCount; i++) {
     use = uses[i];
     regType = use->GetType();
     regNum = use->GetNum();
@@ -452,7 +452,7 @@ void BBWithSpill::UpdateSpillInfoForSchdul_(SchedInstruction *inst,
 
 #ifdef IS_DEBUG_REG_PRESSURE
     Logger::Info("Inst %d uses reg %d of type %d and %d uses", inst->GetNum(),
-                 regNum, regType, use->GetUseCnt());
+                 regNum, regType, use->GetUseCount());
 #endif
 
     use->AddCrntUse();
@@ -472,16 +472,16 @@ void BBWithSpill::UpdateSpillInfoForSchdul_(SchedInstruction *inst,
 
 #ifdef IS_DEBUG_REG_PRESSURE
       Logger::Info("Reg type %d now has %d live regs", regType,
-                   liveRegs_[regType].GetOneCnt());
+                   liveRegs_[regType].GetOneCount());
 #endif
 
-      if (regFiles_[regType].GetPhysRegCnt() > 0 && physRegNum >= 0)
+      if (regFiles_[regType].GetPhysRegCount() > 0 && physRegNum >= 0)
         livePhysRegs_[regType].SetBit(physRegNum, false, use->GetWght());
     }
   }
 
   // Update Live regs after defs
-  for (int i = 0; i < defCnt; i++) {
+  for (int i = 0; i < defCount; i++) {
     def = defs[i];
     regType = def->GetType();
     regNum = def->GetNum();
@@ -489,25 +489,25 @@ void BBWithSpill::UpdateSpillInfoForSchdul_(SchedInstruction *inst,
 
 #ifdef IS_DEBUG_REG_PRESSURE
     Logger::Info("Inst %d defines reg %d of type %d and %d uses",
-                 inst->GetNum(), regNum, regType, def->GetUseCnt());
+                 inst->GetNum(), regNum, regType, def->GetUseCount());
 #endif
 
-    // if (def->GetUseCnt() > 0) {
+    // if (def->GetUseCount() > 0) {
 
-    if (trackCnflcts && liveRegs_[regType].GetOneCnt() > 0)
+    if (trackCnflcts && liveRegs_[regType].GetOneCount() > 0)
       regFiles_[regType].AddConflictsWithLiveRegs(
-          regNum, liveRegs_[regType].GetOneCnt());
+          regNum, liveRegs_[regType].GetOneCount());
 
     liveRegs_[regType].SetBit(regNum, true, def->GetWght());
 
 #ifdef IS_DEBUG_REG_PRESSURE
     Logger::Info("Reg type %d now has %d live regs", regType,
-                 liveRegs_[regType].GetOneCnt());
+                 liveRegs_[regType].GetOneCount());
 #endif
 
-    if (regFiles_[regType].GetPhysRegCnt() > 0 && physRegNum >= 0)
+    if (regFiles_[regType].GetPhysRegCount() > 0 && physRegNum >= 0)
       livePhysRegs_[regType].SetBit(physRegNum, true, def->GetWght());
-    def->ResetCrntUseCnt();
+    def->ResetCrntUseCount();
     //}
   }
 
@@ -525,8 +525,8 @@ void BBWithSpill::UpdateSpillInfoForSchdul_(SchedInstruction *inst,
   }
 #endif
 
-  for (int16_t i = 0; i < regTypeCnt_; i++) {
-    liveRegs = liveRegs_[i].GetWghtedCnt();
+  for (int16_t i = 0; i < regTypeCount_; i++) {
+    liveRegs = liveRegs_[i].GetWghtedCount();
     // Set current RP for register type "i"
     regPressures_[i] = liveRegs;
     // Update peak RP for register type "i"
@@ -535,7 +535,7 @@ void BBWithSpill::UpdateSpillInfoForSchdul_(SchedInstruction *inst,
 
     // (Chris): Compute sum of live range lengths at this point
     if (spillCostFunc_ == SCF_SLIL) {
-      sumOfLiveIntervalLengths_[i] += liveRegs_[i].GetOneCnt();
+      sumOfLiveIntervalLengths_[i] += liveRegs_[i].GetOneCount();
       for (int j = 0; j < liveRegs_[i].GetSize(); ++j) {
         if (liveRegs_[i].GetBit(j)) {
           const Register *reg = regFiles_[i].GetReg(j);
@@ -565,16 +565,16 @@ void BBWithSpill::UpdateSpillInfoForSchdul_(SchedInstruction *inst,
         std::accumulate(regPressures_.begin(), regPressures_.end(), 0);
 
   } else if (spillCostFunc_ == SCF_PEAK_PER_TYPE) {
-    for (int i = 0; i < regTypeCnt_; i++)
+    for (int i = 0; i < regTypeCount_; i++)
       newSpillCost +=
-          std::max(0, peakRegPressures_[i] - machMdl_->GetPhysRegCnt(i));
+          std::max(0, peakRegPressures_[i] - machMdl_->GetPhysRegCount(i));
 
   } else {
     // Default is PERP (Some SCF like SUM rely on PERP being the default here)
     int i = 0;
     std::for_each(
         regPressures_.begin(), regPressures_.end(), [&](InstCount RP) {
-          newSpillCost += std::max(0, RP - machMdl_->GetPhysRegCnt(i++));
+          newSpillCost += std::max(0, RP - machMdl_->GetPhysRegCount(i++));
         });
   }
 
@@ -602,17 +602,17 @@ void BBWithSpill::UpdateSpillInfoForSchdul_(SchedInstruction *inst,
 
   CmputCrntSpillCost_();
 
-  schduldInstCnt_++;
+  schduldInstCount_++;
   if (inst->MustBeInBBEntry())
-    schduldEntryInstCnt_++;
+    schduldEntryInstCount_++;
   if (inst->MustBeInBBExit())
-    schduldExitInstCnt_++;
+    schduldExitInstCount_++;
 }
 /*****************************************************************************/
 
 void BBWithSpill::UpdateSpillInfoForUnSchdul_(SchedInstruction *inst) {
   int16_t regType;
-  int i, defCnt, useCnt, regNum, physRegNum;
+  int i, defCount, useCount, regNum, physRegNum;
   Register **defs, **uses;
   Register *def, *use;
   bool isLive;
@@ -622,12 +622,12 @@ void BBWithSpill::UpdateSpillInfoForUnSchdul_(SchedInstruction *inst) {
                inst->GetNum());
 #endif
 
-  defCnt = inst->GetDefs(defs);
-  useCnt = inst->GetUses(uses);
+  defCount = inst->GetDefs(defs);
+  useCount = inst->GetUses(uses);
 
   // (Chris): Update the SLIL for all live regs at this point.
   if (spillCostFunc_ == SCF_SLIL) {
-    for (int i = 0; i < regTypeCnt_; ++i) {
+    for (int i = 0; i < regTypeCount_; ++i) {
       for (int j = 0; j < liveRegs_[i].GetSize(); ++j) {
         if (liveRegs_[i].GetBit(j)) {
           const Register *reg = regFiles_[i].GetReg(j);
@@ -643,7 +643,7 @@ void BBWithSpill::UpdateSpillInfoForUnSchdul_(SchedInstruction *inst) {
   }
 
   // Update Live regs
-  for (i = 0; i < defCnt; i++) {
+  for (i = 0; i < defCount; i++) {
     def = defs[i];
     regType = def->GetType();
     regNum = def->GetNum();
@@ -651,25 +651,25 @@ void BBWithSpill::UpdateSpillInfoForUnSchdul_(SchedInstruction *inst) {
 
 #ifdef IS_DEBUG_REG_PRESSURE
     Logger::Info("Inst %d defines reg %d of type %d and %d uses",
-                 inst->GetNum(), regNum, regType, def->GetUseCnt());
+                 inst->GetNum(), regNum, regType, def->GetUseCount());
 #endif
 
-    // if (def->GetUseCnt() > 0) {
+    // if (def->GetUseCount() > 0) {
     assert(liveRegs_[regType].GetBit(regNum));
     liveRegs_[regType].SetBit(regNum, false, def->GetWght());
 
 #ifdef IS_DEBUG_REG_PRESSURE
     Logger::Info("Reg type %d now has %d live regs", regType,
-                 liveRegs_[regType].GetOneCnt());
+                 liveRegs_[regType].GetOneCount());
 #endif
 
-    if (regFiles_[regType].GetPhysRegCnt() > 0 && physRegNum >= 0)
+    if (regFiles_[regType].GetPhysRegCount() > 0 && physRegNum >= 0)
       livePhysRegs_[regType].SetBit(physRegNum, false, def->GetWght());
-    def->ResetCrntUseCnt();
+    def->ResetCrntUseCount();
     //}
   }
 
-  for (i = 0; i < useCnt; i++) {
+  for (i = 0; i < useCount; i++) {
     use = uses[i];
     regType = use->GetType();
     regNum = use->GetNum();
@@ -677,7 +677,7 @@ void BBWithSpill::UpdateSpillInfoForUnSchdul_(SchedInstruction *inst) {
 
 #ifdef IS_DEBUG_REG_PRESSURE
     Logger::Info("Inst %d uses reg %d of type %d and %d uses", inst->GetNum(),
-                 regNum, regType, use->GetUseCnt());
+                 regNum, regType, use->GetUseCount());
 #endif
 
     isLive = use->IsLive();
@@ -699,19 +699,19 @@ void BBWithSpill::UpdateSpillInfoForUnSchdul_(SchedInstruction *inst) {
 
 #ifdef IS_DEBUG_REG_PRESSURE
       Logger::Info("Reg type %d now has %d live regs", regType,
-                   liveRegs_[regType].GetOneCnt());
+                   liveRegs_[regType].GetOneCount());
 #endif
 
-      if (regFiles_[regType].GetPhysRegCnt() > 0 && physRegNum >= 0)
+      if (regFiles_[regType].GetPhysRegCount() > 0 && physRegNum >= 0)
         livePhysRegs_[regType].SetBit(physRegNum, true, use->GetWght());
     }
   }
 
-  schduldInstCnt_--;
+  schduldInstCount_--;
   if (inst->MustBeInBBEntry())
-    schduldEntryInstCnt_--;
+    schduldEntryInstCount_--;
   if (inst->MustBeInBBExit())
-    schduldExitInstCnt_--;
+    schduldExitInstCount_--;
 
   totSpillCost_ -= spillCosts_[crntStepNum_];
   crntStepNum_--;
@@ -790,7 +790,7 @@ FUNC_RESULT BBWithSpill::Enumerate_(Milliseconds startTime,
                                     Milliseconds lngthTimeout) {
   InstCount trgtLngth;
   FUNC_RESULT rslt = RES_SUCCESS;
-  int iterCnt = 0;
+  int iterCount = 0;
   int costLwrBound = 0;
   bool timeout = false;
 
@@ -822,7 +822,9 @@ FUNC_RESULT BBWithSpill::Enumerate_(Milliseconds startTime,
         Logger::Info("Schedule found in second pass, terminating BB loop.");
 
         if (trgtLngth  < schedUprBound_)
-          Logger::Info("Schedule found with length %d is shorter than current schedule with length %d.", trgtLngth, schedUprBound_);
+          Logger::Info("Schedule found with length %d is shorter than current "
+                       "schedule with length %d.",
+                       trgtLngth, schedUprBound_);
       }
 
       break;
@@ -834,7 +836,7 @@ FUNC_RESULT BBWithSpill::Enumerate_(Milliseconds startTime,
     if (!isSecondPass)
       CmputSchedUprBound_();
 
-    iterCnt++;
+    iterCount++;
     costLwrBound += 1;
     lngthDeadline = Utilities::GetProcessorTime() + lngthTimeout;
     if (lngthDeadline > rgnDeadline)
@@ -842,9 +844,9 @@ FUNC_RESULT BBWithSpill::Enumerate_(Milliseconds startTime,
   }
 
 #ifdef IS_DEBUG_ITERS
-  stats::iterations.Record(iterCnt);
-  stats::enumerations.Record(enumrtr_->GetSearchCnt());
-  stats::lengths.Record(iterCnt);
+  stats::iterations.Record(iterCount);
+  stats::enumerations.Record(enumrtr_->GetSearchCount());
+  stats::lengths.Record(iterCount);
 #endif
 
   // Failure to find a feasible sched. in the last iteration is still
@@ -891,20 +893,20 @@ InstCount BBWithSpill::UpdtOptmlSched(InstSchedule *crntSched,
 /*****************************************************************************/
 
 void BBWithSpill::SetupForSchdulng_() {
-  for (int i = 0; i < regTypeCnt_; i++) {
-    liveRegs_[i].Construct(regFiles_[i].GetRegCnt());
+  for (int i = 0; i < regTypeCount_; i++) {
+    liveRegs_[i].Construct(regFiles_[i].GetRegCount());
   }
 
   SetupPhysRegs_();
 
-  entryInstCnt_ = dataDepGraph_->GetEntryInstCnt();
-  exitInstCnt_ = dataDepGraph_->GetExitInstCnt();
-  schduldEntryInstCnt_ = 0;
-  schduldExitInstCnt_ = 0;
+  entryInstCount_ = dataDepGraph_->GetEntryInstCount();
+  exitInstCount_ = dataDepGraph_->GetExitInstCount();
+  schduldEntryInstCount_ = 0;
+  schduldExitInstCount_ = 0;
 
   /*
   if (chkCnflcts_)
-    for (int i = 0; i < regTypeCnt_; i++) {
+    for (int i = 0; i < regTypeCount_; i++) {
       regFiles_[i].SetupConflicts();
     }
  */
@@ -949,7 +951,7 @@ bool BBWithSpill::ChkInstLglty(SchedInstruction *inst) {
   return true;
   /*
   int16_t regType;
-  int defCnt, physRegNum;
+  int defCount, physRegNum;
   Register **defs;
   Register *def, *liveDef;
 
@@ -959,20 +961,20 @@ bool BBWithSpill::ChkInstLglty(SchedInstruction *inst) {
 
   if (fixLivein_) {
     if (inst->MustBeInBBEntry() == false &&
-        schduldEntryInstCnt_ < entryInstCnt_)
+        schduldEntryInstCount_ < entryInstCount_)
       return false;
   }
 
   if (fixLiveout_) {
     if (inst->MustBeInBBExit() == true &&
-        schduldInstCnt_ < (dataDepGraph_->GetInstCnt() - exitInstCnt_))
+        schduldInstCount_ < (dataDepGraph_->GetInstCount() - exitInstCount_))
       return false;
   }
 
-  defCnt = inst->GetDefs(defs);
+  defCount = inst->GetDefs(defs);
 
   // Update Live regs
-  for (int i = 0; i < defCnt; i++) {
+  for (int i = 0; i < defCount; i++) {
     def = defs[i];
     regType = def->GetType();
     physRegNum = def->GetPhysicalNumber();
@@ -981,14 +983,14 @@ bool BBWithSpill::ChkInstLglty(SchedInstruction *inst) {
     // definition of the same physical register is live, then
     // scheduling this instruction is illegal unless this
     // instruction is the last use of that physical reg definition.
-    if (regFiles_[regType].GetPhysRegCnt() > 0 && physRegNum >= 0 &&
+    if (regFiles_[regType].GetPhysRegCount() > 0 && physRegNum >= 0 &&
         livePhysRegs_[regType].GetBit(physRegNum) == true) {
 
       liveDef = regFiles_[regType].FindLiveReg(physRegNum);
       assert(liveDef != NULL);
 
       // If this instruction is the last use of the current live def
-      if (liveDef->GetCrntUseCnt() + 1 == liveDef->GetUseCnt() &&
+      if (liveDef->GetCrntUseCount() + 1 == liveDef->GetUseCount() &&
           inst->FindUse(liveDef) == true)
         return true;
       else
@@ -1008,7 +1010,7 @@ bool BBWithSpill::ChkSchedule_(InstSchedule *bestSched,
   if (chkSpillCostSum_) {
 
     InstCount i, heurLarger = 0, bestLarger = 0;
-    for (i = 0; i < dataDepGraph_->GetInstCnt(); i++) {
+    for (i = 0; i < dataDepGraph_->GetInstCount(); i++) {
       if (lstSched->GetSpillCost(i) > bestSched->GetSpillCost(i))
         heurLarger++;
       if (bestSched->GetSpillCost(i) > lstSched->GetSpillCost(i))
@@ -1059,12 +1061,12 @@ bool BBWithSpill::ChkSchedule_(InstSchedule *bestSched,
 }
 
 void BBWithSpill::CmputCnflcts_(InstSchedule *sched) {
-  int cnflctCnt = 0;
+  int cnflctCount = 0;
   InstCount execCost;
 
   CmputNormCost_(sched, CCM_STTC, execCost, true);
-  for (int i = 0; i < regTypeCnt_; i++) {
-    cnflctCnt += regFiles_[i].GetConflictCnt();
+  for (int i = 0; i < regTypeCount_; i++) {
+    cnflctCount += regFiles_[i].GetConflictCount();
   }
-  sched->SetConflictCount(cnflctCnt);
+  sched->SetConflictCount(cnflctCount);
 }

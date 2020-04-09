@@ -6,11 +6,11 @@ using namespace llvm::opt_sched;
 
 SchedInstruction::SchedInstruction(InstCount num, const string &name,
                                    InstType instType, const string &opCode,
-                                   InstCount maxInstCnt, int nodeID,
+                                   InstCount maxInstCount, int nodeID,
                                    InstCount fileSchedOrder,
                                    InstCount fileSchedCycle, InstCount fileLB,
                                    InstCount fileUB, MachineModel *model)
-    : GraphNode(num, maxInstCnt) {
+    : GraphNode(num, maxInstCount) {
   // Static data that is computed only once.
   name_ = name;
   opCode_ = opCode;
@@ -36,8 +36,8 @@ SchedInstruction::SchedInstruction(InstCount num, const string &name,
   rdyCyclePerPrdcsr_ = NULL;
   minRdyCycle_ = INVALID_VALUE;
   prevMinRdyCyclePerPrdcsr_ = NULL;
-  unschduldPrdcsrCnt_ = 0;
-  unschduldScsrCnt_ = 0;
+  unschduldPrdcsrCount_ = 0;
+  unschduldScsrCount_ = 0;
 
   crntRange_ = new SchedRange(this);
 
@@ -49,8 +49,8 @@ SchedInstruction::SchedInstruction(InstCount num, const string &name,
   blksCycle_ = model->BlocksCycle(instType);
   pipelined_ = model->IsPipelined(instType);
 
-  defCnt_ = 0;
-  useCnt_ = 0;
+  defCount_ = 0;
+  useCount_ = 0;
 
   nodeID_ = nodeID;
   fileSchedOrder_ = fileSchedOrder;
@@ -68,15 +68,15 @@ SchedInstruction::~SchedInstruction() {
   delete crntRange_;
 }
 
-void SchedInstruction::SetupForSchdulng(InstCount instCnt, bool isCP_FromScsr,
+void SchedInstruction::SetupForSchdulng(InstCount instCount, bool isCP_FromScsr,
                                         bool isCP_FromPrdcsr) {
   if (memAllocd_)
     DeAllocMem_();
-  AllocMem_(instCnt, isCP_FromScsr, isCP_FromPrdcsr);
+  AllocMem_(instCount, isCP_FromScsr, isCP_FromPrdcsr);
 
   SetPrdcsrNums_();
   SetScsrNums_();
-  ComputeAdjustedUseCnt_();
+  ComputeAdjustedUseCount_();
 }
 
 bool SchedInstruction::UseFileBounds() {
@@ -100,8 +100,8 @@ bool SchedInstruction::UseFileBounds() {
 
   if (frwrdLwrBound_ != fileLwrBound_) {
     match = false;
-    Logger::Info("File LB =%d, Rec LB=%d, instNum=%d, pred Cnt=%d",
-                 fileLwrBound_, frwrdLwrBound_, num_, prdcsrCnt_);
+    Logger::Info("File LB =%d, Rec LB=%d, instNum=%d, pred Count=%d",
+                 fileLwrBound_, frwrdLwrBound_, num_, prdcsrCount_);
   }
 
   if (bkwrdLwrBound_ == fileUprBound_) {
@@ -120,8 +120,8 @@ bool SchedInstruction::UseFileBounds() {
 
   if (bkwrdLwrBound_ != fileUprBound_) {
     match = false;
-    Logger::Info("File UB =%d, Rec UB=%d, instNum=%d, pred Cnt=%d",
-                 fileUprBound_, bkwrdLwrBound_, num_, prdcsrCnt_);
+    Logger::Info("File UB =%d, Rec UB=%d, instNum=%d, pred Count=%d",
+                 fileUprBound_, bkwrdLwrBound_, num_, prdcsrCount_);
   }
 #endif
   SetBounds(fileLwrBound_, fileUprBound_);
@@ -133,16 +133,16 @@ bool SchedInstruction::InitForSchdulng(InstCount schedLngth,
   crntSchedCycle_ = SCHD_UNSCHDULD;
   crntRlxdCycle_ = SCHD_UNSCHDULD;
 
-  for (InstCount i = 0; i < prdcsrCnt_; i++) {
+  for (InstCount i = 0; i < prdcsrCount_; i++) {
     rdyCyclePerPrdcsr_[i] = INVALID_VALUE;
     prevMinRdyCyclePerPrdcsr_[i] = INVALID_VALUE;
   }
 
   ready_ = false;
   minRdyCycle_ = INVALID_VALUE;
-  unschduldPrdcsrCnt_ = prdcsrCnt_;
-  unschduldScsrCnt_ = scsrCnt_;
-  lastUseCnt_ = 0;
+  unschduldPrdcsrCount_ = prdcsrCount_;
+  unschduldScsrCount_ = scsrCount_;
+  lastUseCount_ = 0;
 
   if (schedLngth != INVALID_VALUE) {
     bool fsbl = crntRange_->SetBounds(frwrdLwrBound_, bkwrdLwrBound_,
@@ -154,13 +154,13 @@ bool SchedInstruction::InitForSchdulng(InstCount schedLngth,
   return true;
 }
 
-void SchedInstruction::AllocMem_(InstCount instCnt, bool isCP_FromScsr,
+void SchedInstruction::AllocMem_(InstCount instCount, bool isCP_FromScsr,
                                  bool isCP_FromPrdcsr) {
-  scsrCnt_ = scsrLst_->GetElmntCnt();
-  prdcsrCnt_ = prdcsrLst_->GetElmntCnt();
-  rdyCyclePerPrdcsr_ = new InstCount[prdcsrCnt_];
-  ltncyPerPrdcsr_ = new InstCount[prdcsrCnt_];
-  prevMinRdyCyclePerPrdcsr_ = new InstCount[prdcsrCnt_];
+  scsrCount_ = scsrLst_->GetElmntCount();
+  prdcsrCount_ = prdcsrLst_->GetElmntCount();
+  rdyCyclePerPrdcsr_ = new InstCount[prdcsrCount_];
+  ltncyPerPrdcsr_ = new InstCount[prdcsrCount_];
+  prevMinRdyCyclePerPrdcsr_ = new InstCount[prdcsrCount_];
   sortedPrdcsrLst_ = new PriorityList<SchedInstruction>;
 
   InstCount predecessorIndex = 0;
@@ -172,9 +172,9 @@ void SchedInstruction::AllocMem_(InstCount instCnt, bool isCP_FromScsr,
   }
 
   if (isCP_FromScsr) {
-    crtclPathFrmRcrsvScsr_ = new InstCount[instCnt];
+    crtclPathFrmRcrsvScsr_ = new InstCount[instCount];
 
-    for (InstCount i = 0; i < instCnt; i++) {
+    for (InstCount i = 0; i < instCount; i++) {
       crtclPathFrmRcrsvScsr_[i] = INVALID_VALUE;
     }
 
@@ -182,9 +182,9 @@ void SchedInstruction::AllocMem_(InstCount instCnt, bool isCP_FromScsr,
   }
 
   if (isCP_FromPrdcsr) {
-    crtclPathFrmRcrsvPrdcsr_ = new InstCount[instCnt];
+    crtclPathFrmRcrsvPrdcsr_ = new InstCount[instCount];
 
-    for (InstCount i = 0; i < instCnt; i++) {
+    for (InstCount i = 0; i < instCount; i++) {
       crtclPathFrmRcrsvPrdcsr_[i] = INVALID_VALUE;
     }
 
@@ -255,34 +255,34 @@ bool SchedInstruction::ApplyPreFxng(LinkedList<SchedInstruction> *tightndLst,
 }
 
 void SchedInstruction::AddDef(Register *reg) {
-  if (defCnt_ >= MAX_DEFS_PER_INSTR) {
+  if (defCount_ >= MAX_DEFS_PER_INSTR) {
     Logger::Fatal("An instruction can't have more than %d defs",
                   MAX_DEFS_PER_INSTR);
   }
-  // Logger::Info("Inst %d defines reg %d of type %d and physNum %d and useCnt
+  // Logger::Info("Inst %d defines reg %d of type %d and physNum %d and useCount
   // %d",
   // num_, reg->GetNum(), reg->GetType(), reg->GetPhysicalNumber(),
-  // reg->GetUseCnt());
+  // reg->GetUseCount());
   assert(reg != NULL);
-  defs_[defCnt_++] = reg;
+  defs_[defCount_++] = reg;
 }
 
 void SchedInstruction::AddUse(Register *reg) {
-  if (useCnt_ >= MAX_USES_PER_INSTR) {
+  if (useCount_ >= MAX_USES_PER_INSTR) {
     Logger::Fatal("An instruction can't have more than %d uses",
                   MAX_USES_PER_INSTR);
   }
-  // Logger::Info("Inst %d uses reg %d of type %d and physNum %d and useCnt %d",
-  // num_, reg->GetNum(), reg->GetType(), reg->GetPhysicalNumber(),
-  // reg->GetUseCnt());
+  // Logger::Info("Inst %d uses reg %d of type %d and physNum %d and useCount
+  // %d", num_, reg->GetNum(), reg->GetType(), reg->GetPhysicalNumber(),
+  // reg->GetUseCount());
   assert(reg != NULL);
-  uses_[useCnt_++] = reg;
+  uses_[useCount_++] = reg;
 }
 
 bool SchedInstruction::FindDef(Register *reg) const {
   assert(reg != NULL);
 
-  for (int i = 0; i < defCnt_; i++) {
+  for (int i = 0; i < defCount_; i++) {
     if (defs_[i] == reg)
       return true;
   }
@@ -293,7 +293,7 @@ bool SchedInstruction::FindDef(Register *reg) const {
 bool SchedInstruction::FindUse(Register *reg) const {
   assert(reg != NULL);
 
-  for (int i = 0; i < useCnt_; i++) {
+  for (int i = 0; i < useCount_; i++) {
     if (uses_[i] == reg)
       return true;
   }
@@ -303,12 +303,12 @@ bool SchedInstruction::FindUse(Register *reg) const {
 
 int16_t SchedInstruction::GetDefs(Register **&defs) {
   defs = defs_;
-  return defCnt_;
+  return defCount_;
 }
 
 int16_t SchedInstruction::GetUses(Register **&uses) {
   uses = uses_;
-  return useCnt_;
+  return useCount_;
 }
 
 bool SchedInstruction::BlocksCycle() const { return blksCycle_; }
@@ -341,24 +341,24 @@ int SchedInstruction::GetLtncySum() const { return GetScsrLblSum(); }
 
 int SchedInstruction::GetMaxLtncy() const { return GetMaxEdgeLabel(); }
 
-InstCount SchedInstruction::GetPrdcsrCnt() const {
-  return prdcsrLst_->GetElmntCnt();
+InstCount SchedInstruction::GetPrdcsrCount() const {
+  return prdcsrLst_->GetElmntCount();
 }
 
-InstCount SchedInstruction::GetScsrCnt() const {
-  return scsrLst_->GetElmntCnt();
+InstCount SchedInstruction::GetScsrCount() const {
+  return scsrLst_->GetElmntCount();
 }
 
-InstCount SchedInstruction::GetRcrsvPrdcsrCnt() const {
+InstCount SchedInstruction::GetRcrsvPrdcsrCount() const {
   assert(rcrsvPrdcsrLst_ != NULL);
-  assert(rcrsvPrdcsrLst_->GetElmntCnt() >= prdcsrCnt_);
-  return rcrsvPrdcsrLst_->GetElmntCnt();
+  assert(rcrsvPrdcsrLst_->GetElmntCount() >= prdcsrCount_);
+  return rcrsvPrdcsrLst_->GetElmntCount();
 }
 
-InstCount SchedInstruction::GetRcrsvScsrCnt() const {
+InstCount SchedInstruction::GetRcrsvScsrCount() const {
   assert(rcrsvScsrLst_ != NULL);
-  assert(rcrsvScsrLst_->GetElmntCnt() >= scsrCnt_);
-  return rcrsvScsrLst_->GetElmntCnt();
+  assert(rcrsvScsrLst_->GetElmntCount() >= scsrCount_);
+  return rcrsvScsrLst_->GetElmntCount();
 }
 
 SchedInstruction *SchedInstruction::GetFrstPrdcsr(InstCount *scsrNum,
@@ -541,7 +541,7 @@ void SchedInstruction::SetBounds(InstCount flb, InstCount blb) {
 
 bool SchedInstruction::PrdcsrSchduld(InstCount prdcsrNum, InstCount cycle,
                                      InstCount &rdyCycle) {
-  assert(prdcsrNum < prdcsrCnt_);
+  assert(prdcsrNum < prdcsrCount_);
   rdyCyclePerPrdcsr_[prdcsrNum] = cycle + ltncyPerPrdcsr_[prdcsrNum];
   prevMinRdyCyclePerPrdcsr_[prdcsrNum] = minRdyCycle_;
 
@@ -550,25 +550,26 @@ bool SchedInstruction::PrdcsrSchduld(InstCount prdcsrNum, InstCount cycle,
   }
 
   rdyCycle = minRdyCycle_;
-  unschduldPrdcsrCnt_--;
-  return (unschduldPrdcsrCnt_ == 0);
+  unschduldPrdcsrCount_--;
+  return (unschduldPrdcsrCount_ == 0);
 }
 
 bool SchedInstruction::PrdcsrUnSchduld(InstCount prdcsrNum,
                                        InstCount &rdyCycle) {
-  assert(prdcsrNum < prdcsrCnt_);
+  assert(prdcsrNum < prdcsrCount_);
   assert(rdyCyclePerPrdcsr_[prdcsrNum] != INVALID_VALUE);
   rdyCycle = minRdyCycle_;
   minRdyCycle_ = prevMinRdyCyclePerPrdcsr_[prdcsrNum];
   rdyCyclePerPrdcsr_[prdcsrNum] = INVALID_VALUE;
-  unschduldPrdcsrCnt_++;
-  assert(unschduldPrdcsrCnt_ != prdcsrCnt_ || minRdyCycle_ == INVALID_VALUE);
-  return (unschduldPrdcsrCnt_ == 1);
+  unschduldPrdcsrCount_++;
+  assert(unschduldPrdcsrCount_ != prdcsrCount_ ||
+         minRdyCycle_ == INVALID_VALUE);
+  return (unschduldPrdcsrCount_ == 1);
 }
 
 bool SchedInstruction::ScsrSchduld() {
-  unschduldScsrCnt_--;
-  return unschduldScsrCnt_ == 0;
+  unschduldScsrCount_--;
+  return unschduldScsrCount_ == 0;
 }
 
 void SchedInstruction::SetInstType(InstType type) { instType_ = type; }
@@ -684,14 +685,14 @@ bool SchedInstruction::ProbeScsrsCrntLwrBounds(InstCount cycle) {
   return false;
 }
 
-void SchedInstruction::ComputeAdjustedUseCnt_() {
+void SchedInstruction::ComputeAdjustedUseCount_() {
   Register **uses;
-  int useCnt = GetUses(uses);
-  adjustedUseCnt_ = useCnt;
+  int useCount = GetUses(uses);
+  adjustedUseCount_ = useCount;
 
-  for (int i = 0; i < useCnt; i++) {
+  for (int i = 0; i < useCount; i++) {
     if (uses[i]->IsLiveOut())
-      adjustedUseCnt_--;
+      adjustedUseCount_--;
   }
 }
 
@@ -711,7 +712,7 @@ void SchedInstruction::SetScsrNums_() {
     edge->succOrder = scsrNum++;
   }
 
-  assert(scsrNum == GetScsrCnt());
+  assert(scsrNum == GetScsrCount());
 }
 
 void SchedInstruction::SetPrdcsrNums_() {
@@ -722,20 +723,20 @@ void SchedInstruction::SetPrdcsrNums_() {
     edge->predOrder = prdcsrNum++;
   }
 
-  assert(prdcsrNum == GetPrdcsrCnt());
+  assert(prdcsrNum == GetPrdcsrCount());
 }
 
-int16_t SchedInstruction::CmputLastUseCnt() {
-  lastUseCnt_ = 0;
+int16_t SchedInstruction::CmputLastUseCount() {
+  lastUseCount_ = 0;
 
-  for (int i = 0; i < useCnt_; i++) {
+  for (int i = 0; i < useCount_; i++) {
     Register *reg = uses_[i];
-    assert(reg->GetCrntUseCnt() < reg->GetUseCnt());
-    if (reg->GetCrntUseCnt() + 1 == reg->GetUseCnt())
-      lastUseCnt_++;
+    assert(reg->GetCrntUseCount() < reg->GetUseCount());
+    if (reg->GetCrntUseCount() + 1 == reg->GetUseCount())
+      lastUseCount_++;
   }
 
-  return lastUseCnt_;
+  return lastUseCount_;
 }
 
 /******************************************************************************

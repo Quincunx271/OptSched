@@ -34,7 +34,7 @@ void dumpInstType(InstTypeInfo &instType, MachineModel *mm) {
                 Is Pipelined %s\n \
                 Supported: %s\n \
                 Blocks Cycle: %s\n",
-               instType.name.c_str(), instType.isCntxtDep ? "True" : "False",
+               instType.name.c_str(), instType.isCountxtDep ? "True" : "False",
                mm->GetIssueTypeNameByCode(instType.issuType), instType.ltncy,
                instType.pipelined ? "True" : "False",
                instType.sprtd ? "True" : "False",
@@ -76,7 +76,7 @@ void OptSchedMachineModel::convertMachineModel(
   InstTypeInfo instType;
 
   instType.name = "Default";
-  instType.isCntxtDep = false;
+  instType.isCountxtDep = false;
   instType.issuType = 0;
   instType.ltncy = 1;
   instType.pipelined = true;
@@ -85,7 +85,7 @@ void OptSchedMachineModel::convertMachineModel(
   instTypes_.push_back(instType);
 
   instType.name = "artificial";
-  instType.isCntxtDep = false;
+  instType.isCountxtDep = false;
   instType.issuType = 0;
   instType.ltncy = 1;
   instType.pipelined = true;
@@ -189,7 +189,7 @@ InstType CortexA7MMGenerator::generateInstrType(const MachineInstr *instr) {
     InstTypeI.name = instrName;
     const InstrStage *E = IID->endStage(IDX);
     InstTypeI.issuType = generateIssueType(--E);
-    InstTypeI.isCntxtDep = false;
+    InstTypeI.isCountxtDep = false;
     InstTypeI.ltncy = 1; // Assume using "rough" llvm latencies
     InstTypeI.pipelined = isMIPipelined(instr, IDX);
     InstTypeI.sprtd = true;

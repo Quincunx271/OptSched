@@ -58,7 +58,7 @@ public:
   // when the current offset is at the first character of a line
   // (lineStrt==true).
   NXTLINE_TYPE skipSpaceAndCmnts();
-  NXTLINE_TYPE GetNxtVldLine(int &pieceCnt, char *strngs[], int lngths[]);
+  NXTLINE_TYPE GetNxtVldLine(int &pieceCount, char *strngs[], int lngths[]);
 
 protected:
   char *buf;
@@ -82,8 +82,8 @@ protected:
   // Checks if reloading is necessary and does it or detects end of file.
   int chckReload();
 
-  NXTLINE_TYPE GetNxtVldLine_(int &pieceCnt, char *str[], int lngth[],
-                              int maxPieceCnt = INBUF_MAX_PIECES_PERLINE);
+  NXTLINE_TYPE GetNxtVldLine_(int &pieceCount, char *str[], int lngth[],
+                              int maxPieceCount = INBUF_MAX_PIECES_PERLINE);
   bool IsWhiteSpaceOrLineEnd(char ch);
   void ReportError(char *msg, char *lineStrt, int frstLngth);
   void ReportFatalError(char *msg, char *lineStrt, int frstLngth);
@@ -97,7 +97,7 @@ class SpecsBuffer : public InputBuffer {
 public:
   SpecsBuffer();
   void ReadSpec(char const *const title, char *value);
-  void readLine(char *value, int maxPieceCnt);
+  void readLine(char *value, int maxPieceCount);
   void readLstElmnt(char *value);
   int readIntLstElmnt();
   bool ReadFlagSpec(char const *const title, bool dfltValue);

@@ -50,17 +50,17 @@ EnumTreeNode::~EnumTreeNode() {
 
 void EnumTreeNode::Init_() {
   assert(isClean_);
-  brnchCnt_ = 0;
+  brnchCount_ = 0;
   crntBrnchNum_ = 0;
-  fsblBrnchCnt_ = 0;
-  legalInstCnt_ = 0;
+  fsblBrnchCount_ = 0;
+  legalInstCount_ = 0;
   hstry_ = NULL;
   rdyLst_ = NULL;
   dmntdNode_ = NULL;
   isArchivd_ = false;
   isFsbl_ = true;
   isLngthFsbl_ = true;
-  lngthFsblBrnchCnt_ = 0;
+  lngthFsblBrnchCount_ = 0;
   isLeaf_ = false;
   cost_ = INVALID_VALUE;
   costLwrBound_ = INVALID_VALUE;
@@ -87,12 +87,12 @@ void EnumTreeNode::Construct(EnumTreeNode *prevNode, SchedInstruction *inst,
   enumrtr_ = enumrtr;
   time_ = prevNode_ == NULL ? 0 : prevNode_->time_ + 1;
 
-  InstCount instCnt = enumrtr_->totInstCnt_;
+  InstCount instCount = enumrtr_->totInstCount_;
 
   if (isCnstrctd_ == false) {
-    exmndInsts_ = new LinkedList<ExaminedInst>(instCnt);
-    chldrn_ = new LinkedList<HistEnumTreeNode>(instCnt);
-    frwrdLwrBounds_ = new InstCount[instCnt];
+    exmndInsts_ = new LinkedList<ExaminedInst>(instCount);
+    chldrn_ = new LinkedList<HistEnumTreeNode>(instCount);
+    frwrdLwrBounds_ = new InstCount[instCount];
   }
 
   if (enumrtr_->IsHistDom()) {
@@ -178,11 +178,11 @@ void EnumTreeNode::SetLwrBounds(DIRECTION dir) {
 }
 /*****************************************************************************/
 
-void EnumTreeNode::SetRsrvSlots(int16_t rsrvSlotCnt, ReserveSlot *rsrvSlots) {
+void EnumTreeNode::SetRsrvSlots(int16_t rsrvSlotCount, ReserveSlot *rsrvSlots) {
   assert(rsrvSlots_ == NULL);
   rsrvSlots_ = NULL;
 
-  if (rsrvSlotCnt == 0) { // If no unpipelined instrs are scheduled
+  if (rsrvSlotCount == 0) { // If no unpipelined instrs are scheduled
     return;
   }
 
@@ -244,7 +244,7 @@ void EnumTreeNode::NewBranchExmnd(SchedInstruction *inst, bool isLegal,
     }
 
     if (isLegal) {
-      legalInstCnt_++;
+      legalInstCount_++;
 
       if (enumrtr_->prune_.nodeSup) {
         if (!isNodeDmntd) {
@@ -258,9 +258,9 @@ void EnumTreeNode::NewBranchExmnd(SchedInstruction *inst, bool isLegal,
   }
 
   if (isLngthFsbl == false) {
-    lngthFsblBrnchCnt_--;
+    lngthFsblBrnchCount_--;
 
-    if (lngthFsblBrnchCnt_ == 0) {
+    if (lngthFsblBrnchCount_ == 0) {
       isLngthFsbl_ = false;
     }
   }
@@ -273,7 +273,7 @@ void EnumTreeNode::NewBranchExmnd(SchedInstruction *inst, bool isLegal,
 }
 /*****************************************************************************/
 
-void EnumTreeNode::SetBranchCnt(InstCount rdyLstSize, bool isLeaf) {
+void EnumTreeNode::SetBranchCount(InstCount rdyLstSize, bool isLeaf) {
   assert(isLeaf == false || rdyLstSize == 0);
   isLeaf_ = isLeaf;
 
@@ -281,15 +281,15 @@ void EnumTreeNode::SetBranchCnt(InstCount rdyLstSize, bool isLeaf) {
     isLngthFsbl_ = true;
   }
 
-  brnchCnt_ = rdyLstSize + 1;
+  brnchCount_ = rdyLstSize + 1;
   isEmpty_ = rdyLstSize == 0;
 
   if (isLeaf_) {
-    brnchCnt_ = 0;
+    brnchCount_ = 0;
   }
 
-  fsblBrnchCnt_ = brnchCnt_;
-  lngthFsblBrnchCnt_ = brnchCnt_;
+  fsblBrnchCount_ = brnchCount_;
+  lngthFsblBrnchCount_ = brnchCount_;
 }
 /*****************************************************************************/
 
@@ -434,11 +434,11 @@ Enumerator::Enumerator(DataDepGraph *dataDepGraph, MachineModel *machMdl,
                        InstCount schedUprBound, int16_t sigHashSize,
                        SchedPriorities prirts, Pruning PruningStrategy,
                        bool SchedForRPOnly, bool enblStallEnum,
-                       Milliseconds timeout, InstCount preFxdInstCnt,
+                       Milliseconds timeout, InstCount preFxdInstCount,
                        SchedInstruction *preFxdInsts[])
     : ConstrainedScheduler(dataDepGraph, machMdl, schedUprBound) {
   memAllocBlkSize_ = (int)timeout / TIMEOUT_TO_MEMBLOCK_RATIO;
-  assert(preFxdInstCnt >= 0);
+  assert(preFxdInstCount >= 0);
 
   if (memAllocBlkSize_ > MAX_MEMBLOCK_SIZE) {
     memAllocBlkSize_ = MAX_MEMBLOCK_SIZE;
@@ -461,23 +461,23 @@ Enumerator::Enumerator(DataDepGraph *dataDepGraph, MachineModel *machMdl,
                                          schedUprBound_ + SCHED_UB_EXTRA,
                                          DIR_FRWRD, RST_DYNMC, INVALID_VALUE);
 
-  for (int16_t i = 0; i < issuTypeCnt_; i++) {
-    neededSlots_[i] = instCntPerIssuType_[i];
+  for (int16_t i = 0; i < issuTypeCount_; i++) {
+    neededSlots_[i] = instCountPerIssuType_[i];
 #ifdef IS_DEBUG_ISSUE_TYPES
-    Logger::Info("#of insts. of type %d is %d", i, instCntPerIssuType_[i]);
+    Logger::Info("#of insts. of type %d is %d", i, instCountPerIssuType_[i]);
 #endif
   }
 
   dataDepGraph_->EnableBackTracking();
 
-  maxNodeCnt_ = 0;
-  createdNodeCnt_ = 0;
-  exmndNodeCnt_ = 0;
-  fxdInstCnt_ = 0;
+  maxNodeCount_ = 0;
+  createdNodeCount_ = 0;
+  exmndNodeCount_ = 0;
+  fxdInstCount_ = 0;
   minUnschduldTplgclOrdr_ = 0;
-  backTrackCnt_ = 0;
-  fsblSchedCnt_ = 0;
-  imprvmntCnt_ = 0;
+  backTrackCount_ = 0;
+  fsblSchedCount_ = 0;
+  imprvmntCount_ = 0;
   prevTrgtLngth_ = INVALID_VALUE;
   rgn_ = NULL;
 
@@ -500,15 +500,15 @@ Enumerator::Enumerator(DataDepGraph *dataDepGraph, MachineModel *machMdl,
   dirctTightndLst_ = NULL;
   fxdLst_ = NULL;
 
-  tightndLst_ = new LinkedList<SchedInstruction>(totInstCnt_);
-  fxdLst_ = new LinkedList<SchedInstruction>(totInstCnt_);
-  dirctTightndLst_ = new LinkedList<SchedInstruction>(totInstCnt_);
-  bkwrdTightndLst_ = new LinkedList<SchedInstruction>(totInstCnt_);
-  tmpLwrBounds_ = new InstCount[totInstCnt_];
+  tightndLst_ = new LinkedList<SchedInstruction>(totInstCount_);
+  fxdLst_ = new LinkedList<SchedInstruction>(totInstCount_);
+  dirctTightndLst_ = new LinkedList<SchedInstruction>(totInstCount_);
+  bkwrdTightndLst_ = new LinkedList<SchedInstruction>(totInstCount_);
+  tmpLwrBounds_ = new InstCount[totInstCount_];
 
   SetInstSigs_();
   iterNum_ = 0;
-  preFxdInstCnt_ = preFxdInstCnt;
+  preFxdInstCount_ = preFxdInstCount;
   preFxdInsts_ = preFxdInsts;
 
   isCnstrctd_ = true;
@@ -537,20 +537,20 @@ Enumerator::~Enumerator() {
 
 void Enumerator::SetupAllocators_() {
   int memAllocBlkSize = memAllocBlkSize_;
-  int lastInstsEntryCnt = issuRate_ * (dataDepGraph_->GetMaxLtncy());
-  int maxNodeCnt = issuRate_ * schedUprBound_ + 1;
+  int lastInstsEntryCount = issuRate_ * (dataDepGraph_->GetMaxLtncy());
+  int maxNodeCount = issuRate_ * schedUprBound_ + 1;
 
-  nodeAlctr_ = new EnumTreeNodeAlloc(maxNodeCnt);
+  nodeAlctr_ = new EnumTreeNodeAlloc(maxNodeCount);
 
   if (IsHistDom()) {
     hashTblEntryAlctr_ =
         new MemAlloc<BinHashTblEntry<HistEnumTreeNode>>(memAllocBlkSize);
 
-    bitVctr1_ = new BitVector(totInstCnt_);
-    bitVctr2_ = new BitVector(totInstCnt_);
+    bitVctr1_ = new BitVector(totInstCount_);
+    bitVctr2_ = new BitVector(totInstCount_);
 
-    lastInsts_ = new SchedInstruction *[lastInstsEntryCnt];
-    othrLastInsts_ = new SchedInstruction *[totInstCnt_];
+    lastInsts_ = new SchedInstruction *[lastInstsEntryCount];
+    othrLastInsts_ = new SchedInstruction *[totInstCount_];
   }
 }
 /****************************************************************************/
@@ -603,11 +603,11 @@ void Enumerator::Reset() {
 bool Enumerator::Initialize_(InstSchedule *sched, InstCount trgtLngth) {
   assert(trgtLngth <= schedUprBound_);
   trgtSchedLngth_ = trgtLngth;
-  fsblSchedCnt_ = 0;
-  imprvmntCnt_ = 0;
+  fsblSchedCount_ = 0;
+  imprvmntCount_ = 0;
   crntSched_ = sched;
   minUnschduldTplgclOrdr_ = 0;
-  backTrackCnt_ = 0;
+  backTrackCount_ = 0;
   iterNum_++;
 
   if (ConstrainedScheduler::Initialize_(trgtSchedLngth_, fxdLst_) == false) {
@@ -616,7 +616,7 @@ bool Enumerator::Initialize_(InstSchedule *sched, InstCount trgtLngth) {
 
   rlxdSchdulr_->Initialize(false);
 
-  if (preFxdInstCnt_ > 0) {
+  if (preFxdInstCount_ > 0) {
     if (InitPreFxdInsts_() == false) {
       return false;
     }
@@ -631,12 +631,12 @@ bool Enumerator::Initialize_(InstSchedule *sched, InstCount trgtLngth) {
   // For each issue slot the total number of options is equal to the total
   // number of instructions plus the option of scheduling a stall
   // This establishes an upper bound on the number of tree nodes
-  // InstCount maxSlotCnt = trgtSchedLngth_ * issuRate_;
-  maxNodeCnt_ = 0;
+  // InstCount maxSlotCount = trgtSchedLngth_ * issuRate_;
+  maxNodeCount_ = 0;
 
   int i;
 
-  for (i = 0; i < issuTypeCnt_; i++) {
+  for (i = 0; i < issuTypeCount_; i++) {
     avlblSlots_[i] = slotsPerTypePerCycle_[i] * trgtSchedLngth_;
 
     if (avlblSlots_[i] < neededSlots_[i]) {
@@ -650,8 +650,8 @@ bool Enumerator::Initialize_(InstSchedule *sched, InstCount trgtLngth) {
 
   rlxdSchdulr_->SetupPrirtyLst();
 
-  createdNodeCnt_ = 0;
-  fxdInstCnt_ = 0;
+  createdNodeCount_ = 0;
+  fxdInstCount_ = 0;
   rdyLst_ = NULL;
   CreateRootNode_();
   crntNode_ = rootNode_;
@@ -661,7 +661,7 @@ bool Enumerator::Initialize_(InstSchedule *sched, InstCount trgtLngth) {
 /*****************************************************************************/
 
 bool Enumerator::InitPreFxdInsts_() {
-  for (InstCount i = 0; i < preFxdInstCnt_; i++) {
+  for (InstCount i = 0; i < preFxdInstCount_; i++) {
     bool fsbl = preFxdInsts_[i]->ApplyPreFxng(tightndLst_, fxdLst_);
     if (!fsbl)
       return false;
@@ -672,9 +672,10 @@ bool Enumerator::InitPreFxdInsts_() {
 
 void Enumerator::SetInstSigs_() {
   InstCount i;
-  int16_t bitsForInstNum = Utilities::clcltBitsNeededToHoldNum(totInstCnt_ - 1);
+  int16_t bitsForInstNum =
+      Utilities::clcltBitsNeededToHoldNum(totInstCount_ - 1);
 
-  for (i = 0; i < totInstCnt_; i++) {
+  for (i = 0; i < totInstCount_; i++) {
     SchedInstruction *inst = dataDepGraph_->GetInstByIndx(i);
     InstSignature sig = RandomGen::GetRand32();
 
@@ -704,8 +705,8 @@ void Enumerator::CreateRootNode_() {
   CreateNewRdyLst_();
   rootNode_->SetRdyLst(rdyLst_);
   rootNode_->SetLwrBounds(DIR_FRWRD);
-  assert(rsrvSlotCnt_ == 0);
-  rootNode_->SetRsrvSlots(rsrvSlotCnt_, rsrvSlots_);
+  assert(rsrvSlotCount_ == 0);
+  rootNode_->SetRsrvSlots(rsrvSlotCount_, rsrvSlots_);
   InitNewNode_(rootNode_);
   CmtLwrBoundTightnng_();
 }
@@ -881,7 +882,7 @@ FUNC_RESULT Enumerator::FindFeasibleSchedule_(InstSchedule *sched,
   }
 
 #ifdef IS_DEBUG_NODES
-  uint64_t prevNodeCnt = exmndNodeCnt_;
+  uint64_t prevNodeCount = exmndNodeCount_;
 #endif
 
   while (!(allNodesExplrd || WasObjctvMet_())) {
@@ -944,14 +945,14 @@ FUNC_RESULT Enumerator::FindFeasibleSchedule_(InstSchedule *sched,
   }
 
 #ifdef IS_DEBUG_NODES
-  uint64_t crntNodeCnt = exmndNodeCnt_ - prevNodeCnt;
-  stats::nodesPerLength.Record(crntNodeCnt);
+  uint64_t crntNodeCount = exmndNodeCount_ - prevNodeCount;
+  stats::nodesPerLength.Record(crntNodeCount);
 #endif
 
   if (isTimeout)
     return RES_TIMEOUT;
   // Logger::Info("\nEnumeration at length %d done\n", trgtLngth);
-  return fsblSchedCnt_ > 0 ? RES_SUCCESS : RES_FAIL;
+  return fsblSchedCount_ > 0 ? RES_SUCCESS : RES_FAIL;
 }
 /****************************************************************************/
 
@@ -959,41 +960,42 @@ bool Enumerator::FindNxtFsblBrnch_(EnumTreeNode *&newNode) {
   InstCount i;
   bool isEmptyNode;
   SchedInstruction *inst;
-  InstCount brnchCnt = crntNode_->GetBranchCnt(isEmptyNode);
+  InstCount brnchCount = crntNode_->GetBranchCount(isEmptyNode);
   InstCount crntBrnchNum = crntNode_->GetCrntBranchNum();
   bool isNodeDmntd, isRlxInfsbl;
   bool enumStall = false;
   bool isLngthFsbl = true;
 
 #if defined(IS_DEBUG) || defined(IS_DEBUG_READY_LIST)
-  InstCount rdyInstCnt = rdyLst_->GetInstCnt();
+  InstCount rdyInstCount = rdyLst_->GetInstCount();
 #endif
-  assert(crntNode_->IsLeaf() || (brnchCnt != rdyInstCnt) ? 1 : rdyInstCnt);
-  // brnchCnt == rdyInstCnt == 0 ? 1 : rdyInstCnt);
+  assert(crntNode_->IsLeaf() || (brnchCount != rdyInstCount) ? 1
+                                                             : rdyInstCount);
+  // brnchCount == rdyInstCount == 0 ? 1 : rdyInstCount);
 
 #ifdef IS_DEBUG_READY_LIST
-  Logger::Info("Ready List Size is %d", rdyInstCnt);
+  Logger::Info("Ready List Size is %d", rdyInstCount);
   // Warning! That will reset the instruction iterator!
   // rdyLst_->Print(Logger::GetLogStream());
 
-  stats::maxReadyListSize.SetMax(rdyInstCnt);
+  stats::maxReadyListSize.SetMax(rdyInstCount);
 #endif
 
   if (crntBrnchNum == 0 && SchedForRPOnly_)
     crntNode_->SetFoundInstWithUse(IsUseInRdyLst_());
 
-  for (i = crntBrnchNum; i < brnchCnt && crntNode_->IsFeasible(); i++) {
+  for (i = crntBrnchNum; i < brnchCount && crntNode_->IsFeasible(); i++) {
 #ifdef IS_DEBUG_FLOW
-    Logger::Info("Probing branch %d out of %d", i, brnchCnt);
+    Logger::Info("Probing branch %d out of %d", i, brnchCount);
 #endif
 
-    if (i == brnchCnt - 1) {
+    if (i == brnchCount - 1) {
       // then we only have the option of scheduling a stall
-      assert(isEmptyNode == false || brnchCnt == 1);
+      assert(isEmptyNode == false || brnchCount == 1);
       inst = NULL;
       enumStall = EnumStall_();
 
-      if (isEmptyNode || crntNode_->GetLegalInstCnt() == 0 || enumStall) {
+      if (isEmptyNode || crntNode_->GetLegalInstCount() == 0 || enumStall) {
 #ifdef IS_DEBUG_INFSBLTY_TESTS
         stats::stalls++;
 #endif
@@ -1013,14 +1015,14 @@ bool Enumerator::FindNxtFsblBrnch_(EnumTreeNode *&newNode) {
         Logger::Info("Inst %d is illegal or redundant in cyc%d/slt%d",
                      inst->GetNum(), crntCycleNum_, crntSlotNum_);
 #endif
-        exmndNodeCnt_++;
+        exmndNodeCount_++;
         crntNode_->NewBranchExmnd(inst, false, false, false, false, DIR_FRWRD,
                                   isLngthFsbl);
         continue;
       }
     }
 
-    exmndNodeCnt_++;
+    exmndNodeCount_++;
 
 #ifdef IS_DEBUG_INFSBLTY_TESTS
     stats::feasibilityTests++;
@@ -1089,7 +1091,7 @@ bool Enumerator::ProbeBranch_(SchedInstruction *inst, EnumTreeNode *&newNode,
   // if another instruction in the ready list does use a register.
   if (SchedForRPOnly_) {
     if (inst != NULL && crntNode_->FoundInstWithUse() &&
-        inst->GetAdjustedUseCnt() == 0 && !dataDepGraph_->DoesFeedUser(inst))
+        inst->GetAdjustedUseCount() == 0 && !dataDepGraph_->DoesFeedUser(inst))
       return false;
   }
 
@@ -1134,7 +1136,7 @@ bool Enumerator::ProbeBranch_(SchedInstruction *inst, EnumTreeNode *&newNode,
 
   newNode = nodeAlctr_->Alloc(crntNode_, inst, this);
   newNode->SetLwrBounds(DIR_FRWRD);
-  newNode->SetRsrvSlots(rsrvSlotCnt_, rsrvSlots_);
+  newNode->SetRsrvSlots(rsrvSlotCount_, rsrvSlots_);
 
   // If a node (sub-problem) that dominates the candidate node (sub-problem)
   // has been examined already and found infeasible
@@ -1184,7 +1186,7 @@ bool Enumerator::ProbeIssuSlotFsblty_(SchedInstruction *inst) {
 
   int16_t i;
 
-  for (i = 0; i < issuTypeCnt_; i++) {
+  for (i = 0; i < issuTypeCount_; i++) {
     // Due to stalls in the cycle that has just completed, the available
     // slots for each type that did not get filled can never be used.
     // This could not have been decremented when the stalls were
@@ -1292,12 +1294,12 @@ void Enumerator::InitNewNode_(EnumTreeNode *newNode) {
   crntNode_->SetSlotAvlblty(avlblSlots_, avlblSlotsInCrntCycle_);
 
   UpdtRdyLst_(crntCycleNum_, crntSlotNum_);
-  bool isLeaf = schduldInstCnt_ == totInstCnt_;
+  bool isLeaf = schduldInstCount_ == totInstCount_;
 
-  crntNode_->SetBranchCnt(rdyLst_->GetInstCnt(), isLeaf);
+  crntNode_->SetBranchCount(rdyLst_->GetInstCount(), isLeaf);
 
-  createdNodeCnt_++;
-  crntNode_->SetNum(createdNodeCnt_);
+  createdNodeCount_++;
+  crntNode_->SetNum(createdNodeCount_);
 }
 /*****************************************************************************/
 namespace {
@@ -1487,8 +1489,8 @@ bool Enumerator::BackTrack_() {
   RestoreCrntLwrBounds_(inst);
 
   if (inst != NULL) {
-    // int hitCnt;
-    // assert(rdyLst_->FindInst(inst, hitCnt) && hitCnt == 1);
+    // int hitCount;
+    // assert(rdyLst_->FindInst(inst, hitCount) && hitCount == 1);
     assert(inst->IsInReadyList());
 
     UndoRsrvSlots_(inst);
@@ -1500,7 +1502,7 @@ bool Enumerator::BackTrack_() {
     }
   }
 
-  backTrackCnt_++;
+  backTrackCount_++;
   return fsbl;
 }
 /*****************************************************************************/
@@ -1571,10 +1573,10 @@ bool Enumerator::TightnLwrBounds_(SchedInstruction *newInst) {
   bool fsbl;
   InstCount i;
 
-  assert(fxdLst_->GetElmntCnt() == 0);
-  assert(tightndLst_->GetElmntCnt() == 0);
+  assert(fxdLst_->GetElmntCount() == 0);
+  assert(tightndLst_->GetElmntCount() == 0);
 
-  for (i = 0; i < issuTypeCnt_; i++) {
+  for (i = 0; i < issuTypeCount_; i++) {
     // If this slot is filled with a stall then all subsequent slots are
     // going to be filled with stalls
     if (newInst == NULL) {
@@ -1588,7 +1590,7 @@ bool Enumerator::TightnLwrBounds_(SchedInstruction *newInst) {
     }
   }
 
-  for (i = minUnschduldTplgclOrdr_; i < totInstCnt_; i++) {
+  for (i = minUnschduldTplgclOrdr_; i < totInstCount_; i++) {
     inst = dataDepGraph_->GetInstByTplgclOrdr(i);
     assert(inst != newInst ||
            inst->GetCrntLwrBound(DIR_FRWRD) == crntCycleNum_);
@@ -1663,7 +1665,7 @@ bool Enumerator::FixInsts_(SchedInstruction *newInst) {
 
   bool newInstFxd = false;
 
-  fxdInstCnt_ = 0;
+  fxdInstCount_ = 0;
 
   for (SchedInstruction *inst = fxdLst_->GetFrstElmnt(); inst != NULL;
        inst = fxdLst_->GetNxtElmnt()) {
@@ -1684,7 +1686,7 @@ bool Enumerator::FixInsts_(SchedInstruction *newInst) {
       break;
     }
 
-    fxdInstCnt_++;
+    fxdInstCount_++;
   }
 
   if (fsbl)
@@ -1696,7 +1698,7 @@ bool Enumerator::FixInsts_(SchedInstruction *newInst) {
 
         if (fsbl) {
           fxdLst_->InsrtElmnt(newInst);
-          fxdInstCnt_++;
+          fxdInstCount_++;
         }
       }
     }
@@ -1706,26 +1708,26 @@ bool Enumerator::FixInsts_(SchedInstruction *newInst) {
 /*****************************************************************************/
 
 void Enumerator::UnFixInsts_(SchedInstruction *newInst) {
-  InstCount unfxdInstCnt = 0;
+  InstCount unfxdInstCount = 0;
   SchedInstruction *inst;
 
-  for (inst = fxdLst_->GetFrstElmnt(), unfxdInstCnt = 0;
-       inst != NULL && unfxdInstCnt < fxdInstCnt_;
-       inst = fxdLst_->GetNxtElmnt(), unfxdInstCnt++) {
+  for (inst = fxdLst_->GetFrstElmnt(), unfxdInstCount = 0;
+       inst != NULL && unfxdInstCount < fxdInstCount_;
+       inst = fxdLst_->GetNxtElmnt(), unfxdInstCount++) {
     assert(inst->IsFxd() || inst == newInst);
     InstCount cycle = inst == newInst ? crntCycleNum_ : inst->GetFxdCycle();
     rlxdSchdulr_->UnFixInst(inst, cycle);
   }
 
-  assert(unfxdInstCnt == fxdInstCnt_);
+  assert(unfxdInstCount == fxdInstCount_);
   fxdLst_->Reset();
-  fxdInstCnt_ = 0;
+  fxdInstCount_ = 0;
 }
 /*****************************************************************************/
 
 void Enumerator::CmtInstFxng_() {
   fxdLst_->Reset();
-  fxdInstCnt_ = 0;
+  fxdInstCount_ = 0;
 }
 /*****************************************************************************/
 
@@ -1733,7 +1735,7 @@ void Enumerator::RestoreCrntLwrBounds_(SchedInstruction *unschduldInst) {
   InstCount *frwrdLwrBounds = crntNode_->GetLwrBounds(DIR_FRWRD);
   bool unschduldInstDone = false;
 
-  for (InstCount i = 0; i < totInstCnt_; i++) {
+  for (InstCount i = 0; i < totInstCount_; i++) {
     SchedInstruction *inst = dataDepGraph_->GetInstByIndx(i);
     InstCount fxdCycle = 0;
     bool preFxd = inst->IsFxd();
@@ -1786,13 +1788,13 @@ bool Enumerator::RlxdSchdul_(EnumTreeNode *newNode) {
     }
 
     fxdLst_->InsrtElmnt(inst);
-    fxdInstCnt_++;
+    fxdInstCount_++;
 #ifdef IS_DEBUG_FIX
     Logger::Info("%d [%d], ", inst->GetNum(), inst->GetFxdCycle());
 #endif
   }
 
-  assert(rsrcFxdLst->GetElmntCnt() == 0);
+  assert(rsrcFxdLst->GetElmntCount() == 0);
   rsrcFxdLst->Reset();
   delete rsrcFxdLst;
   return fsbl;
@@ -1802,13 +1804,13 @@ bool Enumerator::RlxdSchdul_(EnumTreeNode *newNode) {
 bool Enumerator::IsUseInRdyLst_() {
   assert(rdyLst_ != NULL);
   bool isEmptyNode = false;
-  InstCount brnchCnt = crntNode_->GetBranchCnt(isEmptyNode);
+  InstCount brnchCount = crntNode_->GetBranchCount(isEmptyNode);
   SchedInstruction *inst;
   bool foundUse = false;
 
 #ifdef IS_DEBUG_RP_ONLY
   Logger::Info("Looking for a use in the ready list with nodes:");
-  for (int i = 0; i < brnchCnt - 1; i++) {
+  for (int i = 0; i < brnchCount - 1; i++) {
     inst = rdyLst_->GetNextPriorityInst();
     assert(inst != NULL);
     Logger::Info("#%d:%d", i, inst->GetNum());
@@ -1816,10 +1818,10 @@ bool Enumerator::IsUseInRdyLst_() {
   rdyLst_->ResetIterator();
 #endif
 
-  for (int i = 0; i < brnchCnt - 1; i++) {
+  for (int i = 0; i < brnchCount - 1; i++) {
     inst = rdyLst_->GetNextPriorityInst();
     assert(inst != NULL);
-    if (inst->GetAdjustedUseCnt() != 0 || dataDepGraph_->DoesFeedUser(inst)) {
+    if (inst->GetAdjustedUseCount() != 0 || dataDepGraph_->DoesFeedUser(inst)) {
       foundUse = true;
 #ifdef IS_DEBUG_RP_ONLY
       Logger::Info("Inst %d uses a register", inst->GetNum());
@@ -1839,9 +1841,9 @@ bool Enumerator::IsUseInRdyLst_() {
 void Enumerator::PrintLog_() {
   Logger::Info("--------------------------------------------------\n");
 
-  Logger::Info("Total nodes examined: %lld\n", GetNodeCnt());
+  Logger::Info("Total nodes examined: %lld\n", GetNodeCount());
   Logger::Info("History table includes %d entries.\n",
-               exmndSubProbs_->GetEntryCnt());
+               exmndSubProbs_->GetEntryCount());
   Logger::GetLogStream() << stats::historyEntriesPerIteration;
   Logger::Info("--------------------------------------------------\n");
 }
@@ -1854,10 +1856,10 @@ LengthEnumerator::LengthEnumerator(
     DataDepGraph *dataDepGraph, MachineModel *machMdl, InstCount schedUprBound,
     int16_t sigHashSize, SchedPriorities prirts, Pruning PruningStrategy,
     bool SchedForRPOnly, bool enblStallEnum, Milliseconds timeout,
-    InstCount preFxdInstCnt, SchedInstruction *preFxdInsts[])
+    InstCount preFxdInstCount, SchedInstruction *preFxdInsts[])
     : Enumerator(dataDepGraph, machMdl, schedUprBound, sigHashSize, prirts,
                  PruningStrategy, SchedForRPOnly, enblStallEnum, timeout,
-                 preFxdInstCnt, preFxdInsts) {
+                 preFxdInstCount, preFxdInsts) {
   SetupAllocators_();
   tmpHstryNode_ = new HistEnumTreeNode;
 }
@@ -1941,15 +1943,15 @@ LengthCostEnumerator::LengthCostEnumerator(
     DataDepGraph *dataDepGraph, MachineModel *machMdl, InstCount schedUprBound,
     int16_t sigHashSize, SchedPriorities prirts, Pruning PruningStrategy,
     bool SchedForRPOnly, bool enblStallEnum, Milliseconds timeout,
-    SPILL_COST_FUNCTION spillCostFunc, InstCount preFxdInstCnt,
+    SPILL_COST_FUNCTION spillCostFunc, InstCount preFxdInstCount,
     SchedInstruction *preFxdInsts[])
     : Enumerator(dataDepGraph, machMdl, schedUprBound, sigHashSize, prirts,
                  PruningStrategy, SchedForRPOnly, enblStallEnum, timeout,
-                 preFxdInstCnt, preFxdInsts) {
+                 preFxdInstCount, preFxdInsts) {
   SetupAllocators_();
 
-  costChkCnt_ = 0;
-  costPruneCnt_ = 0;
+  costChkCount_ = 0;
+  costPruneCount_ = 0;
   isEarlySubProbDom_ = false;
   costLwrBound_ = 0;
   spillCostFunc_ = spillCostFunc;
@@ -2005,8 +2007,8 @@ bool LengthCostEnumerator::Initialize_(InstSchedule *preSched,
     return false;
   }
 
-  costChkCnt_ = 0;
-  costPruneCnt_ = 0;
+  costChkCount_ = 0;
+  costPruneCount_ = 0;
   return true;
 }
 /*****************************************************************************/
@@ -2021,10 +2023,10 @@ FUNC_RESULT LengthCostEnumerator::FindFeasibleSchedule(InstSchedule *sched,
   FUNC_RESULT rslt = FindFeasibleSchedule_(sched, trgtLngth, deadline);
 
 #ifdef IS_DEBUG_TRACE_ENUM
-  stats::costChecksPerLength.Record(costChkCnt_);
-  stats::costPruningsPerLength.Record(costPruneCnt_);
-  stats::feasibleSchedulesPerLength.Record(fsblSchedCnt_);
-  stats::improvementsPerLength.Record(imprvmntCnt_);
+  stats::costChecksPerLength.Record(costChkCount_);
+  stats::costPruningsPerLength.Record(costPruneCount_);
+  stats::feasibleSchedulesPerLength.Record(fsblSchedCount_);
+  stats::improvementsPerLength.Record(imprvmntCount_);
 #endif
 
   return rslt;
@@ -2044,7 +2046,7 @@ bool LengthCostEnumerator::WasObjctvMet_() {
   assert(newCost <= GetBestCost_());
 
   if (newCost < crntCost) {
-    imprvmntCnt_++;
+    imprvmntCount_++;
   }
 
   return newCost == costLwrBound_;
@@ -2100,7 +2102,7 @@ bool LengthCostEnumerator::ChkCostFsblty_(SchedInstruction *inst,
                                           EnumTreeNode *&newNode) {
   bool isFsbl = true;
 
-  costChkCnt_++;
+  costChkCount_++;
 
   rgn_->SchdulInst(inst, crntCycleNum_, crntSlotNum_, false);
 
@@ -2108,7 +2110,7 @@ bool LengthCostEnumerator::ChkCostFsblty_(SchedInstruction *inst,
     isFsbl = rgn_->ChkCostFsblty(trgtSchedLngth_, newNode);
 
     if (!isFsbl) {
-      costPruneCnt_++;
+      costPruneCount_++;
 #ifdef IS_DEBUG_FLOW
       Logger::Info("Detected cost infeasibility of inst %d in cycle %d",
                    inst == NULL ? -2 : inst->GetNum(), crntCycleNum_);
@@ -2149,8 +2151,8 @@ void LengthCostEnumerator::CreateRootNode_() {
   rootNode_->SetRdyLst(rdyLst_);
   rootNode_->SetLwrBounds(DIR_FRWRD);
 
-  assert(rsrvSlotCnt_ == 0);
-  rootNode_->SetRsrvSlots(rsrvSlotCnt_, rsrvSlots_);
+  assert(rsrvSlotCount_ == 0);
+  rootNode_->SetRsrvSlots(rsrvSlotCount_, rsrvSlots_);
 
   rgn_->SetSttcLwrBounds(rootNode_);
 

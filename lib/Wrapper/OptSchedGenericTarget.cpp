@@ -48,7 +48,7 @@ public:
 InstCount OptSchedGenericTarget::getCost(
     const llvm::SmallVectorImpl<unsigned> &PRP) const {
   InstCount TotalPRP = 0;
-  for (int16_t T = 0; T < MM->GetRegTypeCnt(); ++T)
+  for (int16_t T = 0; T < MM->GetRegTypeCount(); ++T)
     TotalPRP += PRP[T];
   return TotalPRP;
 }

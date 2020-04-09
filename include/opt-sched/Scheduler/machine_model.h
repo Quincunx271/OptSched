@@ -58,7 +58,7 @@ struct InstTypeInfo {
   string name;
   // Whether instructions of this type can be scheduled only in a particular
   // context.
-  bool isCntxtDep;
+  bool isCountxtDep;
   // The issue type used by instructions of this type.
   IssueType issuType;
   // The latency of this instructions, i.e. the number of cycles this
@@ -85,16 +85,16 @@ public:
   // Returns the name of the machine model.
   const string &GetModelName() const;
   // Returns the number of instruction types.
-  int GetInstTypeCnt() const;
+  int GetInstTypeCount() const;
   // Returns the number of issue types (pipelines).
-  int GetIssueTypeCnt() const;
+  int GetIssueTypeCount() const;
   // Returns the machine's issue rate. I.e. the total number of issue slots
   // for all issue types.
   int GetIssueRate() const;
   // Returns the number of register types.
-  int16_t GetRegTypeCnt() const;
+  int16_t GetRegTypeCount() const;
   // Returns the number of registers of a given type.
-  int GetPhysRegCnt(int16_t regType) const;
+  int GetPhysRegCount(int16_t regType) const;
   // Returns the name of a given register type.
   const string &GetRegTypeName(int16_t regType) const;
   // Returns the register type given its name.

@@ -7,15 +7,15 @@
 
 using namespace llvm::opt_sched;
 
-GraphNode::GraphNode(UDT_GNODES num, UDT_GNODES maxNodeCnt) {
+GraphNode::GraphNode(UDT_GNODES num, UDT_GNODES maxNodeCount) {
   num_ = num;
   scsrLblSum_ = 0;
   prdcsrLblSum_ = 0;
   maxEdgLbl_ = 0;
   color_ = COL_WHITE;
 
-  scsrLst_ = new PriorityList<GraphEdge>(maxNodeCnt);
-  prdcsrLst_ = new LinkedList<GraphEdge>(maxNodeCnt);
+  scsrLst_ = new PriorityList<GraphEdge>(maxNodeCount);
+  prdcsrLst_ = new LinkedList<GraphEdge>(maxNodeCount);
 
   rcrsvScsrLst_ = NULL;
   rcrsvPrdcsrLst_ = NULL;
@@ -93,7 +93,7 @@ void GraphNode::AddRcrsvNghbr(GraphNode *nghbr, DIRECTION dir) {
   isRcrsvNghbr->SetBit(nghbr->GetNum());
 }
 
-void GraphNode::AllocRcrsvInfo(DIRECTION dir, UDT_GNODES nodeCnt) {
+void GraphNode::AllocRcrsvInfo(DIRECTION dir, UDT_GNODES nodeCount) {
   if (dir == DIR_FRWRD) {
     if (rcrsvScsrLst_ != NULL) {
       delete rcrsvScsrLst_;
@@ -105,7 +105,7 @@ void GraphNode::AllocRcrsvInfo(DIRECTION dir, UDT_GNODES nodeCnt) {
     }
     assert(rcrsvScsrLst_ == NULL && isRcrsvScsr_ == NULL);
     rcrsvScsrLst_ = new LinkedList<GraphNode>;
-    isRcrsvScsr_ = new BitVector(nodeCnt);
+    isRcrsvScsr_ = new BitVector(nodeCount);
   } else {
     if (rcrsvPrdcsrLst_ != NULL) {
       delete rcrsvPrdcsrLst_;
@@ -117,7 +117,7 @@ void GraphNode::AllocRcrsvInfo(DIRECTION dir, UDT_GNODES nodeCnt) {
     }
     assert(rcrsvPrdcsrLst_ == NULL && isRcrsvPrdcsr_ == NULL);
     rcrsvPrdcsrLst_ = new LinkedList<GraphNode>;
-    isRcrsvPrdcsr_ = new BitVector(nodeCnt);
+    isRcrsvPrdcsr_ = new BitVector(nodeCount);
   }
 }
 
@@ -127,13 +127,13 @@ bool GraphNode::IsScsrDmntd(GraphNode *cnddtDmnnt) {
 
   // A node dominates itself.
 
-  UDT_GNODES thisScsrCnt = GetScsrCnt();
-  UDT_GNODES cnddtScsrCnt = cnddtDmnnt->GetScsrCnt();
+  UDT_GNODES thisScsrCount = GetScsrCount();
+  UDT_GNODES cnddtScsrCount = cnddtDmnnt->GetScsrCount();
 
-  if (thisScsrCnt > cnddtScsrCnt)
+  if (thisScsrCount > cnddtScsrCount)
     return false;
 
-  assert(thisScsrCnt > 0);
+  assert(thisScsrCount > 0);
 
   UDT_GLABEL thisLbl;
   for (GraphNode *thisScsr = GetFrstScsr(thisLbl); thisScsr != NULL;
@@ -225,7 +225,7 @@ bool GraphNode::IsScsrEquvlnt(GraphNode *othrNode) {
   if (othrNode == this)
     return true;
 
-  if (GetScsrCnt() != othrNode->GetScsrCnt())
+  if (GetScsrCount() != othrNode->GetScsrCount())
     return false;
 
   for (GraphNode *thisScsr = GetFrstScsr(thisLbl),
@@ -246,7 +246,7 @@ bool GraphNode::IsPrdcsrEquvlnt(GraphNode *othrNode) {
   if (othrNode == this)
     return true;
 
-  if (GetPrdcsrCnt() != othrNode->GetPrdcsrCnt())
+  if (GetPrdcsrCount() != othrNode->GetPrdcsrCount())
     return false;
 
   // TODO(austin) Find out why the first call to GetFrstPrdcsr returns the node
@@ -311,10 +311,10 @@ void GraphNode::LogScsrLst() {
 }
 
 DirAcycGraph::DirAcycGraph() {
-  nodeCnt_ = 0;
-  edgeCnt_ = 0;
+  nodeCount_ = 0;
+  edgeCount_ = 0;
   nodes_ = NULL;
-  maxScsrCnt_ = 0;
+  maxScsrCount_ = 0;
   root_ = leaf_ = NULL;
   tplgclOrdr_ = NULL;
   dpthFrstSrchDone_ = false;
@@ -330,11 +330,11 @@ void DirAcycGraph::CreateEdge_(UDT_GNODES frmNodeNum, UDT_GNODES toNodeNum,
                                UDT_GLABEL label) {
   GraphEdge *newEdg;
 
-  assert(frmNodeNum < nodeCnt_);
+  assert(frmNodeNum < nodeCount_);
   GraphNode *frmNode = nodes_[frmNodeNum];
   assert(frmNode != NULL);
 
-  assert(toNodeNum < nodeCnt_);
+  assert(toNodeNum < nodeCount_);
   GraphNode *toNode = nodes_[toNodeNum];
   assert(toNode != NULL);
 
@@ -346,13 +346,13 @@ void DirAcycGraph::CreateEdge_(UDT_GNODES frmNodeNum, UDT_GNODES toNodeNum,
 
 FUNC_RESULT DirAcycGraph::DepthFirstSearch() {
   if (tplgclOrdr_ == NULL)
-    tplgclOrdr_ = new GraphNode *[nodeCnt_];
+    tplgclOrdr_ = new GraphNode *[nodeCount_];
 
-  for (UDT_GNODES i = 0; i < nodeCnt_; i++) {
+  for (UDT_GNODES i = 0; i < nodeCount_; i++) {
     nodes_[i]->SetColor(COL_WHITE);
   }
 
-  UDT_GNODES tplgclIndx = nodeCnt_ - 1;
+  UDT_GNODES tplgclIndx = nodeCount_ - 1;
   root_->DepthFirstVisit(tplgclOrdr_, tplgclIndx);
 
   if (tplgclIndx != -1) {
@@ -365,16 +365,16 @@ FUNC_RESULT DirAcycGraph::DepthFirstSearch() {
 }
 
 FUNC_RESULT DirAcycGraph::FindRcrsvNghbrs(DIRECTION dir) {
-  for (UDT_GNODES i = 0; i < nodeCnt_; i++) {
+  for (UDT_GNODES i = 0; i < nodeCount_; i++) {
     GraphNode *node = nodes_[i];
 
     // Set the colors of all nodes to white (not visited yet) before starting
     // each recursive search.
-    for (UDT_GNODES j = 0; j < nodeCnt_; j++) {
+    for (UDT_GNODES j = 0; j < nodeCount_; j++) {
       nodes_[j]->SetColor(COL_WHITE);
     }
 
-    node->AllocRcrsvInfo(dir, nodeCnt_);
+    node->AllocRcrsvInfo(dir, nodeCount_);
 
     node->FindRcrsvNghbrs(dir, this);
 
@@ -384,9 +384,10 @@ FUNC_RESULT DirAcycGraph::FindRcrsvNghbrs(DIRECTION dir) {
             node->GetRcrsvNghbrLst(dir)->GetFrstElmnt() == root_) ||
            node == root_ || node == leaf_);
     assert(node != root_ ||
-           node->GetRcrsvNghbrLst(DIR_FRWRD)->GetElmntCnt() == nodeCnt_ - 1);
+           node->GetRcrsvNghbrLst(DIR_FRWRD)->GetElmntCount() ==
+               nodeCount_ - 1);
     assert(node != leaf_ ||
-           node->GetRcrsvNghbrLst(DIR_FRWRD)->GetElmntCnt() == 0);
+           node->GetRcrsvNghbrLst(DIR_FRWRD)->GetElmntCount() == 0);
   }
 
   if (cycleDetected_)
@@ -396,19 +397,19 @@ FUNC_RESULT DirAcycGraph::FindRcrsvNghbrs(DIRECTION dir) {
 }
 
 void DirAcycGraph::Print(FILE *outFile) {
-  fprintf(outFile, "Number of Nodes= %d    Number of Edges= %d\n", nodeCnt_,
-          edgeCnt_);
+  fprintf(outFile, "Number of Nodes= %d    Number of Edges= %d\n", nodeCount_,
+          edgeCount_);
 
-  for (UDT_GNODES i = 0; i < nodeCnt_; i++) {
+  for (UDT_GNODES i = 0; i < nodeCount_; i++) {
     fprintf(outFile, "%d:  ", i + 1);
     nodes_[i]->PrntScsrLst(outFile);
   }
 }
 
 void DirAcycGraph::LogGraph() {
-  Logger::Info("Number of Nodes= %d   Number of Edges= %d\n", nodeCnt_,
-               edgeCnt_);
-  for (UDT_GNODES i = 0; i < nodeCnt_; i++) {
+  Logger::Info("Number of Nodes= %d   Number of Edges= %d\n", nodeCount_,
+               edgeCount_);
+  for (UDT_GNODES i = 0; i < nodeCount_; i++) {
     nodes_[i]->LogScsrLst();
   }
 }

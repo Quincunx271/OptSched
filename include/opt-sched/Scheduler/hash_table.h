@@ -98,15 +98,15 @@ private:
 template <class T> class HashTable {
 public:
   HashTable(UDT_HASHVAL size = DFLT_HASHTBL_SIZE,
-            UDT_HASHTBL_CPCTY maxEntryCnt = DFLT_HASHTBL_CPCTY);
+            UDT_HASHTBL_CPCTY maxEntryCount = DFLT_HASHTBL_CPCTY);
   virtual ~HashTable();
   bool IsConstructed();
 
   void RemoveEntry(HashTblEntry<T> *entry, bool del = false,
                    MemAlloc<HashTblEntry<T>> *entryAlctr = NULL);
 
-  UDT_HASHTBL_CPCTY GetEntryCnt() { return entryCnt_; }
-  UDT_HASHTBL_CPCTY GetPpultdBktCnt() { return ppultdBktCnt_; }
+  UDT_HASHTBL_CPCTY GetEntryCount() { return entryCount_; }
+  UDT_HASHTBL_CPCTY GetPpultdBktCount() { return ppultdBktCount_; }
   UDT_HASHTBL_CPCTY GetMaxListSize() { return maxListSize_; }
 
   // Clear the table by deleting all entries, and if (del is set to true),
@@ -118,9 +118,9 @@ public:
 
 protected:
   UDT_HASHVAL tblSize_;
-  UDT_HASHTBL_CPCTY entryCnt_;
-  UDT_HASHTBL_CPCTY maxEntryCnt_;
-  UDT_HASHTBL_CPCTY ppultdBktCnt_;
+  UDT_HASHTBL_CPCTY entryCount_;
+  UDT_HASHTBL_CPCTY maxEntryCount_;
+  UDT_HASHTBL_CPCTY ppultdBktCount_;
   UDT_HASHTBL_CPCTY maxListSize_;
 
   // array of heads of linked lists
@@ -128,7 +128,7 @@ protected:
   // array of last-linked entries
   HashTblEntry<T> **lastEntry_;
   // array of linked-list sizes
-  UDT_HASHTBL_CPCTY *entryCnts_;
+  UDT_HASHTBL_CPCTY *entryCounts_;
 
   UDT_HASHVAL maxHash_;
   bool isCnstrctd_;
@@ -147,8 +147,8 @@ protected:
 
 template <class T> class BinHashTable : public HashTable<T> {
 public:
-  BinHashTable(int16_t keyBitCnt, int16_t hashBitCnt, bool isExtrnlAlctr,
-               UDT_HASHTBL_CPCTY maxEntryCnt = DFLT_HASHTBL_CPCTY);
+  BinHashTable(int16_t keyBitCount, int16_t hashBitCount, bool isExtrnlAlctr,
+               UDT_HASHTBL_CPCTY maxEntryCount = DFLT_HASHTBL_CPCTY);
   ~BinHashTable() {}
 
   void Clear(bool del, MemAlloc<BinHashTblEntry<T>> *entryAlctr = NULL);
@@ -169,7 +169,7 @@ public:
   T *GetPrevMatch(bool skipCollision = true);
   //----------------------------------------------------------------------
   // The following pair of methods work only under perfect hashing
-  //,i.e., when hashBitCnt_=keyBitCnt_
+  //,i.e., when hashBitCount_=keyBitCount_
 
   // Get the entry with the maximum key value
   HashTblEntry<T> *GetMaxEntry();
@@ -197,11 +197,11 @@ public:
 
 private:
   // The size of the key in bits
-  uint16_t keyBitCnt_;
+  uint16_t keyBitCount_;
 
   // The number of MS bits to be used as a hash value indexing into the table,
   // and thus detremining the table size
-  uint16_t hashBitCnt_;
+  uint16_t hashBitCount_;
 
   UDT_HASHKEY maxKey_;
 
@@ -231,7 +231,7 @@ private:
 template <class T> class StrHashTable : public HashTable<T> {
 public:
   StrHashTable(UDT_HASHVAL size = DFLT_HASHTBL_SIZE, bool useIndx = false,
-               UDT_HASHTBL_CPCTY maxEntryCnt = DFLT_HASHTBL_CPCTY);
+               UDT_HASHTBL_CPCTY maxEntryCount = DFLT_HASHTBL_CPCTY);
   ~StrHashTable();
 
   FUNC_RESULT InsertElement(const char *name, T *elmnt);
@@ -375,28 +375,28 @@ template <class T> inline UDT_HASHTBL_CPCTY StrHashTblEntry<T>::GetIndx() {
 }
 
 template <class T>
-HashTable<T>::HashTable(UDT_HASHVAL size, UDT_HASHTBL_CPCTY maxEntryCnt) {
+HashTable<T>::HashTable(UDT_HASHVAL size, UDT_HASHTBL_CPCTY maxEntryCount) {
   isCnstrctd_ = false;
   topEntry_ = NULL;
   lastEntry_ = NULL;
-  entryCnts_ = NULL;
+  entryCounts_ = NULL;
   tblSize_ = size;
-  maxEntryCnt_ = maxEntryCnt;
+  maxEntryCount_ = maxEntryCount;
 
   topEntry_ = new HashTblEntry<T> *[tblSize_];
   lastEntry_ = new HashTblEntry<T> *[tblSize_];
-  entryCnts_ = new UDT_HASHTBL_CPCTY[tblSize_];
+  entryCounts_ = new UDT_HASHTBL_CPCTY[tblSize_];
 
   UDT_HASHVAL i;
 
   for (i = 0; i < tblSize_; i++) {
     topEntry_[i] = NULL;
     lastEntry_[i] = NULL;
-    entryCnts_[i] = 0;
+    entryCounts_[i] = 0;
   }
 
-  entryCnt_ = 0;
-  ppultdBktCnt_ = 0;
+  entryCount_ = 0;
+  ppultdBktCount_ = 0;
   maxListSize_ = 0;
   maxHash_ = 0;
   isExtrnlAlctr_ = false;
@@ -414,7 +414,7 @@ void HashTable<T>::Clear(bool del, MemAlloc<BinHashTblEntry<T>> *entryAlctr) {
   HashTblEntry<T> *nxtEntry;
   assert(isCnstrctd_);
 
-  if (entryCnt_ == 0) {
+  if (entryCount_ == 0) {
     return;
   }
 
@@ -441,11 +441,11 @@ void HashTable<T>::Clear(bool del, MemAlloc<BinHashTblEntry<T>> *entryAlctr) {
 
     topEntry_[i] = NULL;
     lastEntry_[i] = NULL;
-    entryCnts_[i] = 0;
+    entryCounts_[i] = 0;
   }
 
-  entryCnt_ = 0;
-  ppultdBktCnt_ = 0;
+  entryCount_ = 0;
+  ppultdBktCount_ = 0;
   maxListSize_ = 0;
   maxHash_ = 0;
 }
@@ -457,8 +457,8 @@ template <class T> HashTable<T>::~HashTable() {
     delete[] topEntry_;
   if (lastEntry_)
     delete[] lastEntry_;
-  if (entryCnts_)
-    delete[] entryCnts_;
+  if (entryCounts_)
+    delete[] entryCounts_;
 }
 
 template <class T>
@@ -474,17 +474,17 @@ void HashTable<T>::AddNewEntry_(HashTblEntry<T> *newEntry,
   }
 
   lastEntry_[hashVal] = newEntry;
-  entryCnts_[hashVal]++;
+  entryCounts_[hashVal]++;
 
-  if (entryCnts_[hashVal] > maxListSize_) {
-    maxListSize_ = entryCnts_[hashVal];
+  if (entryCounts_[hashVal] > maxListSize_) {
+    maxListSize_ = entryCounts_[hashVal];
   }
 
-  if (entryCnts_[hashVal] == 1) {
-    ppultdBktCnt_++;
+  if (entryCounts_[hashVal] == 1) {
+    ppultdBktCount_++;
   }
 
-  entryCnt_++;
+  entryCount_++;
 }
 
 template <class T> void HashTable<T>::FindNewMaxHash_() {
@@ -494,7 +494,7 @@ template <class T> void HashTable<T>::FindNewMaxHash_() {
 template <class T>
 void HashTable<T>::RemoveEntry(HashTblEntry<T> *entry, bool del,
                                MemAlloc<HashTblEntry<T>> *entryAlctr) {
-  assert(entryCnt_ > 0);
+  assert(entryCount_ > 0);
 
   UDT_HASHVAL hashVal = entry->GetHashVal();
   HashTblEntry<T> *nxtEntry = entry->GetNxt();
@@ -514,10 +514,10 @@ void HashTable<T>::RemoveEntry(HashTblEntry<T> *entry, bool del,
     nxtEntry->SetPrev(prevEntry);
   }
 
-  entryCnts_[hashVal]--;
-  entryCnt_--;
+  entryCounts_[hashVal]--;
+  entryCount_--;
 
-  if (hashVal == maxHash_ && entryCnts_[hashVal] == 0) {
+  if (hashVal == maxHash_ && entryCounts_[hashVal] == 0) {
     FindNewMaxHash_();
   }
 
@@ -534,13 +534,13 @@ void HashTable<T>::RemoveEntry(HashTblEntry<T> *entry, bool del,
 
 template <class T>
 UDT_HASHVAL HashTable<T>::FindNextHash_(UDT_HASHVAL crntHash) {
-  if (entryCnt_ == 0)
+  if (entryCount_ == 0)
     return 0;
 
   assert(crntHash > 0);
 
   for (UDT_HASHVAL nxtHash = crntHash - 1; nxtHash != 0; nxtHash--) {
-    if (entryCnts_[nxtHash] > 0)
+    if (entryCounts_[nxtHash] > 0)
       return nxtHash;
   }
 
@@ -550,7 +550,7 @@ UDT_HASHVAL HashTable<T>::FindNextHash_(UDT_HASHVAL crntHash) {
 template <class T> void HashTable<T>::GetFullList(LinkedList<T> *lst) {
   for (UDT_HASHVAL crntHash = maxHash_; crntHash >= 0 && crntHash <= maxHash_;
        crntHash--) {
-    if (entryCnts_[crntHash] > 0) {
+    if (entryCounts_[crntHash] > 0) {
       for (HashTblEntry<T> *crntEntry = topEntry_[crntHash]; crntEntry != NULL;
            crntEntry = crntEntry->GetNxt()) {
         lst->InsrtElmnt(crntEntry->GetElmnt());
@@ -558,16 +558,17 @@ template <class T> void HashTable<T>::GetFullList(LinkedList<T> *lst) {
     }
   }
 
-  assert(lst->GetElmntCnt() == entryCnt_);
+  assert(lst->GetElmntCount() == entryCount_);
 }
 
 template <class T>
-BinHashTable<T>::BinHashTable(int16_t keyBitCnt, int16_t hashBitCnt,
-                              bool isExtrnlAlctr, UDT_HASHTBL_CPCTY maxEntryCnt)
-    : HashTable<T>(1 + (UDT_HASHVAL)(((int64_t)(1) << hashBitCnt) - 1),
-                   maxEntryCnt) {
-  keyBitCnt_ = keyBitCnt;
-  hashBitCnt_ = hashBitCnt;
+BinHashTable<T>::BinHashTable(int16_t keyBitCount, int16_t hashBitCount,
+                              bool isExtrnlAlctr,
+                              UDT_HASHTBL_CPCTY maxEntryCount)
+    : HashTable<T>(1 + (UDT_HASHVAL)(((int64_t)(1) << hashBitCount) - 1),
+                   maxEntryCount) {
+  keyBitCount_ = keyBitCount;
+  hashBitCount_ = hashBitCount;
   HashTable<T>::isExtrnlAlctr_ = isExtrnlAlctr;
   CmputConsts_();
   Init_();
@@ -591,14 +592,14 @@ template <class T> void BinHashTable<T>::Init_() {
 }
 
 template <class T> inline void BinHashTable<T>::CmputConsts_() {
-  hashRShft_ = keyBitCnt_ - hashBitCnt_;
-  assert(keyBitCnt_ < (8 * sizeof(UDT_HASHKEY)));
-  keyMask_ = (((UDT_HASHKEY)1) << keyBitCnt_) - 1;
+  hashRShft_ = keyBitCount_ - hashBitCount_;
+  assert(keyBitCount_ < (8 * sizeof(UDT_HASHKEY)));
+  keyMask_ = (((UDT_HASHKEY)1) << keyBitCount_) - 1;
 }
 
 template <class T>
 inline UDT_HASHVAL BinHashTable<T>::HashKey(UDT_HASHKEY key) {
-  if (keyBitCnt_ == hashBitCnt_)
+  if (keyBitCount_ == hashBitCount_)
     return (UDT_HASHVAL)key;
   return ((UDT_HASHVAL)key >> hashRShft_);
 }
@@ -607,7 +608,7 @@ template <class T>
 HashTblEntry<T> *
 BinHashTable<T>::InsertElement(const UDT_HASHKEY key, T *elmnt,
                                MemAlloc<BinHashTblEntry<T>> *allocator) {
-  if (this->entryCnt_ == this->maxEntryCnt_)
+  if (this->entryCount_ == this->maxEntryCount_)
     return NULL;
 
   UDT_HASHVAL hashVal = HashKey(key);
@@ -662,18 +663,18 @@ template <class T> void BinHashTable<T>::ReInsertEntry(HashTblEntry<T> *entry) {
     this->maxHash_ = hashVal;
   }
 
-  this->entryCnts_[hashVal]++;
-  this->entryCnt_++;
+  this->entryCounts_[hashVal]++;
+  this->entryCount_++;
 }
 
 template <class T> T *BinHashTable<T>::ExtractMax() {
   T *elmnt;
   HashTblEntry<T> *maxEntry;
 
-  if (this->entryCnt_ == 0)
+  if (this->entryCount_ == 0)
     return NULL;
 
-  if (keyBitCnt_ == hashBitCnt_) {
+  if (keyBitCount_ == hashBitCount_) {
     // If all bits of the key are used as a hash value, then all entries at a
     // given table index have the same key value and we just get any one of
     // them. The top would be the easiest one.
@@ -702,11 +703,11 @@ template <class T> T *BinHashTable<T>::ExtractMax() {
 }
 
 template <class T> HashTblEntry<T> *BinHashTable<T>::GetMaxEntry() {
-  if (this->entryCnt_ == 0) {
+  if (this->entryCount_ == 0) {
     return NULL;
   }
 
-  assert(keyBitCnt_ == hashBitCnt_);
+  assert(keyBitCount_ == hashBitCount_);
   // If all bits of the key are used as a hash value, then all entries at a
   // given table index have the same key value and we just get any one of them.
   return this->topEntry_[this->maxHash_];
@@ -714,8 +715,8 @@ template <class T> HashTblEntry<T> *BinHashTable<T>::GetMaxEntry() {
 
 template <class T>
 HashTblEntry<T> *BinHashTable<T>::GetNextEntry(HashTblEntry<T> *crntEntry) {
-  assert(HashTable<T>::entryCnt_ != 0);
-  assert(keyBitCnt_ == hashBitCnt_);
+  assert(HashTable<T>::entryCount_ != 0);
+  assert(keyBitCount_ == hashBitCount_);
   HashTblEntry<T> *nxtEntry = crntEntry->GetNxt();
   UDT_HASHVAL hashVal = crntEntry->GetHashVal();
 
@@ -746,12 +747,12 @@ template <class T> void BinHashTable<T>::RestoreLastMax() {
 template <class T>
 UDT_HASHTBL_CPCTY BinHashTable<T>::GetListSize(const UDT_HASHKEY key) {
   UDT_HASHVAL srchHash = HashKey(key);
-  return this->entryCnts_[srchHash];
+  return this->entryCounts_[srchHash];
 }
 
 template <class T>
 T *BinHashTable<T>::GetFirstMatch(const UDT_HASHKEY key, bool skipCollision) {
-  if (this->entryCnt_ == 0)
+  if (this->entryCount_ == 0)
     return NULL;
 
   srchKey_ = key;
@@ -783,7 +784,7 @@ template <class T> void BinHashTable<T>::FindNextMatch_() {
 
 template <class T>
 T *BinHashTable<T>::GetLastMatch(const UDT_HASHKEY key, bool skipCollision) {
-  if (this->entryCnt_ == 0)
+  if (this->entryCount_ == 0)
     return NULL;
 
   srchKey_ = key;
@@ -849,16 +850,16 @@ bool BinHashTable<T>::DeleteEntry(UDT_HASHKEY key, T *elmnt,
 
 template <class T>
 StrHashTable<T>::StrHashTable(UDT_HASHVAL size, bool useIndx,
-                              UDT_HASHTBL_CPCTY maxEntryCnt)
-    : HashTable<T>(size, maxEntryCnt) {
+                              UDT_HASHTBL_CPCTY maxEntryCount)
+    : HashTable<T>(size, maxEntryCount) {
   indxdTbl_ = NULL;
   useIndx_ = useIndx;
 
   if (useIndx_) {
     UDT_HASHTBL_CPCTY i;
-    indxdTbl_ = new StrHashTblEntry<T> *[this->maxEntryCnt_];
+    indxdTbl_ = new StrHashTblEntry<T> *[this->maxEntryCount_];
 
-    for (i = 0; i < this->maxEntryCnt_; i++) {
+    for (i = 0; i < this->maxEntryCount_; i++) {
       indxdTbl_[i] = NULL;
     }
   }
@@ -899,7 +900,7 @@ template <class T>
 T *StrHashTable<T>::GetElement(const UDT_HASHTBL_CPCTY indx) {
   if (!useIndx_)
     return NULL;
-  return indx >= this->entryCnt_ ? NULL : indxdTbl_[indx]->GetElmnt();
+  return indx >= this->entryCount_ ? NULL : indxdTbl_[indx]->GetElmnt();
 }
 
 template <class T>
@@ -907,7 +908,7 @@ FUNC_RESULT StrHashTable<T>::InsertElement(const char *name, T *elmnt) {
   StrHashTblEntry<T> *newEntry;
   UDT_HASHVAL hashVal = HashString_(name);
 
-  if (this->entryCnt_ == this->maxEntryCnt_)
+  if (this->entryCount_ == this->maxEntryCount_)
     return RES_FAIL;
 
   assert(!HashTable<T>::isExtrnlAlctr_);

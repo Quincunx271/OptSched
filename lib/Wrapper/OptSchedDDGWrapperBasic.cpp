@@ -76,8 +76,8 @@ OptSchedDDGWrapperBasic::OptSchedDDGWrapperBasic(
 void OptSchedDDGWrapperBasic::convertSUnits() {
   LLVM_DEBUG(dbgs() << "Building opt_sched DAG\n");
   // The extra 2 are for the artifical root and leaf nodes.
-  instCnt_ = nodeCnt_ = DAG->SUnits.size() + 2;
-  AllocArrays_(instCnt_);
+  instCount_ = nodeCount_ = DAG->SUnits.size() + 2;
+  AllocArrays_(instCount_);
 
   // Create nodes.
   for (size_t i = 0; i < DAG->SUnits.size(); i++) {
@@ -101,7 +101,7 @@ void OptSchedDDGWrapperBasic::convertSUnits() {
 }
 
 void OptSchedDDGWrapperBasic::convertRegFiles() {
-  for (int i = 0; i < MM->GetRegTypeCnt(); i++)
+  for (int i = 0; i < MM->GetRegTypeCount(); i++)
     RegFiles[i].SetRegType(i);
 
   countDefs();
@@ -109,7 +109,7 @@ void OptSchedDDGWrapperBasic::convertRegFiles() {
 }
 
 void OptSchedDDGWrapperBasic::countDefs() {
-  std::vector<int> RegDefCounts(MM->GetRegTypeCnt());
+  std::vector<int> RegDefCounts(MM->GetRegTypeCount());
   // Track all regs that are defined.
   std::set<unsigned> Defs;
 
@@ -155,18 +155,18 @@ void OptSchedDDGWrapperBasic::countDefs() {
       for (int Type : getRegisterType(O.RegUnit))
         RegDefCounts[Type]++;
 
-  for (int i = 0; i < MM->GetRegTypeCnt(); i++) {
+  for (int i = 0; i < MM->GetRegTypeCount(); i++) {
     LLVM_DEBUG(if (RegDefCounts[i]) dbgs()
                    << "Reg Type " << MM->GetRegTypeName(i).c_str() << "->"
                    << RegDefCounts[i] << " registers\n";);
 
-    RegFiles[i].SetRegCnt(RegDefCounts[i]);
+    RegFiles[i].SetRegCount(RegDefCounts[i]);
   }
 }
 
 void OptSchedDDGWrapperBasic::addDefsAndUses() {
   // The index of the last "assigned" register for each register type.
-  RegIndices.resize(MM->GetRegTypeCnt());
+  RegIndices.resize(MM->GetRegTypeCount());
 
   // Add live in regs as defs for artificial root
   for (const auto &I : DAG->getRegPressure().LiveInRegs)
@@ -197,10 +197,10 @@ void OptSchedDDGWrapperBasic::addDefsAndUses() {
   // Check for any registers that are not used but are also not in LLVM's
   // live-out set.
   // Optionally, add these registers as uses in the aritificial leaf node.
-  for (int16_t i = 0; i < MM->GetRegTypeCnt(); i++)
-    for (int j = 0; j < RegFiles[i].GetRegCnt(); j++) {
+  for (int16_t i = 0; i < MM->GetRegTypeCount(); i++)
+    for (int j = 0; j < RegFiles[i].GetRegCount(); j++) {
       Register *Reg = RegFiles[i].GetReg(j);
-      if (Reg->GetUseCnt() == 0)
+      if (Reg->GetUseCount() == 0)
         addDefAndNotUsed(Reg);
     }
 
@@ -355,15 +355,15 @@ LLVM_DUMP_METHOD
 void OptSchedDDGWrapperBasic::dumpOptSchedRegisters() const {
   dbgs() << "Optsched Regsiters\n";
 
-  auto RegTypeCount = MM->GetRegTypeCnt();
+  auto RegTypeCount = MM->GetRegTypeCount();
   for (int16_t RegTypeNum = 0; RegTypeNum < RegTypeCount; RegTypeNum++) {
     const auto &RegFile = RegFiles[RegTypeNum];
     // Skip register types that have no registers in the region
-    if (RegFile.GetRegCnt() == 0)
+    if (RegFile.GetRegCount() == 0)
       continue;
 
     const auto &RegTypeName = MM->GetRegTypeName(RegTypeNum);
-    for (int RegNum = 0; RegNum < RegFile.GetRegCnt(); RegNum++) {
+    for (int RegNum = 0; RegNum < RegFile.GetRegCount(); RegNum++) {
       auto *Reg = RegFile.GetReg(RegNum);
       dbgs() << printOptSchedReg(Reg, RegTypeName, RegTypeNum);
     }
@@ -385,7 +385,7 @@ inline void OptSchedDDGWrapperBasic::setupRoot() {
 
   // Add edges between root nodes in graph and optsched artificial root.
   for (size_t i = 0; i < DAG->SUnits.size(); i++)
-    if (insts_[i]->GetPrdcsrCnt() == 0)
+    if (insts_[i]->GetPrdcsrCount() == 0)
       CreateEdge_(RootNum, i, 0, DEP_OTHER);
 }
 
@@ -403,7 +403,7 @@ inline void OptSchedDDGWrapperBasic::setupLeaf() {
 
   // Add edges between leaf nodes in graph and optsched artificial leaf.
   for (size_t i = 0; i < DAG->SUnits.size(); i++)
-    if (insts_[i]->GetScsrCnt() == 0)
+    if (insts_[i]->GetScsrCount() == 0)
       CreateEdge_(i, LeafNum, 0, DEP_OTHER);
 }
 
@@ -513,7 +513,7 @@ void LLVMRegTypeFilter::FindPSetsToFilter() {
     const char *RegTypeName = TRI->getRegPressureSetName(i);
     int16_t RegTypeID = MM->GetRegTypeByName(RegTypeName);
 
-    int RPLimit = MM->GetPhysRegCnt(RegTypeID);
+    int RPLimit = MM->GetPhysRegCount(RegTypeID);
     int MAXPR = RegionPressure[i];
 
     bool ShouldFilterType = MAXPR < RegFilterFactor * RPLimit;

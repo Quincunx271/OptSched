@@ -44,11 +44,11 @@ void LocalRegAlloc::AllocRegs() {
 
     Register **uses;
     Register **defs;
-    int useCnt = inst->GetUses(uses);
-    int defCnt = inst->GetDefs(defs);
+    int useCount = inst->GetUses(uses);
+    int defCount = inst->GetDefs(defs);
 
     // Find registers for this instruction's VReg uses.
-    for (int u = 0; u < useCnt; u++) {
+    for (int u = 0; u < useCount; u++) {
       Register *use = uses[u];
       int16_t regType = use->GetType();
       int virtRegNum = use->GetNum();
@@ -69,7 +69,7 @@ void LocalRegAlloc::AllocRegs() {
     }
 
     // Kill registers if this is the last use for them.
-    for (int u = 0; u < useCnt; u++) {
+    for (int u = 0; u < useCount; u++) {
       Register *use = uses[u];
       int16_t regType = use->GetType();
       int virtRegNum = use->GetNum();
@@ -90,7 +90,7 @@ void LocalRegAlloc::AllocRegs() {
     }
 
     // Process definitions.
-    for (int d = 0; d < defCnt; d++) {
+    for (int d = 0; d < defCount; d++) {
       Register *def = defs[d];
       int16_t regType = def->GetType();
       int virtRegNum = def->GetNum();
@@ -179,7 +179,7 @@ int LocalRegAlloc::FindSpillCand_(std::map<int, RegMap> &regMaps,
 void LocalRegAlloc::SetupForRegAlloc() {
   numLoads_ = 0;
   numStores_ = 0;
-  numRegTypes_ = dataDepGraph_->GetRegTypeCnt();
+  numRegTypes_ = dataDepGraph_->GetRegTypeCount();
 #ifdef IS_DEBUG_REG_ALLOC
   Logger::Info("REG_ALLOC: Found %d register types.", numRegTypes_);
 #endif
@@ -188,7 +188,7 @@ void LocalRegAlloc::SetupForRegAlloc() {
   freeRegs_.resize(numRegTypes_);
   physRegs_.resize(numRegTypes_);
   for (int i = 0; i < numRegTypes_; i++)
-    for (int j = 0; j < dataDepGraph_->GetPhysRegCnt(i); j++) {
+    for (int j = 0; j < dataDepGraph_->GetPhysRegCount(i); j++) {
       freeRegs_[i].push(j);
       physRegs_[i].push_back(-1);
     }
@@ -211,12 +211,12 @@ void LocalRegAlloc::ScanUses_() {
 
     int instNum = i;
     Register **uses;
-    int useCnt = inst->GetUses(uses);
+    int useCount = inst->GetUses(uses);
 #ifdef IS_DEBUG_REG_ALLOC
     Logger::Info("REG_ALLOC: Scanning for uses for instruction %d.", instNum);
 #endif
 
-    for (int j = 0; j < useCnt; j++) {
+    for (int j = 0; j < useCount; j++) {
       Register *use = uses[j];
       int virtRegNum = use->GetNum();
       int16_t regType = use->GetType();
@@ -246,9 +246,9 @@ void LocalRegAlloc::ScanUses_() {
 void LocalRegAlloc::AddLiveIn_(SchedInstruction *artificialEntry) {
   // Process live-in regs.
   Register **defs;
-  int defCnt = artificialEntry->GetDefs(defs);
+  int defCount = artificialEntry->GetDefs(defs);
 
-  for (int d = 0; d < defCnt; d++) {
+  for (int d = 0; d < defCount; d++) {
     Register *def = defs[d];
     int16_t regType = def->GetType();
     int virtRegNum = def->GetNum();

@@ -122,7 +122,7 @@ public:
   //   instType: The instruction type (defined in its machine model).
   //   opCode: The mnemonic for this instruction, e.g. "add" or "jmp". Only
   //     stored, not used by this class.
-  //   maxInstCnt: The maximum number of instructions in the graph. Passed to
+  //   maxInstCount: The maximum number of instructions in the graph. Passed to
   //     the graph node constructor which uses it for calculating memory
   //     allocation bounds.
   //   nodeID: The ID of this node. Only stored, not used by this class.
@@ -136,7 +136,7 @@ public:
   //     provided in the input file.
   //   model: The machine model used by this instruction.
   SchedInstruction(InstCount num, const string &name, InstType instType,
-                   const string &opCode, InstCount maxInstCnt, int nodeID,
+                   const string &opCode, InstCount maxInstCount, int nodeID,
                    InstCount fileSchedCycle, InstCount fileSchedOrder,
                    InstCount fileLB, InstCount fileUB, MachineModel *model);
   // Deallocates the memory used by the instruction and destroys the object.
@@ -144,7 +144,7 @@ public:
 
   // Prepares the instruction for scheduling. Should be called only once in
   // the lifetime of an instruction object.
-  void SetupForSchdulng(InstCount instCnt, bool isCP_FromScsr,
+  void SetupForSchdulng(InstCount instCount, bool isCP_FromScsr,
                         bool isCP_FromPrdcsr);
 
   // Sets the instruction's bounds to the ones specified in the input file.
@@ -177,15 +177,15 @@ public:
   InstCount GetLwrBound(DIRECTION dir) const;
 
   // Returns the number of predecessors of this instruction.
-  InstCount GetPrdcsrCnt() const;
+  InstCount GetPrdcsrCount() const;
   // Returns the number of successors of this instruction node.
-  InstCount GetScsrCnt() const;
+  InstCount GetScsrCount() const;
   // Returns the number of predecessors in this instructions transitive
   // closure (i.e. total number of ancestors).
-  InstCount GetRcrsvPrdcsrCnt() const;
+  InstCount GetRcrsvPrdcsrCount() const;
   // Returns the number of successors in this instructions transitive
   // closure (i.e. total number of descendants).
-  InstCount GetRcrsvScsrCnt() const;
+  InstCount GetRcrsvScsrCount() const;
 
   /***************************************************************************
    * Iterators                                                               *
@@ -412,16 +412,16 @@ public:
   // into uses and the number of elements is returned.
   int16_t GetUses(Register **&uses);
 
-  int16_t GetDefCnt() { return defCnt_; }
-  int16_t GetUseCnt() { return useCnt_; }
+  int16_t GetDefCount() { return defCount_; }
+  int16_t GetUseCount() { return useCount_; }
 
   // Return the adjusted use count. The number of uses minus live-out uses.
-  int16_t GetAdjustedUseCnt() { return adjustedUseCnt_; }
-  // Computer the adjusted use count. Update "adjustedUseCnt_".
-  void ComputeAdjustedUseCnt(SchedInstruction *inst);
+  int16_t GetAdjustedUseCount() { return adjustedUseCount_; }
+  // Computer the adjusted use count. Update "adjustedUseCount_".
+  void ComputeAdjustedUseCount(SchedInstruction *inst);
 
-  int16_t CmputLastUseCnt();
-  int16_t GetLastUseCnt() { return lastUseCnt_; }
+  int16_t CmputLastUseCount();
+  int16_t GetLastUseCount() { return lastUseCount_; }
 
   InstType GetCrtclPathFrmRoot() { return crtclPathFrmRoot_; }
 
@@ -444,9 +444,9 @@ protected:
   InstCount fileSchedCycle_;
 
   // The number of predecessors of this instruction.
-  InstCount prdcsrCnt_;
+  InstCount prdcsrCount_;
   // The number of successors of this instruction.
-  InstCount scsrCnt_;
+  InstCount scsrCount_;
 
   // The minimum cycle in which this instruction can be scheduled, given its
   // data and resource constraints.
@@ -501,9 +501,9 @@ protected:
   // An array of predecessor latencies indexed by predecessor number.
   InstCount *ltncyPerPrdcsr_;
   // The number of unscheduled predecessors.
-  InstCount unschduldPrdcsrCnt_;
+  InstCount unschduldPrdcsrCount_;
   // The number of unscheduled successors.
-  InstCount unschduldScsrCnt_;
+  InstCount unschduldScsrCount_;
   /***************************************************************************/
 
   // The cycle in which this instruction is currently scheduled.
@@ -549,17 +549,17 @@ protected:
   // The registers defined by this instruction node.
   Register *defs_[MAX_DEFS_PER_INSTR];
   // The number of elements in defs.
-  int16_t defCnt_;
+  int16_t defCount_;
   // The registers used by this instruction node.
   Register *uses_[MAX_USES_PER_INSTR];
   // The number of elements in uses.
-  int16_t useCnt_;
+  int16_t useCount_;
   // The number of uses minus live-out registers. Live-out registers are uses
   // in the artifical leaf instruction.
-  int16_t adjustedUseCnt_;
+  int16_t adjustedUseCount_;
   // The number of live virtual registers for which this instruction is
   // the last use. This value changes dynamically during scheduling
-  int16_t lastUseCnt_;
+  int16_t lastUseCount_;
   /***************************************************************************/
 
   // Whether this instruction blocks its cycle, i.e. does not allow other
@@ -575,12 +575,12 @@ protected:
   InstCount CmputCrtclPath_(DIRECTION dir, SchedInstruction *ref = NULL);
   // Allocate the memory needed for data structures used in this node.
   // Arguments as follows:
-  //   instCnt: The maximum number of instructions in the graph.
+  //   instCount: The maximum number of instructions in the graph.
   //   isCP_FromScsr: Whether this instruction will keep track of critical
   //     paths from successors.
   //   isCP_FromPrdcsr: Whether this instruction will keep track of critical
   //     paths from predecessors.
-  void AllocMem_(InstCount instCnt, bool isCP_FromScsr, bool isCP_FromPrdcsr);
+  void AllocMem_(InstCount instCount, bool isCP_FromScsr, bool isCP_FromPrdcsr);
   // Deallocates the memory used by the node's data structures.
   void DeAllocMem_();
   // Sets the predecessor order numbers on the edges between this node and its
@@ -589,8 +589,8 @@ protected:
   // Sets the successor order numbers on the edges between this node and its
   // successors.
   void SetScsrNums_();
-  // Computer the adjusted use count. Update "adjustedUseCnt_".
-  void ComputeAdjustedUseCnt_();
+  // Computer the adjusted use count. Update "adjustedUseCount_".
+  void ComputeAdjustedUseCount_();
 };
 
 // A class to keep track of dynamic SchedInstruction lower bounds, i.e. lower

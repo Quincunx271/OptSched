@@ -48,7 +48,7 @@ SchedRegion::SchedRegion(MachineModel *machMdl, DataDepGraph *dataDepGraph,
   schedLwrBound_ = 0;
   schedUprBound_ = INVALID_VALUE;
 
-  instCnt_ = dataDepGraph_->GetInstCnt();
+  instCount_ = dataDepGraph_->GetInstCount();
 
   needTrnstvClsr_ = false;
 }
@@ -139,10 +139,10 @@ FUNC_RESULT SchedRegion::FindOptimalSchedule(
   Logger::Info("---------------------------------------------------------------"
                "------------");
   Logger::Info("Processing DAG %s with %d insts and max latency %d.",
-               dataDepGraph_->GetDagID(), dataDepGraph_->GetInstCnt(),
+               dataDepGraph_->GetDagID(), dataDepGraph_->GetInstCount(),
                dataDepGraph_->GetMaxLtncy());
 
-  stats::problemSize.Record(dataDepGraph_->GetInstCnt());
+  stats::problemSize.Record(dataDepGraph_->GetInstCount());
 
   const auto *GraphTransformations = dataDepGraph_->GetGraphTrans();
   if (BbSchedulerEnabled || GraphTransformations->size() > 0 ||
@@ -334,7 +334,7 @@ FUNC_RESULT SchedRegion::FindOptimalSchedule(
     auto regTypeCount = lstSched->GetPeakRegPressures(regPressures);
     InstCount sumPerp = 0;
     for (int i = 0; i < regTypeCount; ++i) {
-      int perp = regPressures[i] - machMdl_->GetPhysRegCnt(i);
+      int perp = regPressures[i] - machMdl_->GetPhysRegCount(i);
       if (perp > 0)
         sumPerp += perp;
     }
@@ -352,7 +352,7 @@ FUNC_RESULT SchedRegion::FindOptimalSchedule(
     auto regTypeCount = lstSched->GetPeakRegPressures(regPressures);
     InstCount sumPerp = 0;
     for (int i = 0; i < regTypeCount; ++i) {
-      int perp = regPressures[i] - machMdl_->GetPhysRegCnt(i);
+      int perp = regPressures[i] - machMdl_->GetPhysRegCount(i);
       if (perp > 0)
         sumPerp += perp;
     }
@@ -417,7 +417,7 @@ FUNC_RESULT SchedRegion::FindOptimalSchedule(
     Logger::Info("Printing PERP at each step in the schedule.");
 
     int costSum = 0;
-    for (int i = 0; i < dataDepGraph_->GetInstCnt(); ++i) {
+    for (int i = 0; i < dataDepGraph_->GetInstCount(); ++i) {
       Logger::Info("Cycle: %lu Cost: %lu", i, bestSched_->GetSpillCost(i));
       costSum += bestSched_->GetSpillCost(i);
     }
@@ -565,7 +565,7 @@ FUNC_RESULT SchedRegion::FindOptimalSchedule(
           auto regTypeCount = sched->GetPeakRegPressures(regPressures);
           InstCount sumPerp = 0;
           for (int i = 0; i < regTypeCount; ++i) {
-            int perp = regPressures[i] - machMdl_->GetPhysRegCnt(i);
+            int perp = regPressures[i] - machMdl_->GetPhysRegCount(i);
             if (perp > 0)
               sumPerp += perp;
           }
@@ -597,7 +597,7 @@ FUNC_RESULT SchedRegion::FindOptimalSchedule(
 #if defined(IS_DEBUG_PRINT_PEAK_FOR_ENUMERATED)
   if (!isLstOptml) {
     InstCount maxSpillCost = 0;
-    for (int i = 0; i < dataDepGraph_->GetInstCnt(); ++i) {
+    for (int i = 0; i < dataDepGraph_->GetInstCount(); ++i) {
       if (bestSched->GetSpillCost(i) > maxSpillCost)
         maxSpillCost = bestSched->GetSpillCost(i);
     }
@@ -623,9 +623,9 @@ FUNC_RESULT SchedRegion::Optimize_(Milliseconds startTime,
   Milliseconds solnTime = Utilities::GetProcessorTime() - startTime;
 
 #ifdef IS_DEBUG_NODES
-  Logger::Info("Examined %lld nodes.", enumrtr->GetNodeCnt());
+  Logger::Info("Examined %lld nodes.", enumrtr->GetNodeCount());
 #endif
-  stats::nodeCount.Record(enumrtr->GetNodeCnt());
+  stats::nodeCount.Record(enumrtr->GetNodeCount());
   stats::solutionTime.Record(solnTime);
 
   InstCount imprvmnt = initCost - bestCost_;
@@ -634,7 +634,7 @@ FUNC_RESULT SchedRegion::Optimize_(Milliseconds startTime,
                  "length=%d, spill cost = %d, tot cost = %d, cost imp=%d.",
                  solnTime, bestSchedLngth_, bestSched_->GetSpillCost(),
                  bestCost_, imprvmnt);
-    stats::solvedProblemSize.Record(dataDepGraph_->GetInstCnt());
+    stats::solvedProblemSize.Record(dataDepGraph_->GetInstCount());
     stats::solutionTimeForSolvedProblems.Record(solnTime);
   } else {
     if (rslt == RES_TIMEOUT) {
@@ -643,7 +643,7 @@ FUNC_RESULT SchedRegion::Optimize_(Milliseconds startTime,
                    bestSchedLngth_, bestSched_->GetSpillCost(), bestCost_,
                    imprvmnt);
     }
-    stats::unsolvedProblemSize.Record(dataDepGraph_->GetInstCnt());
+    stats::unsolvedProblemSize.Record(dataDepGraph_->GetInstCount());
   }
 
   return rslt;

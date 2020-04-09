@@ -112,8 +112,8 @@ public:
   // TODO(max): Document.
   virtual ~DataDepStruct();
 
-  virtual InstCount GetInstCnt();
-  virtual InstCount GetOrgnlInstCnt();
+  virtual InstCount GetInstCount();
+  virtual InstCount GetOrgnlInstCount();
   virtual SchedInstruction *GetInstByIndx(InstCount instIndx) = 0;
   virtual SchedInstruction *GetInstByTplgclOrdr(InstCount ordr) = 0;
   virtual SchedInstruction *GetInstByRvrsTplgclOrdr(InstCount ordr) = 0;
@@ -121,7 +121,7 @@ public:
   virtual SchedInstruction *GetRootInst() = 0;
   virtual SchedInstruction *GetLeafInst() = 0;
 
-  void GetInstCntPerIssuType(InstCount instCntPerIssuType[]);
+  void GetInstCountPerIssuType(InstCount instCountPerIssuType[]);
   bool IncludesUnpipelined();
 
   virtual bool IsInGraph(SchedInstruction *inst) = 0;
@@ -142,17 +142,17 @@ protected:
   DEP_GRAPH_TYPE type_;
 
   // The total number of instructions in the graph.
-  InstCount instCnt_;
+  InstCount instCount_;
 
   // An array of pointers to instructions.
   // TODO(max): Elaborate.
   SchedInstruction **insts_;
 
   // The number of issue types of the machine which this graph uses.
-  int16_t issuTypeCnt_;
+  int16_t issuTypeCount_;
 
   // An array holding the number of instructions of each issue type.
-  InstCount *instCntPerIssuType_;
+  InstCount *instCountPerIssuType_;
 
   InstCount schedLwrBound_;
   InstCount schedUprBound_;
@@ -251,9 +251,9 @@ public:
   void PrintInstTypeInfo(FILE *file);
 
   // Count dependences and cross-dependences
-  void CountDeps(InstCount &totDepCnt, InstCount &crossDepCnt);
+  void CountDeps(InstCount &totDepCount, InstCount &crossDepCount);
 
-  int GetBscBlkCnt();
+  int GetBscBlkCount();
   bool IsInGraph(SchedInstruction *inst);
   InstCount GetInstIndx(SchedInstruction *inst);
   InstCount GetRltvCrtclPath(SchedInstruction *ref, SchedInstruction *inst,
@@ -272,21 +272,21 @@ public:
   bool IncludesNonStandardBlock();
   bool IncludesCall();
 
-  InstCount GetRealInstCnt();
+  InstCount GetRealInstCount();
   InstCount GetCodeSize();
   void SetHard(bool isHard);
   bool IsHard() { return isHard_; }
 
-  int GetEntryInstCnt() { return entryInstCnt_; }
-  int GetExitInstCnt() { return exitInstCnt_; }
+  int GetEntryInstCount() { return entryInstCount_; }
+  int GetExitInstCount() { return exitInstCount_; }
 
   InstCount GetMaxFileSchedOrder() { return maxFileSchedOrder_; }
-  void PrintEdgeCntPerLtncyInfo();
+  void PrintEdgeCountPerLtncyInfo();
 
-  int16_t GetMaxUseCnt() { return maxUseCnt_; }
-  int16_t GetRegTypeCnt() { return machMdl_->GetRegTypeCnt(); }
-  int GetPhysRegCnt(int16_t regType) {
-    return machMdl_->GetPhysRegCnt(regType);
+  int16_t GetMaxUseCount() { return maxUseCount_; }
+  int16_t GetRegTypeCount() { return machMdl_->GetRegTypeCount(); }
+  int GetPhysRegCount(int16_t regType) {
+    return machMdl_->GetPhysRegCount(regType);
   }
 
   RegisterFile *getRegFiles() { return RegFiles.get(); }
@@ -294,13 +294,13 @@ public:
 protected:
   // TODO(max): Get rid of this.
   // Number of basic blocks
-  int32_t bscBlkCnt_;
+  int32_t bscBlkCount_;
 
   // How many instruction types are supported
-  int16_t instTypeCnt_;
+  int16_t instTypeCount_;
 
   // An array holding the number of instructions of each type
-  InstCount *instCntPerType_;
+  InstCount *instCountPerType_;
 
   // The total sum of latencies in the entire graph
   // Will be useful to compute an absolute upper bound on the schedule length
@@ -321,7 +321,7 @@ protected:
   InstCount fileSchedLngth_;
   InstCount minFileSchedCycle_;
   InstCount maxFileSchedOrder_;
-  int16_t maxUseCnt_;
+  int16_t maxUseCount_;
 
   // Final upper and lower bounds when the solver completes or times out
   InstCount finalLwrBound_;
@@ -361,20 +361,20 @@ protected:
   bool includesUnsupported_;
   bool includesNonStandardBlock_;
 
-  InstCount realInstCnt_;
+  InstCount realInstCount_;
   bool isHard_;
 
-  int entryInstCnt_;
-  int exitInstCnt_;
+  int entryInstCount_;
+  int exitInstCount_;
 
   LATENCY_PRECISION ltncyPrcsn_;
-  int edgeCntPerLtncy_[MAX_LATENCY_VALUE + 1];
+  int edgeCountPerLtncy_[MAX_LATENCY_VALUE + 1];
 
   // Tracks all registers in the scheduling region. Each RegisterFile
   // object holds all registers for a given register type.
   std::unique_ptr<RegisterFile[]> RegFiles;
 
-  void AllocArrays_(InstCount instCnt);
+  void AllocArrays_(InstCount instCount);
   FUNC_RESULT ParseF2Nodes_(SpecsBuffer *specsBuf, MachineModel *machMdl);
   FUNC_RESULT ParseF2Edges_(SpecsBuffer *specsBuf, MachineModel *machMdl);
   FUNC_RESULT ParseF2Blocks_(SpecsBuffer *buf);
@@ -390,7 +390,7 @@ protected:
                                 InstCount fileSchedCycle, InstCount fileLB,
                                 InstCount fileUB, int blkNum);
   void AddNode_(SchedInstruction *instPtr, InstCount instNum);
-  FUNC_RESULT FinishNode_(InstCount nodeNum, InstCount edgeCnt = -1);
+  FUNC_RESULT FinishNode_(InstCount nodeNum, InstCount edgeCount = -1);
   void CreateEdge_(InstCount frmInstNum, InstCount toInstNum, int ltncy,
                    DependenceType depType);
 
@@ -415,9 +415,9 @@ class DataDepSubGraph : public DataDepStruct {
 protected:
   DataDepGraph *fullGraph_;
 
-  InstCount maxInstCnt_;
-  InstCount extrnlInstCnt_;
-  InstCount cmpnstdInstCnt_;
+  InstCount maxInstCount_;
+  InstCount extrnlInstCount_;
+  InstCount cmpnstdInstCount_;
   bool instsChngd_;
   bool instAdded_;
   SUB_GRAPH_TYPE subType_;
@@ -456,7 +456,7 @@ protected:
   InstCount rejoinCycle_;
 
 #ifdef IS_DEBUG
-  int errorCnt_;
+  int errorCount_;
 #endif
 
 #ifdef IS_DEBUG_TRACE_ENUM
@@ -480,7 +480,7 @@ protected:
   void CmputCrtclPaths_(DIRECTION dir);
   void CmputCrtclPaths_();
   void FindFrstCycleRange_(InstCount &minFrstCycle, InstCount &maxFrstCycle);
-  InstCount GetRealInstCnt_();
+  InstCount GetRealInstCount_();
 
   bool TightnDynmcLwrBound_(InstCount frstCycle, InstCount minLastCycle,
                             InstCount maxLastCycle, InstCount trgtLwrBound,
@@ -517,7 +517,7 @@ protected:
   InstCount CmputMaxDeadline_();
   bool CmputEntTrmnlDynmcLwrBound_(InstCount &dynmcLwrBound,
                                    InstCount trgtLwrBound);
-  InstCount GetLostInstCnt_();
+  InstCount GetLostInstCount_();
 
   //  void CmputExtrnlLtncs_(InstCount rejoinCycle);
   InstCount CmputExtrnlLtncs_(InstCount rejoinCycle, SchedInstruction *inst);
@@ -532,7 +532,7 @@ protected:
   InstCount CmputAbslutUprBound_();
 
 public:
-  DataDepSubGraph(DataDepGraph *fullGraph, InstCount maxInstCnt,
+  DataDepSubGraph(DataDepGraph *fullGraph, InstCount maxInstCount,
                   MachineModel *machMdl);
   virtual ~DataDepSubGraph();
   void InitForSchdulng(bool clearAll);
@@ -565,7 +565,7 @@ public:
   void RmvExtrnlInst(SchedInstruction *inst);
   InstCount GetDistFrmLeaf(SchedInstruction *inst);
   void GetLwrBounds(InstCount *&frwrdLwrBounds, InstCount *&bkwrdLwrBounds);
-  InstCount GetOrgnlInstCnt();
+  InstCount GetOrgnlInstCount();
 
   void InstLost(SchedInstruction *inst);
   void UndoInstLost(SchedInstruction *inst);
@@ -585,17 +585,17 @@ private:
   int issuRate_;
 
   // The total number of instructions to be scheduled
-  InstCount totInstCnt_;
+  InstCount totInstCount_;
 
   // The total number of slots available
-  InstCount totSlotCnt_;
+  InstCount totSlotCount_;
 
   // The number of instructions that have been scheduled so far
-  // When this is equal to totInstCnt_ we have a complete schedule
-  InstCount schduldInstCnt_;
+  // When this is equal to totInstCount_ we have a complete schedule
+  InstCount schduldInstCount_;
 
   // The maximum number of instructions scheduled. Useful in backtracking mode
-  InstCount maxSchduldInstCnt_;
+  InstCount maxSchduldInstCount_;
 
   // The maximum instruction number scheduled
   InstCount maxInstNumSchduld_;
@@ -634,12 +634,12 @@ private:
   InstCount *peakRegPressures_;
 
   // The number of conflicts among live ranges
-  int cnflctCnt_;
+  int cnflctCount_;
 
   // The number of live ranges involved in high-reg pressure sections
   // exceeding the physical reg limit. These live ranges may get spilled
   // by the reg allocator
-  int spillCnddtCnt_;
+  int spillCnddtCount_;
 
   MachineModel *machMdl_;
 
@@ -693,9 +693,9 @@ public:
   InstCount GetSpillCost(InstCount stepNum);
   InstCount GetTotSpillCost();
   int GetConflictCount();
-  void SetConflictCount(int cnflctCnt);
+  void SetConflictCount(int cnflctCount);
   int GetSpillCandidateCount();
-  void SetSpillCandidateCount(int cnflctCnt);
+  void SetSpillCandidateCount(int cnflctCount);
 
   void Print(std::ostream &out, char const *const title);
   void PrintInstList(FILE *file, DataDepGraph *dataDepGraph,

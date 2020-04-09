@@ -12,8 +12,8 @@ ReadyList::ReadyList(DataDepGraph *dataDepGraph, SchedPriorities prirts) {
   int i;
   uint16_t totKeyBits = 0;
 
-  useCntBits_ = crtclPathBits_ = scsrCntBits_ = ltncySumBits_ = nodeID_Bits_ =
-      inptSchedOrderBits_ = 0;
+  useCountBits_ = crtclPathBits_ = scsrCountBits_ = ltncySumBits_ =
+      nodeID_Bits_ = inptSchedOrderBits_ = 0;
 
   // Calculate the number of bits needed to hold the maximum value of each
   // priority scheme
@@ -28,24 +28,24 @@ ReadyList::ReadyList(DataDepGraph *dataDepGraph, SchedPriorities prirts) {
 
     case LSH_LUC:
       keyedEntries_ = new KeyedEntry<SchedInstruction, unsigned long>
-          *[dataDepGraph->GetInstCnt()];
-      for (int j = 0; j < dataDepGraph->GetInstCnt(); j++) {
+          *[dataDepGraph->GetInstCount()];
+      for (int j = 0; j < dataDepGraph->GetInstCount(); j++) {
         keyedEntries_[j] = NULL;
       }
-      maxUseCnt_ = dataDepGraph->GetMaxUseCnt();
-      useCntBits_ = Utilities::clcltBitsNeededToHoldNum(maxUseCnt_);
-      totKeyBits += useCntBits_;
+      maxUseCount_ = dataDepGraph->GetMaxUseCount();
+      useCountBits_ = Utilities::clcltBitsNeededToHoldNum(maxUseCount_);
+      totKeyBits += useCountBits_;
       break;
 
     case LSH_UC:
-      maxUseCnt_ = dataDepGraph->GetMaxUseCnt();
-      useCntBits_ = Utilities::clcltBitsNeededToHoldNum(maxUseCnt_);
-      totKeyBits += useCntBits_;
+      maxUseCount_ = dataDepGraph->GetMaxUseCount();
+      useCountBits_ = Utilities::clcltBitsNeededToHoldNum(maxUseCount_);
+      totKeyBits += useCountBits_;
       break;
 
     case LSH_NID:
     case LSH_LLVM:
-      maxNodeID_ = dataDepGraph->GetInstCnt() - 1;
+      maxNodeID_ = dataDepGraph->GetInstCount() - 1;
       nodeID_Bits_ = Utilities::clcltBitsNeededToHoldNum(maxNodeID_);
       totKeyBits += nodeID_Bits_;
       break;
@@ -58,9 +58,9 @@ ReadyList::ReadyList(DataDepGraph *dataDepGraph, SchedPriorities prirts) {
       break;
 
     case LSH_SC:
-      maxScsrCnt_ = dataDepGraph->GetMaxScsrCnt();
-      scsrCntBits_ = Utilities::clcltBitsNeededToHoldNum(maxScsrCnt_);
-      totKeyBits += scsrCntBits_;
+      maxScsrCount_ = dataDepGraph->GetMaxScsrCount();
+      scsrCountBits_ = Utilities::clcltBitsNeededToHoldNum(maxScsrCount_);
+      totKeyBits += scsrCountBits_;
       break;
 
     case LSH_LS:
@@ -91,8 +91,8 @@ ReadyList::ReadyList(DataDepGraph *dataDepGraph, SchedPriorities prirts) {
       break;
     case LSH_LUC:
     case LSH_UC:
-      AddPrirtyToKey_(maxPriority_, keySize, useCntBits_, maxUseCnt_,
-                      maxUseCnt_);
+      AddPrirtyToKey_(maxPriority_, keySize, useCountBits_, maxUseCount_,
+                      maxUseCount_);
       break;
     case LSH_NID:
     case LSH_LLVM:
@@ -104,8 +104,8 @@ ReadyList::ReadyList(DataDepGraph *dataDepGraph, SchedPriorities prirts) {
                       maxInptSchedOrder_, maxInptSchedOrder_);
       break;
     case LSH_SC:
-      AddPrirtyToKey_(maxPriority_, keySize, scsrCntBits_, maxScsrCnt_,
-                      maxScsrCnt_);
+      AddPrirtyToKey_(maxPriority_, keySize, scsrCountBits_, maxScsrCount_,
+                      maxScsrCount_);
       break;
     case LSH_LS:
       AddPrirtyToKey_(maxPriority_, keySize, ltncySumBits_, maxLtncySum_,
@@ -131,8 +131,8 @@ void ReadyList::Reset() {
 }
 
 void ReadyList::CopyList(ReadyList *othrLst) {
-  assert(prirtyLst_->GetElmntCnt() == 0);
-  assert(latestSubLst_->GetElmntCnt() == 0);
+  assert(prirtyLst_->GetElmntCount() == 0);
+  assert(latestSubLst_->GetElmntCount() == 0);
   assert(othrLst != NULL);
   prirtyLst_->CopyList(othrLst->prirtyLst_);
 }
@@ -142,7 +142,7 @@ unsigned long ReadyList::CmputKey_(SchedInstruction *inst, bool isUpdate,
   unsigned long key = 0;
   int16_t keySize = 0;
   int i;
-  int16_t oldLastUseCnt, newLastUseCnt;
+  int16_t oldLastUseCount, newLastUseCount;
   changed = true;
   if (isUpdate)
     changed = false;
@@ -156,17 +156,19 @@ unsigned long ReadyList::CmputKey_(SchedInstruction *inst, bool isUpdate,
       break;
 
     case LSH_LUC:
-      oldLastUseCnt = inst->GetLastUseCnt();
-      newLastUseCnt = inst->CmputLastUseCnt();
-      assert(!isUpdate || newLastUseCnt >= oldLastUseCnt);
-      if (newLastUseCnt != oldLastUseCnt)
+      oldLastUseCount = inst->GetLastUseCount();
+      newLastUseCount = inst->CmputLastUseCount();
+      assert(!isUpdate || newLastUseCount >= oldLastUseCount);
+      if (newLastUseCount != oldLastUseCount)
         changed = true;
 
-      AddPrirtyToKey_(key, keySize, useCntBits_, newLastUseCnt, maxUseCnt_);
+      AddPrirtyToKey_(key, keySize, useCountBits_, newLastUseCount,
+                      maxUseCount_);
       break;
 
     case LSH_UC:
-      AddPrirtyToKey_(key, keySize, useCntBits_, inst->GetUseCnt(), maxUseCnt_);
+      AddPrirtyToKey_(key, keySize, useCountBits_, inst->GetUseCount(),
+                      maxUseCount_);
       break;
 
     case LSH_NID:
@@ -182,8 +184,8 @@ unsigned long ReadyList::CmputKey_(SchedInstruction *inst, bool isUpdate,
       break;
 
     case LSH_SC:
-      AddPrirtyToKey_(key, keySize, scsrCntBits_, inst->GetScsrCnt(),
-                      maxScsrCnt_);
+      AddPrirtyToKey_(key, keySize, scsrCountBits_, inst->GetScsrCount(),
+                      maxScsrCount_);
       break;
 
     case LSH_LS:
@@ -197,7 +199,7 @@ unsigned long ReadyList::CmputKey_(SchedInstruction *inst, bool isUpdate,
 
 void ReadyList::AddLatestSubLists(LinkedList<SchedInstruction> *lst1,
                                   LinkedList<SchedInstruction> *lst2) {
-  assert(latestSubLst_->GetElmntCnt() == 0);
+  assert(latestSubLst_->GetElmntCount() == 0);
   if (lst1 != NULL)
     AddLatestSubList_(lst1);
   if (lst2 != NULL)
@@ -289,7 +291,9 @@ void ReadyList::AddList(LinkedList<SchedInstruction> *lst) {
   prirtyLst_->ResetIterator();
 }
 
-InstCount ReadyList::GetInstCnt() const { return prirtyLst_->GetElmntCnt(); }
+InstCount ReadyList::GetInstCount() const {
+  return prirtyLst_->GetElmntCount();
+}
 
 SchedInstruction *ReadyList::GetNextPriorityInst() {
   return prirtyLst_->GetNxtPriorityElmnt();
@@ -315,18 +319,18 @@ void ReadyList::UpdatePriorities() {
 
 void ReadyList::RemoveNextPriorityInst() { prirtyLst_->RmvCrntElmnt(); }
 
-bool ReadyList::FindInst(SchedInstruction *inst, int &hitCnt) {
-  return prirtyLst_->FindElmnt(inst, hitCnt);
+bool ReadyList::FindInst(SchedInstruction *inst, int &hitCount) {
+  return prirtyLst_->FindElmnt(inst, hitCount);
 }
 
 void ReadyList::AddPrirtyToKey_(unsigned long &key, int16_t &keySize,
-                                int16_t bitCnt, unsigned long val,
+                                int16_t bitCount, unsigned long val,
                                 unsigned long maxVal) {
   assert(val <= maxVal);
   if (keySize > 0)
-    key <<= bitCnt;
+    key <<= bitCount;
   key |= val;
-  keySize += bitCnt;
+  keySize += bitCount;
 }
 
 unsigned long ReadyList::MaxPriority() { return maxPriority_; }

@@ -109,15 +109,15 @@ void HistEnumTreeNode::SetLwrBounds_(InstCount lwrBounds[],
                                      InstCount thisTime,
                                      InstCount minTimeToExmn,
                                      Enumerator *enumrtr) {
-  InstCount instCnt = enumrtr->totInstCnt_;
+  InstCount instCount = enumrtr->totInstCount_;
 
-  for (InstCount i = 0; i < instCnt; i++) {
+  for (InstCount i = 0; i < instCount; i++) {
     lwrBounds[i] = 0;
   }
 
-  InstCount entryCnt = SetLastInsts_(lastInsts, thisTime, minTimeToExmn);
+  InstCount entryCount = SetLastInsts_(lastInsts, thisTime, minTimeToExmn);
 
-  for (InstCount indx = 0; indx < entryCnt; indx++) {
+  for (InstCount indx = 0; indx < entryCount; indx++) {
     InstCount time = thisTime - indx;
     InstCount cycleNum = enumrtr->GetCycleNumFrmTime_(time);
     SchedInstruction *inst = lastInsts[indx];
@@ -212,11 +212,11 @@ bool HistEnumTreeNode::DoesDominate_(EnumTreeNode *node,
     }
   }
 
-  InstCount entryCnt;
+  InstCount entryCount;
   InstCount minTimeToExmn = GetMinTimeToExmn_(thisTime, enumrtr);
 
-  entryCnt = SetLastInsts_(lastInsts, thisTime, minTimeToExmn);
-  assert(entryCnt == thisTime - minTimeToExmn + 1);
+  entryCount = SetLastInsts_(lastInsts, thisTime, minTimeToExmn);
+  assert(entryCount == thisTime - minTimeToExmn + 1);
 
   assert(lastInsts != NULL);
   bool isAbslutDmnnt = true;
@@ -228,7 +228,7 @@ bool HistEnumTreeNode::DoesDominate_(EnumTreeNode *node,
 
   CmputNxtAvlblCycles_(enumrtr, instsPerType, nxtAvlblCycles);
 
-  for (indx = 0; indx < entryCnt; indx++) {
+  for (indx = 0; indx < entryCount; indx++) {
     time = thisTime - indx;
     InstCount cycleNum = enumrtr->GetCycleNumFrmTime_(time);
     SchedInstruction *inst = lastInsts[indx];
@@ -286,9 +286,9 @@ void HistEnumTreeNode::CmputNxtAvlblCycles_(Enumerator *enumrtr,
   InstCount cycleNum = crntCycle;
 
   MachineModel *machMdl = enumrtr->machMdl_;
-  int issuTypeCnt = machMdl->GetIssueTypeCnt();
+  int issuTypeCount = machMdl->GetIssueTypeCount();
 
-  for (int i = 0; i < issuTypeCnt; i++) {
+  for (int i = 0; i < issuTypeCount; i++) {
     instsPerType[i] = 0;
     nxtAvlblCycles[i] = crntCycle;
   }
@@ -304,7 +304,7 @@ void HistEnumTreeNode::CmputNxtAvlblCycles_(Enumerator *enumrtr,
       continue;
 
     IssueType issuType = inst->GetIssueType();
-    assert(issuType < issuTypeCnt);
+    assert(issuType < issuTypeCount);
     instsPerType[issuType]++;
 
     if (instsPerType[issuType] == machMdl->GetSlotsPerCycle(issuType)) {
@@ -490,9 +490,9 @@ bool CostHistEnumTreeNode::ChkCostDmntnForBBSpill_(EnumTreeNode *Node,
     // If the cost function is peak plus avg, make sure that the fraction lost
     // by integer divsion does not lead to false domination.
     else if (SpillCostFunc == SCF_PEAK_PLUS_AVG && cost_ == Node->GetCost()) {
-      InstCount instCnt = E->GetTotInstCnt();
+      InstCount instCount = E->GetTotInstCount();
       ShouldPrune =
-          spillCostSum_ % instCnt >= Node->GetSpillCostSum() % instCnt;
+          spillCostSum_ % instCount >= Node->GetSpillCostSum() % instCount;
     }
   }
   return ShouldPrune;

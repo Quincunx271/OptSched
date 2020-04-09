@@ -114,7 +114,7 @@ protected:
   // The number of this region.
   long rgnNum_;
   // The number of instructions in this region.
-  InstCount instCnt_;
+  InstCount instCount_;
   // Whether to verify the schedule after calculating it.
   bool vrfySched_;
   // What list scheduler should be used to find an initial feasible schedule.

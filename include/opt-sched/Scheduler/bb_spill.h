@@ -42,7 +42,7 @@ private:
 
   bool SchedForRPOnly_;
 
-  int16_t regTypeCnt_;
+  int16_t regTypeCount_;
   RegisterFile *regFiles_;
 
   // A bit vector indexed by register number indicating whether that
@@ -64,11 +64,11 @@ private:
   // calculated.
   InstCount dynamicSlilLowerBound_ = 0;
 
-  int entryInstCnt_;
-  int exitInstCnt_;
-  int schduldEntryInstCnt_;
-  int schduldExitInstCnt_;
-  int schduldInstCnt_;
+  int entryInstCount_;
+  int exitInstCount_;
+  int schduldEntryInstCount_;
+  int schduldExitInstCount_;
+  int schduldInstCount_;
 
   InstCount *spillCosts_;
   // Current register pressure for each register type.

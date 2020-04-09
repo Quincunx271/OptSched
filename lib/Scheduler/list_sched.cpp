@@ -29,7 +29,7 @@ SchedInstruction *ListScheduler::PickInst() const {
 }
 
 FUNC_RESULT ListScheduler::FindSchedule(InstSchedule *sched, SchedRegion *rgn) {
-  InstCount rdyLstSize, maxRdyLstSize = 0, avgRdyLstSize = 0, iterCnt = 0;
+  InstCount rdyLstSize, maxRdyLstSize = 0, avgRdyLstSize = 0, iterCount = 0;
   bool isEmptyCycle = true;
 
   crntSched_ = sched;
@@ -41,8 +41,8 @@ FUNC_RESULT ListScheduler::FindSchedule(InstSchedule *sched, SchedRegion *rgn) {
     UpdtRdyLst_(crntCycleNum_, crntSlotNum_);
     rdyLst_->ResetIterator();
 
-    iterCnt++;
-    rdyLstSize = rdyLst_->GetInstCnt();
+    iterCount++;
+    rdyLstSize = rdyLst_->GetInstCount();
     if (rdyLstSize > maxRdyLstSize)
       maxRdyLstSize = rdyLstSize;
     avgRdyLstSize += rdyLstSize;
@@ -114,7 +114,7 @@ bool SequentialListScheduler::ChkInstLglty_(SchedInstruction *inst) const {
   }
 
   IssueType issuType = inst->GetIssueType();
-  assert(issuType < issuTypeCnt_);
+  assert(issuType < issuTypeCount_);
   assert(avlblSlotsInCrntCycle_[issuType] >= 0);
   return (avlblSlotsInCrntCycle_[issuType] > 0);
 }

@@ -51,7 +51,7 @@ public:
   void RemoveNextPriorityInst();
 
   // Returns the number of instructions currently in the list.
-  InstCount GetInstCnt() const;
+  InstCount GetInstCount() const;
 
   // Resets the list iterator to point back to the first instruction.
   void ResetIterator();
@@ -70,8 +70,8 @@ public:
   void CopyList(ReadyList *otherLst);
 
   // Searches the list for an instruction, returning whether it has been found
-  // or not and writing the number of times it was found into hitCnt.
-  bool FindInst(SchedInstruction *inst, int &hitCnt);
+  // or not and writing the number of times it was found into hitCount.
+  bool FindInst(SchedInstruction *inst, int &hitCount);
 
   // Update instruction priorities within the list
   // Called only if the priorities change dynamically during scheduling
@@ -99,9 +99,9 @@ private:
   //    bool isDynmcPrirty_;
 
   // The maximum values for each part of the priority key.
-  InstCount maxUseCnt_;
+  InstCount maxUseCount_;
   InstCount maxCrtclPath_;
-  InstCount maxScsrCnt_;
+  InstCount maxScsrCount_;
   InstCount maxLtncySum_;
   InstCount maxNodeID_;
   InstCount maxInptSchedOrder_;
@@ -109,9 +109,9 @@ private:
   unsigned long maxPriority_;
 
   // The number of bits for each part of the priority key.
-  int16_t useCntBits_;
+  int16_t useCountBits_;
   int16_t crtclPathBits_;
-  int16_t scsrCntBits_;
+  int16_t scsrCountBits_;
   int16_t ltncySumBits_;
   int16_t nodeID_Bits_;
   int16_t inptSchedOrderBits_;
@@ -124,9 +124,9 @@ private:
   void AddLatestSubList_(LinkedList<SchedInstruction> *lst);
 
   // Calculates a new priority key given an existing key of size keySize by
-  // appending bitCnt bits holding the value val, assuming val < maxVal.
+  // appending bitCount bits holding the value val, assuming val < maxVal.
   static void AddPrirtyToKey_(unsigned long &key, int16_t &keySize,
-                              int16_t bitCnt, unsigned long val,
+                              int16_t bitCount, unsigned long val,
                               unsigned long maxVal);
 };
 

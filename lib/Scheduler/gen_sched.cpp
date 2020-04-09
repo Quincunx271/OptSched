@@ -18,28 +18,28 @@ InstScheduler::InstScheduler(DataDepStruct *dataDepGraph, MachineModel *machMdl,
   // PATCH.
   schedUprBound_ += 1;
 
-  totInstCnt_ = dataDepGraph->GetInstCnt();
+  totInstCount_ = dataDepGraph->GetInstCount();
   rootInst_ = dataDepGraph->GetRootInst();
   leafInst_ = dataDepGraph->GetLeafInst();
 
   issuRate_ = machMdl_->GetIssueRate();
-  issuTypeCnt_ = machMdl_->GetIssueTypeCnt();
+  issuTypeCount_ = machMdl_->GetIssueTypeCount();
 
-  schduldInstCnt_ = 0;
+  schduldInstCount_ = 0;
 
-  slotsPerTypePerCycle_ = new int[issuTypeCnt_];
-  instCntPerIssuType_ = new InstCount[issuTypeCnt_];
+  slotsPerTypePerCycle_ = new int[issuTypeCount_];
+  instCountPerIssuType_ = new InstCount[issuTypeCount_];
 
-  issuTypeCnt_ = machMdl_->GetSlotsPerCycle(slotsPerTypePerCycle_);
+  issuTypeCount_ = machMdl_->GetSlotsPerCycle(slotsPerTypePerCycle_);
 
-  dataDepGraph->GetInstCntPerIssuType(instCntPerIssuType_);
+  dataDepGraph->GetInstCountPerIssuType(instCountPerIssuType_);
 
   includesUnpipelined_ = dataDepGraph->IncludesUnpipelined();
 }
 
 InstScheduler::~InstScheduler() {
   delete[] slotsPerTypePerCycle_;
-  delete[] instCntPerIssuType_;
+  delete[] instCountPerIssuType_;
 }
 
 void ConstrainedScheduler::AllocRsrvSlots_() {
@@ -56,7 +56,7 @@ void ConstrainedScheduler::ResetRsrvSlots_() {
     rsrvSlots_[i].endCycle = INVALID_VALUE;
   }
 
-  rsrvSlotCnt_ = 0;
+  rsrvSlotCount_ = 0;
 }
 
 ConstrainedScheduler::ConstrainedScheduler(DataDepGraph *dataDepGraph,
@@ -75,17 +75,17 @@ ConstrainedScheduler::ConstrainedScheduler(DataDepGraph *dataDepGraph,
 
   rdyLst_ = NULL;
   crntSched_ = NULL;
-  schduldInstCnt_ = 0;
+  schduldInstCount_ = 0;
   crntSlotNum_ = 0;
   crntRealSlotNum_ = 0;
   crntCycleNum_ = 0;
   isCrntCycleBlkd_ = false;
   consecEmptyCycles_ = 0;
 
-  avlblSlotsInCrntCycle_ = new int16_t[issuTypeCnt_];
+  avlblSlotsInCrntCycle_ = new int16_t[issuTypeCount_];
 
   rsrvSlots_ = NULL;
-  rsrvSlotCnt_ = 0;
+  rsrvSlotCount_ = 0;
 }
 
 ConstrainedScheduler::~ConstrainedScheduler() {
@@ -101,7 +101,7 @@ ConstrainedScheduler::~ConstrainedScheduler() {
 
 bool ConstrainedScheduler::Initialize_(InstCount trgtSchedLngth,
                                        LinkedList<SchedInstruction> *fxdLst) {
-  for (int i = 0; i < totInstCnt_; i++) {
+  for (int i = 0; i < totInstCount_; i++) {
     SchedInstruction *inst = dataDepGraph_->GetInstByIndx(i);
     if (!inst->InitForSchdulng(trgtSchedLngth, fxdLst))
       return false;
@@ -119,10 +119,10 @@ bool ConstrainedScheduler::Initialize_(InstCount trgtSchedLngth,
     rsrvSlots_ = NULL;
   }
 
-  rsrvSlotCnt_ = 0;
+  rsrvSlotCount_ = 0;
 
   // Dynamic data.
-  schduldInstCnt_ = 0;
+  schduldInstCount_ = 0;
   crntSlotNum_ = 0;
   crntRealSlotNum_ = 0;
   crntCycleNum_ = 0;
@@ -161,7 +161,7 @@ void ConstrainedScheduler::SchdulInst_(SchedInstruction *inst, InstCount) {
     isCrntCycleBlkd_ = true;
   }
 
-  schduldInstCnt_++;
+  schduldInstCount_++;
 }
 
 void ConstrainedScheduler::UnSchdulInst_(SchedInstruction *inst) {
@@ -188,7 +188,7 @@ void ConstrainedScheduler::UnSchdulInst_(SchedInstruction *inst) {
     }
   }
 
-  schduldInstCnt_--;
+  schduldInstCount_--;
 }
 
 void ConstrainedScheduler::DoRsrvSlots_(SchedInstruction *inst) {
@@ -200,7 +200,7 @@ void ConstrainedScheduler::DoRsrvSlots_(SchedInstruction *inst) {
       AllocRsrvSlots_();
     rsrvSlots_[crntSlotNum_].strtCycle = crntCycleNum_;
     rsrvSlots_[crntSlotNum_].endCycle = crntCycleNum_ + inst->GetMaxLtncy() - 1;
-    rsrvSlotCnt_++;
+    rsrvSlotCount_++;
   }
 }
 
@@ -212,17 +212,17 @@ void ConstrainedScheduler::UndoRsrvSlots_(SchedInstruction *inst) {
     assert(rsrvSlots_ != NULL);
     rsrvSlots_[inst->GetSchedSlot()].strtCycle = INVALID_VALUE;
     rsrvSlots_[inst->GetSchedSlot()].endCycle = INVALID_VALUE;
-    rsrvSlotCnt_--;
+    rsrvSlotCount_--;
   }
 }
 
 bool InstScheduler::IsSchedComplete_() {
-  return schduldInstCnt_ == totInstCnt_;
+  return schduldInstCount_ == totInstCount_;
 }
 
 void ConstrainedScheduler::InitNewCycle_() {
   assert(crntSlotNum_ == 0 && crntRealSlotNum_ == 0);
-  for (int i = 0; i < issuTypeCnt_; i++) {
+  for (int i = 0; i < issuTypeCount_; i++) {
     avlblSlotsInCrntCycle_[i] = slotsPerTypePerCycle_[i];
   }
   isCrntCycleBlkd_ = false;
@@ -303,7 +303,7 @@ bool ConstrainedScheduler::ChkInstLglty_(SchedInstruction *inst) const {
   }
 
   IssueType issuType = inst->GetIssueType();
-  assert(issuType < issuTypeCnt_);
+  assert(issuType < issuTypeCount_);
   assert(avlblSlotsInCrntCycle_[issuType] >= 0);
   // Logger::Info("avlblSlots = %d", avlblSlotsInCrntCycle_[issuType]);
   return (avlblSlotsInCrntCycle_[issuType] > 0);
@@ -321,7 +321,7 @@ void ConstrainedScheduler::UpdtSlotAvlblty_(SchedInstruction *inst) {
   if (inst == NULL)
     return;
   IssueType issuType = inst->GetIssueType();
-  assert(issuType < issuTypeCnt_);
+  assert(issuType < issuTypeCount_);
   assert(avlblSlotsInCrntCycle_[issuType] > 0);
   avlblSlotsInCrntCycle_[issuType]--;
 }

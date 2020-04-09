@@ -43,7 +43,7 @@ protected:
   bool *isFxd_;
   bool useFxng_;
 
-  InstCount fxdInstCnt_;
+  InstCount fxdInstCount_;
 
   // the main direction
   DIRECTION mainDir_;
@@ -53,14 +53,14 @@ protected:
 
   bool writeBack_;
 
-  int16_t instCntBits_;
+  int16_t instCountBits_;
 
   RLXD_SCHED_TYPE schedType_;
 
   InstCount *frwrdLwrBounds_;
   InstCount *bkwrdLwrBounds_;
 
-  InstCount maxInstCnt_;
+  InstCount maxInstCount_;
 
 #ifdef IS_DEBUG
   bool *wasLwrBoundCmputd_;
@@ -96,7 +96,7 @@ protected:
 public:
   RelaxedScheduler(DataDepStruct *dataDepGraph, MachineModel *machMdl,
                    InstCount uprBound, DIRECTION schedDir,
-                   RLXD_SCHED_TYPE schedType, InstCount maxInstCnt);
+                   RLXD_SCHED_TYPE schedType, InstCount maxInstCount);
   virtual ~RelaxedScheduler();
 
   // Find a feasible relaxed schedule and return its length
@@ -110,7 +110,7 @@ public:
 
 class RJ_RelaxedScheduler : public RelaxedScheduler {
 private:
-  InstCount chkdInstCnt_;
+  InstCount chkdInstCount_;
 
   void Initialize_(bool setPrirtyLst);
   void InitChkng_(InstCount crntCycle);
@@ -121,7 +121,7 @@ public:
   RJ_RelaxedScheduler(DataDepStruct *dataDepGraph, MachineModel *machMdl,
                       InstCount uprBound, DIRECTION schedDir,
                       RLXD_SCHED_TYPE schedType,
-                      InstCount maxInstCnt = INVALID_VALUE);
+                      InstCount maxInstCount = INVALID_VALUE);
   ~RJ_RelaxedScheduler();
 
   inline void Initialize(bool setPrirtyLst);
@@ -242,7 +242,7 @@ In line Functions
 InstCount RelaxedScheduler::FindNxtAvlblCycle_(IssueType issuType,
                                                InstCount strtCycle) {
   for (InstCount cycleNum = strtCycle; cycleNum < schedUprBound_; cycleNum++) {
-    assert(issuType < issuTypeCnt_);
+    assert(issuType < issuTypeCount_);
 
     if (avlblSlots_[issuType][cycleNum] > 0) {
       return cycleNum;
@@ -269,10 +269,10 @@ unsigned long RelaxedScheduler::CmputTplgclPrirty_(SchedInstruction *inst,
   // the total # of neighbors whether they are in the subgraph or not
 
   unsigned long prirty = GetCrntLwrBound_(inst, dir);
-  prirty <<= instCntBits_;
-  InstCount rcrsvPredCnt =
-      dir == DIR_FRWRD ? inst->GetRcrsvPrdcsrCnt() : inst->GetRcrsvScsrCnt();
-  prirty += rcrsvPredCnt;
+  prirty <<= instCountBits_;
+  InstCount rcrsvPredCount = dir == DIR_FRWRD ? inst->GetRcrsvPrdcsrCount()
+                                              : inst->GetRcrsvScsrCount();
+  prirty += rcrsvPredCount;
   return prirty;
 }
 /*****************************************************************************/
@@ -281,7 +281,7 @@ void RelaxedScheduler::SetFix_(SchedInstruction *inst, bool val) {
   assert(useFxng_);
   InstCount indx = dataDepGraph_->GetInstIndx(inst);
 
-  assert(indx < totInstCnt_);
+  assert(indx < totInstCount_);
   assert(dataDepGraph_->GetType() == DGT_SUB || indx == inst->GetNum());
   isFxd_[indx] = val;
 }
@@ -289,7 +289,7 @@ void RelaxedScheduler::SetFix_(SchedInstruction *inst, bool val) {
 
 void RelaxedScheduler::SetFix_(InstCount indx, bool val) {
   assert(useFxng_);
-  assert(indx < totInstCnt_);
+  assert(indx < totInstCount_);
   isFxd_[indx] = val;
 }
 /*****************************************************************************/
@@ -297,7 +297,7 @@ void RelaxedScheduler::SetFix_(InstCount indx, bool val) {
 bool RelaxedScheduler::GetFix_(SchedInstruction *inst) {
   assert(useFxng_);
   InstCount indx = dataDepGraph_->GetInstIndx(inst);
-  assert(indx < totInstCnt_);
+  assert(indx < totInstCount_);
   assert(dataDepGraph_->GetType() == DGT_SUB || indx == inst->GetNum());
   return isFxd_[indx];
 }
@@ -305,7 +305,7 @@ bool RelaxedScheduler::GetFix_(SchedInstruction *inst) {
 
 bool RelaxedScheduler::IsInstFxd(InstCount indx) {
   assert(useFxng_);
-  assert(0 <= indx && indx < totInstCnt_);
+  assert(0 <= indx && indx < totInstCount_);
   assert(dataDepGraph_->GetType() == DGT_SUB);
   return isFxd_[indx];
 }
@@ -313,7 +313,7 @@ bool RelaxedScheduler::IsInstFxd(InstCount indx) {
 
 void RelaxedScheduler::SetInstFxng(InstCount indx) {
   assert(useFxng_);
-  assert(0 <= indx && indx < totInstCnt_);
+  assert(0 <= indx && indx < totInstCount_);
   isFxd_[indx] = true;
 }
 /*****************************************************************************/

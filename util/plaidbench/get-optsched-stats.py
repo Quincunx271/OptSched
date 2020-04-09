@@ -72,12 +72,12 @@ benchmarks = [
 # List of stats that can be initialized to 0
 statsProcessed = [
     'TotalProcessed',
-    'EnumCnt',
+    'EnumCount',
     'OptImpr',
     'OptNotImpr',
     'TimeoutImpr',
     'TimeoutNotImpr',
-    'TimeoutCnt',
+    'TimeoutCount',
     'TotalInstr'
 ]
 
@@ -127,7 +127,7 @@ def parseStats(inputFolder):
                     # If our enumerator was called then
                     # record stats for it.
                     if 'Enumerating' in block:
-                        stats[passNum]['EnumCnt'] += 1
+                        stats[passNum]['EnumCount'] += 1
                         # Get cost
                         searchCost = REGEX_COST_IMPROV.search(block)
                         cost = int(searchCost.group(1))
@@ -157,7 +157,7 @@ def parseStats(inputFolder):
                             # Timeout but not improved
                             elif cost == 0:
                                 stats[passNum]['TimeoutNotImpr'] += 1
-                            stats[passNum]['TimeoutCnt'] += 1
+                            stats[passNum]['TimeoutCount'] += 1
                             
                                                         
         # If the file doesn't exist, output error log.
@@ -167,8 +167,8 @@ def parseStats(inputFolder):
         for passNum in passes:
             for stat in statsProcessed:
                 passStats[passNum][stat] += stats[passNum][stat]
-            if stats[passNum]['EnumCnt'] != 0:
-                stats[passNum]['AverageSizeToEnum'] = float(stats[passNum]['TotalInstr'])/stats[passNum]['EnumCnt']
+            if stats[passNum]['EnumCount'] != 0:
+                stats[passNum]['AverageSizeToEnum'] = float(stats[passNum]['TotalInstr'])/stats[passNum]['EnumCount']
             if passStats[passNum]['LargestOptimalRegion'] < stats[passNum]['LargestOptimalRegion']:
                 passStats[passNum]['LargestOptimalRegion'] = stats[passNum]['LargestOptimalRegion']
             if passStats[passNum]['LargestImprovedRegion'] < stats[passNum]['LargestImprovedRegion']:
@@ -177,8 +177,8 @@ def parseStats(inputFolder):
         benchStats[bench] = stats
 
     for passNum in passes:
-        if passStats[passNum]['EnumCnt'] != 0:
-            passStats[passNum]['AverageSizeToEnum'] = float(passStats[passNum]['TotalInstr'])/passStats[passNum]['EnumCnt']
+        if passStats[passNum]['EnumCount'] != 0:
+            passStats[passNum]['AverageSizeToEnum'] = float(passStats[passNum]['TotalInstr'])/passStats[passNum]['EnumCount']
 
 def printStats():
     for passNum in passes:
@@ -249,25 +249,25 @@ def createSpreadsheets(output):
         for bench in benchmarks:
             ws[col+str(row)] = benchStats[bench][passNum]['TotalProcessed']
             ws[col+str(row)].alignment = Alignment(horizontal='right')
-            if benchStats[bench][passNum]['EnumCnt'] != 0:
-                enumCntPcnt = float(benchStats[bench][passNum]['EnumCnt']) / benchStats[bench][passNum]['TotalProcessed'] * 100.0
-                ws[chr(ord(col)+1)+str(row)] = str(benchStats[bench][passNum]['EnumCnt']) + ' ({:.2f}%)'.format(enumCntPcnt)
+            if benchStats[bench][passNum]['EnumCount'] != 0:
+                enumCountPcnt = float(benchStats[bench][passNum]['EnumCount']) / benchStats[bench][passNum]['TotalProcessed'] * 100.0
+                ws[chr(ord(col)+1)+str(row)] = str(benchStats[bench][passNum]['EnumCount']) + ' ({:.2f}%)'.format(enumCountPcnt)
                 ws[chr(ord(col)+1)+str(row)].alignment = Alignment(horizontal='right')
 
-                enumCntPcnt = float(benchStats[bench][passNum]['OptImpr']) / benchStats[bench][passNum]['EnumCnt'] * 100.0
-                ws[chr(ord(col)+2)+str(row)] = str(benchStats[bench][passNum]['OptImpr']) + ' ({:.2f}%)'.format(enumCntPcnt)
+                enumCountPcnt = float(benchStats[bench][passNum]['OptImpr']) / benchStats[bench][passNum]['EnumCount'] * 100.0
+                ws[chr(ord(col)+2)+str(row)] = str(benchStats[bench][passNum]['OptImpr']) + ' ({:.2f}%)'.format(enumCountPcnt)
                 ws[chr(ord(col)+2)+str(row)].alignment = Alignment(horizontal='right')
 
-                enumCntPcnt = float(benchStats[bench][passNum]['OptNotImpr']) / benchStats[bench][passNum]['EnumCnt'] * 100.0
-                ws[chr(ord(col)+3)+str(row)] = str(benchStats[bench][passNum]['OptNotImpr']) + ' ({:.2f}%)'.format(enumCntPcnt)
+                enumCountPcnt = float(benchStats[bench][passNum]['OptNotImpr']) / benchStats[bench][passNum]['EnumCount'] * 100.0
+                ws[chr(ord(col)+3)+str(row)] = str(benchStats[bench][passNum]['OptNotImpr']) + ' ({:.2f}%)'.format(enumCountPcnt)
                 ws[chr(ord(col)+3)+str(row)].alignment = Alignment(horizontal='right')
 
-                enumCntPcnt = float(benchStats[bench][passNum]['TimeoutImpr']) / benchStats[bench][passNum]['EnumCnt'] * 100.0
-                ws[chr(ord(col)+4)+str(row)] = str(benchStats[bench][passNum]['TimeoutImpr']) + ' ({:.2f}%)'.format(enumCntPcnt)
+                enumCountPcnt = float(benchStats[bench][passNum]['TimeoutImpr']) / benchStats[bench][passNum]['EnumCount'] * 100.0
+                ws[chr(ord(col)+4)+str(row)] = str(benchStats[bench][passNum]['TimeoutImpr']) + ' ({:.2f}%)'.format(enumCountPcnt)
                 ws[chr(ord(col)+4)+str(row)].alignment = Alignment(horizontal='right')
 
-                enumCntPcnt = float(benchStats[bench][passNum]['TimeoutNotImpr']) / benchStats[bench][passNum]['EnumCnt'] * 100.0
-                ws[chr(ord(col)+5)+str(row)] = str(benchStats[bench][passNum]['TimeoutNotImpr']) + ' ({:.2f}%)'.format(enumCntPcnt)
+                enumCountPcnt = float(benchStats[bench][passNum]['TimeoutNotImpr']) / benchStats[bench][passNum]['EnumCount'] * 100.0
+                ws[chr(ord(col)+5)+str(row)] = str(benchStats[bench][passNum]['TimeoutNotImpr']) + ' ({:.2f}%)'.format(enumCountPcnt)
                 ws[chr(ord(col)+5)+str(row)].alignment = Alignment(horizontal='right')
                 
                 ws[chr(ord(col)+6)+str(row)] = benchStats[bench][passNum]['AverageSizeToEnum']
@@ -283,25 +283,25 @@ def createSpreadsheets(output):
 
         # Write overall stats
         ws[col+str(row)] = passStats[passNum]['TotalProcessed']
-        enumCntPcnt = float(passStats[passNum]['EnumCnt']) / passStats[passNum]['TotalProcessed'] * 100.0
-        ws[chr(ord(col)+1)+str(row)] = str(passStats[passNum]['EnumCnt']) + ' ({:.2f}%)'.format(enumCntPcnt)
+        enumCountPcnt = float(passStats[passNum]['EnumCount']) / passStats[passNum]['TotalProcessed'] * 100.0
+        ws[chr(ord(col)+1)+str(row)] = str(passStats[passNum]['EnumCount']) + ' ({:.2f}%)'.format(enumCountPcnt)
         ws[chr(ord(col)+1)+str(row)].alignment = Alignment(horizontal='right')
 
-        if passStats[passNum]['EnumCnt'] != 0:
-            enumCntPcnt = float(passStats[passNum]['OptImpr']) / passStats[passNum]['EnumCnt'] * 100.0
-            ws[chr(ord(col)+2)+str(row)] = str(passStats[passNum]['OptImpr']) + ' ({:.2f}%)'.format(enumCntPcnt)
+        if passStats[passNum]['EnumCount'] != 0:
+            enumCountPcnt = float(passStats[passNum]['OptImpr']) / passStats[passNum]['EnumCount'] * 100.0
+            ws[chr(ord(col)+2)+str(row)] = str(passStats[passNum]['OptImpr']) + ' ({:.2f}%)'.format(enumCountPcnt)
             ws[chr(ord(col)+2)+str(row)].alignment = Alignment(horizontal='right')
 
-            enumCntPcnt = float(passStats[passNum]['OptNotImpr']) / passStats[passNum]['EnumCnt'] * 100.0
-            ws[chr(ord(col)+3)+str(row)] = str(passStats[passNum]['OptNotImpr']) + ' ({:.2f}%)'.format(enumCntPcnt)
+            enumCountPcnt = float(passStats[passNum]['OptNotImpr']) / passStats[passNum]['EnumCount'] * 100.0
+            ws[chr(ord(col)+3)+str(row)] = str(passStats[passNum]['OptNotImpr']) + ' ({:.2f}%)'.format(enumCountPcnt)
             ws[chr(ord(col)+3)+str(row)].alignment = Alignment(horizontal='right')
 
-            enumCntPcnt = float(passStats[passNum]['TimeoutImpr']) / passStats[passNum]['EnumCnt'] * 100.0        
-            ws[chr(ord(col)+4)+str(row)] = str(passStats[passNum]['TimeoutImpr']) + ' ({:.2f}%)'.format(enumCntPcnt)
+            enumCountPcnt = float(passStats[passNum]['TimeoutImpr']) / passStats[passNum]['EnumCount'] * 100.0        
+            ws[chr(ord(col)+4)+str(row)] = str(passStats[passNum]['TimeoutImpr']) + ' ({:.2f}%)'.format(enumCountPcnt)
             ws[chr(ord(col)+4)+str(row)].alignment = Alignment(horizontal='right')
             
-            enumCntPcnt = float(passStats[passNum]['TimeoutNotImpr']) / passStats[passNum]['EnumCnt'] * 100.0
-            ws[chr(ord(col)+5)+str(row)] = str(passStats[passNum]['TimeoutNotImpr']) + ' ({:.2f}%)'.format(enumCntPcnt)
+            enumCountPcnt = float(passStats[passNum]['TimeoutNotImpr']) / passStats[passNum]['EnumCount'] * 100.0
+            ws[chr(ord(col)+5)+str(row)] = str(passStats[passNum]['TimeoutNotImpr']) + ' ({:.2f}%)'.format(enumCountPcnt)
             ws[chr(ord(col)+5)+str(row)].alignment = Alignment(horizontal='right')
             
             ws[chr(ord(col)+6)+str(row)] = passStats[passNum]['AverageSizeToEnum']

@@ -290,12 +290,12 @@ def writeStats(stats, args, dagSizesPerBenchmark):
               continue
             dagName = "%s:%d" % (functionName, blockName)
             if not dagSizesPerBenchmark[benchName] is None and dagSizesPerBenchmark[benchName][dagName] < args.mininstcnt:
-              # print("DAG %s:%d InstCnt %d does not meet minimum InstCnt requirement %d. Skipping." 
+              # print("DAG %s:%d InstCount %d does not meet minimum InstCount requirement %d. Skipping." 
               #   % (functionName, blockName, 
               #      dagSizesPerBenchmark[benchName]["%s:%d" % (functionName, blockName)], 
               #      args.mininstcnt))
               continue
-            # print("DAG %s InstCnt %d MaxPERP %d meets contraints MinInstCnt %d MinPERP %d." % 
+            # print("DAG %s InstCount %d MaxPERP %d meets contraints MinInstCount %d MinPERP %d." % 
             #   (dagName, 
             #   dagSizesPerBenchmark[benchName][dagName], 
             #   maxSetPerp, args.mininstcnt, args.minperp))
@@ -369,12 +369,12 @@ def writeStats(stats, args, dagSizesPerBenchmark):
               continue
             dagName = "%s:%d" % (functionName, blockNum)
             if not dagSizesPerBenchmark[benchName] is None and dagSizesPerBenchmark[benchName][dagName] < args.mininstcnt:
-              # print("DAG %s:%d InstCnt %d does not meet minimum InstCnt requirement %d. Skipping." 
+              # print("DAG %s:%d InstCount %d does not meet minimum InstCount requirement %d. Skipping." 
               #   % (functionName, blockNum, 
               #      dagSizesPerBenchmark[benchName]["%s:%d" % (functionName, blockNum)], 
               #      args.mininstcnt))
               continue
-            # print("DAG %s InstCnt %d MaxPERP %d meets contraints MinInstCnt %d MinPERP %d." % 
+            # print("DAG %s InstCount %d MaxPERP %d meets contraints MinInstCount %d MinPERP %d." % 
             #   (dagName, 
             #   dagSizesPerBenchmark[benchName][dagName], 
             #   maxSetPerp, args.mininstcnt, args.minperp))

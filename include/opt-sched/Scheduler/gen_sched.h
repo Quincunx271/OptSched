@@ -56,7 +56,7 @@ public:
   // Deallocates memory used by the scheduler.
   virtual ~InstScheduler();
 
-  InstCount GetTotInstCnt() { return totInstCnt_; }
+  InstCount GetTotInstCount() { return totInstCount_; }
 
 protected:
   // A pointer to the machine which this scheduler uses
@@ -66,20 +66,20 @@ protected:
   // TODO(ghassan): Eliminate.
   int issuRate_;
   // The number of issue types (pipelines) of the underlying machine model.
-  int issuTypeCnt_;
+  int issuTypeCount_;
   // The maximum number of total issue slots per cycle, for all issue types.
-  int issuSlotCnt_;
+  int issuSlotCount_;
   // How many slots of each issue type the machine has per cycle.
   int *slotsPerTypePerCycle_;
   // How many instructions of each issue type does the dependence graph
   // contain.
-  InstCount *instCntPerIssuType_;
+  InstCount *instCountPerIssuType_;
 
   // The total number of instructions to be scheduled.
-  InstCount totInstCnt_;
+  InstCount totInstCount_;
   // The number of instructions that have been scheduled so far. When this is
-  // equal to totInstCnt_ we have a complete schedule.
-  InstCount schduldInstCnt_;
+  // equal to totInstCount_ we have a complete schedule.
+  InstCount schduldInstCount_;
   // An absolute upper bound on the schedule length, used to determine data
   // structure sizes.
   InstCount schedUprBound_;
@@ -148,7 +148,7 @@ protected:
   // The reserved scheduling slots.
   ReserveSlot *rsrvSlots_;
   // The number of elements in rsrvSlots_.
-  int16_t rsrvSlotCnt_;
+  int16_t rsrvSlotCount_;
 
   // A pointer to the scheduling region. Needed to perform region-specific
   // calculations.

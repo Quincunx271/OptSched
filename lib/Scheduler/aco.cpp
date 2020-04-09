@@ -41,7 +41,7 @@ ACOScheduler::ACOScheduler(DataDepGraph *dataDepGraph,
   VrfySched_ = vrfySched;
   prirts_ = priorities;
   rdyLst_ = new ReadyList(dataDepGraph_, priorities);
-  count_ = dataDepGraph->GetInstCnt();
+  count_ = dataDepGraph->GetInstCount();
   Config &schedIni = SchedulerOptions::getInstance();
 
   use_fixed_bias = schedIni.GetBool("ACO_USE_FIXED_BIAS");
@@ -176,7 +176,7 @@ std::unique_ptr<InstSchedule> ACOScheduler::FindOneSchedule() {
     // much nicer for this particular scheduler
     UpdtRdyLst_(crntCycleNum_, crntSlotNum_);
     unsigned long heuristic;
-    ready.reserve(rdyLst_->GetInstCnt());
+    ready.reserve(rdyLst_->GetInstCount());
     SchedInstruction *inst = rdyLst_->GetNextPriorityInst(heuristic);
     while (inst != NULL) {
       if (ChkInstLglty_(inst)) {

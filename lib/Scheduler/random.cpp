@@ -91,8 +91,8 @@ uint64_t RandomGen::GetRand64() {
   return rand64;
 }
 
-void RandomGen::GetRandBits(uint16_t bitCnt, unsigned char *dest) {
-  uint16_t bytesNeeded = (bitCnt + 7) / 8;
+void RandomGen::GetRandBits(uint16_t bitCount, unsigned char *dest) {
+  uint16_t bytesNeeded = (bitCount + 7) / 8;
   uint16_t index = 0;
 
   while (bytesNeeded > 0) {

@@ -9,7 +9,7 @@ RelaxedScheduler::RelaxedScheduler(DataDepStruct *dataDepGraph,
                                    MachineModel *machMdl,
                                    InstCount schedUprBound, DIRECTION mainDir,
                                    RLXD_SCHED_TYPE schedType,
-                                   InstCount maxInstCnt)
+                                   InstCount maxInstCount)
     : InstScheduler(dataDepGraph, machMdl, schedUprBound) {
   dataDepGraph_ = dataDepGraph;
   mainDir_ = mainDir;
@@ -17,16 +17,16 @@ RelaxedScheduler::RelaxedScheduler(DataDepStruct *dataDepGraph,
   schedType_ = schedType;
   useFxng_ = (schedType == RST_DYNMC);
 
-  maxInstCnt_ = totInstCnt_;
+  maxInstCount_ = totInstCount_;
 
-  if (maxInstCnt != INVALID_VALUE) {
-    maxInstCnt_ = maxInstCnt;
+  if (maxInstCount != INVALID_VALUE) {
+    maxInstCount_ = maxInstCount;
   }
 
   // Write the bounds back only if it is a full graph
   writeBack_ = dataDepGraph_->GetType() == DGT_FULL;
 
-  instCntBits_ = Utilities::clcltBitsNeededToHoldNum(maxInstCnt_);
+  instCountBits_ = Utilities::clcltBitsNeededToHoldNum(maxInstCount_);
 
   // If scheduling in the reverse direction.
   if (mainDir_ == DIR_BKWRD) {
@@ -37,9 +37,9 @@ RelaxedScheduler::RelaxedScheduler(DataDepStruct *dataDepGraph,
     leafInst_ = tmpInst;
   }
 
-  instLst_ = new PriorityList<SchedInstruction>(maxInstCnt_);
+  instLst_ = new PriorityList<SchedInstruction>(maxInstCount_);
 
-  for (InstCount i = 0; i < issuTypeCnt_; i++) {
+  for (InstCount i = 0; i < issuTypeCount_; i++) {
     avlblSlots_[i] = new int16_t[schedUprBound_];
     nxtAvlblCycles_[i] = new InstCount[schedUprBound_];
   }
@@ -47,27 +47,27 @@ RelaxedScheduler::RelaxedScheduler(DataDepStruct *dataDepGraph,
   isFxd_ = NULL;
 
   if (useFxng_) {
-    isFxd_ = new bool[maxInstCnt_];
+    isFxd_ = new bool[maxInstCount_];
 
-    for (InstCount i = 0; i < maxInstCnt_; i++) {
+    for (InstCount i = 0; i < maxInstCount_; i++) {
       isFxd_[i] = false;
     }
   }
 
   if (schedType_ == RST_DYNMC) {
-    for (InstCount i = 0; i < issuTypeCnt_; i++) {
+    for (InstCount i = 0; i < issuTypeCount_; i++) {
       prevAvlblSlots_[i] = new int16_t[schedUprBound_];
     }
   }
 
   frwrdLwrBounds_ = NULL;
   bkwrdLwrBounds_ = NULL;
-  fxdInstCnt_ = 0;
-  schduldInstCnt_ = 0;
+  fxdInstCount_ = 0;
+  schduldInstCount_ = 0;
   dataDepGraph_->GetLwrBounds(frwrdLwrBounds_, bkwrdLwrBounds_);
 
 #ifdef IS_DEBUG
-  wasLwrBoundCmputd_ = new bool[maxInstCnt_];
+  wasLwrBoundCmputd_ = new bool[maxInstCount_];
 #endif
 }
 /*****************************************************************************/
@@ -80,7 +80,7 @@ RelaxedScheduler::~RelaxedScheduler() {
     delete[] isFxd_;
   }
 
-  for (int16_t i = 0; i < issuTypeCnt_; i++) {
+  for (int16_t i = 0; i < issuTypeCount_; i++) {
     delete[] avlblSlots_[i];
     delete[] nxtAvlblCycles_[i];
 
@@ -96,10 +96,10 @@ RelaxedScheduler::~RelaxedScheduler() {
 /*****************************************************************************/
 
 void RelaxedScheduler::Reset_(InstCount startIndx) {
-  fxdInstCnt_ = 0;
-  schduldInstCnt_ = 0;
+  fxdInstCount_ = 0;
+  schduldInstCount_ = 0;
 
-  for (int i = 0; i < issuTypeCnt_; i++) {
+  for (int i = 0; i < issuTypeCount_; i++) {
     for (InstCount j = startIndx; j < schedUprBound_; j++) {
       avlblSlots_[i][j] = (int16_t)slotsPerTypePerCycle_[i];
       nxtAvlblCycles_[i][j] = j;
@@ -119,7 +119,7 @@ InstCount RelaxedScheduler::SchdulInst_(SchedInstruction *inst,
   assert(releaseTime < schedUprBound_);
   assert(releaseTime >= minCycle);
   IssueType issuType = inst->GetIssueType();
-  assert(0 <= issuType && issuType < issuTypeCnt_);
+  assert(0 <= issuType && issuType < issuTypeCount_);
 
   InstCount schedCycle = nxtAvlblCycles_[issuType][releaseTime];
   assert(minCycle <= schedCycle && schedCycle < schedUprBound_);
@@ -147,7 +147,7 @@ InstCount RelaxedScheduler::GetCrntLwrBound_(SchedInstruction *inst,
   assert(inst != NULL);
   //  InstCount indx=inst->GetCrntIndx();
   InstCount indx = dataDepGraph_->GetInstIndx(inst);
-  assert(indx < totInstCnt_);
+  assert(indx < totInstCount_);
   assert(dataDepGraph_->GetType() == DGT_SUB || indx == inst->GetNum());
 
   if (dir == DIR_FRWRD) {
@@ -166,7 +166,7 @@ void RelaxedScheduler::SetCrntLwrBound_(SchedInstruction *inst, DIRECTION dir,
   //  InstCount indx=inst->GetCrntIndx();
   InstCount indx = dataDepGraph_->GetInstIndx(inst);
 
-  assert(indx < totInstCnt_);
+  assert(indx < totInstCount_);
   assert(dataDepGraph_->GetType() == DGT_SUB || indx == inst->GetNum());
 #ifdef IS_DEBUG
   //  wasLwrBoundCmputd_[inst->GetCrntIndx()]=true;
@@ -226,7 +226,7 @@ void RelaxedScheduler::WriteBoundsBack_() {
   InstCount i;
   SchedInstruction *inst;
 
-  for (i = 0; i < totInstCnt_; i++) {
+  for (i = 0; i < totInstCount_; i++) {
     inst = dataDepGraph_->GetInstByIndx(i);
     assert(inst != NULL);
 #ifdef IS_DEBUG
@@ -241,7 +241,7 @@ void RelaxedScheduler::WriteBoundsBack_() {
 /*****************************************************************************/
 
 void RelaxedScheduler::ClearFxng() {
-  for (InstCount i = 0; i < totInstCnt_; i++) {
+  for (InstCount i = 0; i < totInstCount_; i++) {
     SetFix_(i, false);
   }
 }
@@ -249,10 +249,10 @@ void RelaxedScheduler::ClearFxng() {
 
 RJ_RelaxedScheduler::RJ_RelaxedScheduler(
     DataDepStruct *dataDepGraph, MachineModel *machMdl, InstCount schedUprBound,
-    DIRECTION mainDir, RLXD_SCHED_TYPE type, InstCount maxInstCnt)
+    DIRECTION mainDir, RLXD_SCHED_TYPE type, InstCount maxInstCount)
     : RelaxedScheduler(dataDepGraph, machMdl, schedUprBound, mainDir, type,
-                       maxInstCnt) {
-  assert(instLst_->GetElmntCnt() == 0);
+                       maxInstCount) {
+  assert(instLst_->GetElmntCount() == 0);
 }
 /*****************************************************************************/
 
@@ -260,7 +260,7 @@ RJ_RelaxedScheduler::~RJ_RelaxedScheduler() {}
 /*****************************************************************************/
 
 void RJ_RelaxedScheduler::Initialize_(bool setPrirtyLst) {
-  totInstCnt_ = dataDepGraph_->GetInstCnt();
+  totInstCount_ = dataDepGraph_->GetInstCount();
   rootInst_ = dataDepGraph_->GetRootInst();
   leafInst_ = dataDepGraph_->GetLeafInst();
 
@@ -281,10 +281,10 @@ void RJ_RelaxedScheduler::Initialize_(bool setPrirtyLst) {
   }
 
   Reset_(0);
-  chkdInstCnt_ = 0;
+  chkdInstCount_ = 0;
 
   if (useFxng_)
-    for (InstCount i = 0; i < totInstCnt_; i++) {
+    for (InstCount i = 0; i < totInstCount_; i++) {
       SetFix_(i, false);
     }
 
@@ -298,7 +298,7 @@ void RJ_RelaxedScheduler::SetupPrirtyLst() {
 
   instLst_->Reset();
 
-  for (i = 0; i < totInstCnt_; i++) {
+  for (i = 0; i < totInstCount_; i++) {
     SchedInstruction *inst;
 
     if (schedDir_ == DIR_FRWRD) {
@@ -331,13 +331,13 @@ InstCount RJ_RelaxedScheduler::FindSchedule() {
 
   trgtLastCycle = GetCrntLwrBound_(leafInst_, schedDir_);
 
-  assert(instLst_->GetElmntCnt() == totInstCnt_);
+  assert(instLst_->GetElmntCount() == totInstCount_);
 
   while (!IsSchedComplete_()) {
     inst = instLst_->GetNxtPriorityElmnt();
     assert(inst != NULL);
     schedCycle = SchdulInst_(inst, 0, trgtLastCycle);
-    schduldInstCnt_++;
+    schduldInstCount_++;
     delay =
         CmputDelay_(schedCycle, trgtLastCycle, GetCrntLwrBound_(inst, opstDir));
 
@@ -365,12 +365,12 @@ bool RJ_RelaxedScheduler::SchdulAndChkFsblty(InstCount crntCycle,
 #ifdef IS_DEBUG
   InstCount iterNum = 0;
 #endif
-  assert(instLst_->GetElmntCnt() == totInstCnt_);
+  assert(instLst_->GetElmntCount() == totInstCount_);
 
   while (!IsSchedComplete_()) {
     inst = instLst_->GetNxtPriorityElmnt();
 #ifdef IS_DEBUG
-    assert(iterNum < totInstCnt_);
+    assert(iterNum < totInstCount_);
     iterNum++;
 #endif
     assert(inst != NULL);
@@ -383,8 +383,8 @@ bool RJ_RelaxedScheduler::SchdulAndChkFsblty(InstCount crntCycle,
     assert(inst->IsSchduld() == false);
     schedCycle = SchdulInst_(inst, crntCycle, lastCycle);
     inst->SetRlxdCycle(schedCycle);
-    schduldInstCnt_++;
-    chkdInstCnt_++;
+    schduldInstCount_++;
+    chkdInstCount_++;
     delay = CmputDelay_(schedCycle, lastCycle, GetCrntLwrBound_(inst, opstDir));
 
 #ifdef IS_DEBUG_RJ
@@ -427,19 +427,19 @@ bool RJ_RelaxedScheduler::CmputDynmcLwrBound(InstCount trgtLastCycle,
   InstCount lastCycle = 0;
   schedLwrBound = INVALID_VALUE;
 
-  //  assert(instLst_->GetElmntCnt()==totInstCnt_);
-  InstCount instCnt = instLst_->GetElmntCnt();
-  schduldInstCnt_ = 0;
+  //  assert(instLst_->GetElmntCount()==totInstCount_);
+  InstCount instCount = instLst_->GetElmntCount();
+  schduldInstCount_ = 0;
 
   //  while(!IsSchedComplete_())
-  while (schduldInstCnt_ < instCnt) {
+  while (schduldInstCount_ < instCount) {
     SchedInstruction *inst = instLst_->GetNxtPriorityElmnt();
     assert(inst != NULL);
 
     assert(dataDepGraph_->IsInGraph(inst));
     /*    if(dataDepGraph_->IsInGraph(inst)==false)
         {
-          schduldInstCnt_++;
+          schduldInstCount_++;
           continue;
         }*/
 
@@ -448,7 +448,7 @@ bool RJ_RelaxedScheduler::CmputDynmcLwrBound(InstCount trgtLastCycle,
            trgtLastCycle);
     InstCount schedCycle = SchdulInst_(inst, 0, trgtLastCycle);
 
-    schduldInstCnt_++;
+    schduldInstCount_++;
     InstCount delay =
         CmputDelay_(schedCycle, trgtLastCycle, GetCrntLwrBound_(inst, opstDir));
 
@@ -491,7 +491,7 @@ bool RJ_RelaxedScheduler::FixInsts_(LinkedList<SchedInstruction> *fxdLst) {
   SchedInstruction *inst;
   assert(useFxng_);
 
-  /*  for(InstCount i=0;i<totInstCnt_;i++)
+  /*  for(InstCount i=0;i<totInstCount_;i++)
       SetFix_(i,false);*/
 
   for (inst = fxdLst->GetFrstElmnt(); inst != NULL;
@@ -516,7 +516,7 @@ void RJ_RelaxedScheduler::InitChkng_(InstCount crntCycle) {
 
   assert(schedType_ == RST_DYNMC);
 
-  for (i = 0; i < issuTypeCnt_; i++) {
+  for (i = 0; i < issuTypeCount_; i++) {
     for (j = crntCycle; j < schedUprBound_; j++) {
       assert(prevAvlblSlots_[i] != NULL);
       prevAvlblSlots_[i][j] = avlblSlots_[i][j];
@@ -524,7 +524,7 @@ void RJ_RelaxedScheduler::InitChkng_(InstCount crntCycle) {
     }
   }
 
-  chkdInstCnt_ = 0;
+  chkdInstCount_ = 0;
   instLst_->ResetIterator();
 }
 /*****************************************************************************/
@@ -535,14 +535,14 @@ void RJ_RelaxedScheduler::EndChkng_(InstCount crntCycle) {
 
   assert(schedType_ == RST_DYNMC);
 
-  for (i = 0; i < issuTypeCnt_; i++) {
+  for (i = 0; i < issuTypeCount_; i++) {
     for (j = crntCycle; j < schedUprBound_; j++) {
       assert(prevAvlblSlots_[i] != NULL);
       avlblSlots_[i][j] = prevAvlblSlots_[i][j];
     }
   }
 
-  schduldInstCnt_ -= chkdInstCnt_;
+  schduldInstCount_ -= chkdInstCount_;
 }
 /*****************************************************************************/
 
@@ -551,7 +551,7 @@ bool RJ_RelaxedScheduler::FixInst(SchedInstruction *inst, InstCount cycle) {
   assert(useFxng_);
   assert(GetCrntLwrBound_(inst, schedDir_) == cycle && cycle < schedUprBound_);
   IssueType issuType = inst->GetIssueType();
-  assert(issuType < issuTypeCnt_);
+  assert(issuType < issuTypeCount_);
 
   if (avlblSlots_[issuType][cycle] == 0) {
     return false;
@@ -559,8 +559,8 @@ bool RJ_RelaxedScheduler::FixInst(SchedInstruction *inst, InstCount cycle) {
 
   assert(avlblSlots_[issuType][cycle] > 0);
   avlblSlots_[issuType][cycle]--;
-  fxdInstCnt_++;
-  schduldInstCnt_++;
+  fxdInstCount_++;
+  schduldInstCount_++;
   SetFix_(inst, true);
   return true;
 }
@@ -575,13 +575,13 @@ void RJ_RelaxedScheduler::UnFixInst(SchedInstruction *inst, InstCount cycle) {
   }
 
   IssueType issuType = inst->GetIssueType();
-  assert(issuType < issuTypeCnt_);
+  assert(issuType < issuTypeCount_);
 
   avlblSlots_[issuType][cycle]++;
   assert(avlblSlots_[issuType][cycle] <= slotsPerTypePerCycle_[issuType]);
   SetFix_(inst, false);
-  fxdInstCnt_--;
-  schduldInstCnt_--;
+  fxdInstCount_--;
+  schduldInstCount_--;
 }
 /*****************************************************************************/
 
@@ -611,7 +611,7 @@ void LC_RelaxedScheduler::Initialize_() {
   dataDepGraph_->GetLwrBounds(frwrdLwrBounds_, bkwrdLwrBounds_);
 #ifdef IS_DEBUG
 
-  for (InstCount i = 0; i < totInstCnt_; i++) {
+  for (InstCount i = 0; i < totInstCount_; i++) {
     wasLwrBoundCmputd_[i] = false;
   }
 
@@ -631,7 +631,7 @@ InstCount LC_RelaxedScheduler::FindSchedule() {
 
   Initialize_();
 
-  for (InstCount i = 0; i < totInstCnt_; i++) {
+  for (InstCount i = 0; i < totInstCount_; i++) {
     if (mainDir_ == DIR_FRWRD) {
       inst = dataDepGraph_->GetInstByTplgclOrdr(i);
     } else {
@@ -714,8 +714,9 @@ InstCount LC_RelaxedScheduler::SchdulSubGraph_(SchedInstruction *leaf,
   }
 
   subGraphInstLst_->InsrtElmnt(leaf, 0, true);
-  assert(subGraphInstLst_->GetElmntCnt() <= totInstCnt_);
-  assert(leaf != leafInst_ || subGraphInstLst_->GetElmntCnt() == totInstCnt_);
+  assert(subGraphInstLst_->GetElmntCount() <= totInstCount_);
+  assert(leaf != leafInst_ ||
+         subGraphInstLst_->GetElmntCount() == totInstCount_);
 
   for (inst = subGraphInstLst_->GetFrstElmnt(); inst != NULL;
        inst = subGraphInstLst_->GetNxtElmnt()) {
@@ -767,13 +768,13 @@ LPP_RelaxedScheduler::LPP_RelaxedScheduler(DataDepStruct *dataDepGraph,
 
   subGraphInstLst_ = new PriorityList<SchedInstruction>;
 
-  crntFrwrdLwrBounds_ = new InstCount[totInstCnt_];
-  crntBkwrdLwrBounds_ = new InstCount[totInstCnt_];
+  crntFrwrdLwrBounds_ = new InstCount[totInstCount_];
+  crntBkwrdLwrBounds_ = new InstCount[totInstCount_];
 
-  tightndFrwrdLwrBounds_ = new LinkedList<SchedInstruction>(totInstCnt_);
-  tightndBkwrdLwrBounds_ = new LinkedList<SchedInstruction>(totInstCnt_);
+  tightndFrwrdLwrBounds_ = new LinkedList<SchedInstruction>(totInstCount_);
+  tightndBkwrdLwrBounds_ = new LinkedList<SchedInstruction>(totInstCount_);
 
-  lstEntries_ = new KeyedEntry<SchedInstruction> *[totInstCnt_];
+  lstEntries_ = new KeyedEntry<SchedInstruction> *[totInstCount_];
 }
 /*****************************************************************************/
 
@@ -794,7 +795,7 @@ void LPP_RelaxedScheduler::Initialize_(bool opstFsbl) {
   //  dataDepGraph_->SetInstIndexes();
   instLst_->Reset();
 
-  for (i = 0; i < totInstCnt_; i++) {
+  for (i = 0; i < totInstCount_; i++) {
     SchedInstruction *inst = dataDepGraph_->GetInstByIndx(i);
 
     if (!opstFsbl) {
@@ -819,8 +820,8 @@ void LPP_RelaxedScheduler::Initialize_(bool opstFsbl) {
 bool LPP_RelaxedScheduler::InitLength_(InstCount lngth) {
   int16_t t;
 
-  for (t = 0; t < issuTypeCnt_; t++) {
-    neededSlots_[t] = instCntPerIssuType_[t];
+  for (t = 0; t < issuTypeCount_; t++) {
+    neededSlots_[t] = instCountPerIssuType_[t];
   }
 
   if (CheckSlots_(0, lngth - 1) == false) {
@@ -831,13 +832,13 @@ bool LPP_RelaxedScheduler::InitLength_(InstCount lngth) {
   instLst_->ResetIterator();
   subGraphInstLst_->Reset();
 
-  for (t = 0; t < issuTypeCnt_; t++) {
+  for (t = 0; t < issuTypeCount_; t++) {
     neededSlots_[t] = 0;
   }
 
 #ifdef IS_DEBUG
 
-  for (InstCount i = 0; i < totInstCnt_; i++) {
+  for (InstCount i = 0; i < totInstCount_; i++) {
     wasLwrBoundCmputd_[i] = false;
   }
 
@@ -872,10 +873,10 @@ bool LPP_RelaxedScheduler::CheckSlots_(InstCount firstCycle,
                                        InstCount lastCycle) {
   int16_t i;
   InstCount avlblSlots[MAX_ISSUTYPE_CNT];
-  InstCount cycleCnt = lastCycle - firstCycle + 1;
+  InstCount cycleCount = lastCycle - firstCycle + 1;
 
-  for (i = 0; i < issuTypeCnt_; i++) {
-    avlblSlots[i] = slotsPerTypePerCycle_[i] * cycleCnt;
+  for (i = 0; i < issuTypeCount_; i++) {
+    avlblSlots[i] = slotsPerTypePerCycle_[i] * cycleCount;
 
     if (avlblSlots[i] < neededSlots_[i]) {
       return false;
@@ -927,7 +928,7 @@ bool LPP_RelaxedScheduler::ProbeLength_(InstCount trgtLngth) {
   if (!fsbl)
     return false;
 
-  for (i = 0; i < totInstCnt_; i++) {
+  for (i = 0; i < totInstCount_; i++) {
     inst = instLst_->GetNxtPriorityElmnt();
     instNum = inst->GetNum();
     assert(inst != NULL);
@@ -953,7 +954,7 @@ bool LPP_RelaxedScheduler::ProbeLength_(InstCount trgtLngth) {
   assert(newLwrBound + 1 <= trgtLngth);
 
   // If the length is feasible, set the permanent LBs to the current LBs
-  for (i = 0; i < totInstCnt_; i++) {
+  for (i = 0; i < totInstCount_; i++) {
     inst = dataDepGraph_->GetInstByIndx(i);
     inst->SetLwrBound(mainDir_, crntBkwrdLwrBounds_[i], false);
   }
@@ -1074,7 +1075,7 @@ void LPP_RelaxedScheduler::SetCrntLwrBound_(SchedInstruction *inst,
                    inst->GetNum(),
                    GetCrntLwrBound_(inst, dir),
                    newBound,
-                   tightndBkwrdLwrBounds_->GetElmntCnt());
+                   tightndBkwrdLwrBounds_->GetElmntCount());
       */
       if (crntBkwrdLwrBounds_[instNum] == inst->GetLwrBound(dir)) {
         tightndBkwrdLwrBounds_->InsrtElmnt(inst);

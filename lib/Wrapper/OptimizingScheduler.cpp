@@ -128,7 +128,8 @@ nextIfDebug(MachineBasicBlock::iterator I,
   return I;
 }
 
-static bool scheduleSpecificRegion(const StringRef RegionName, const Config &SchedIni) {
+static bool scheduleSpecificRegion(const StringRef RegionName,
+                                   const Config &SchedIni) {
   const bool ScheduleSpecificRegions =
       SchedIni.GetBool("SCHEDULE_SPECIFIC_REGIONS");
 
