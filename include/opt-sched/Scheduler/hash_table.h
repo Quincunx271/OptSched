@@ -31,7 +31,7 @@ const UDT_HASHTBL_CPCTY DFLT_HASHTBL_CPCTY =
 // It is used to implement a linked list of objects for each hashValue.
 template <class T> class HashTblEntry {
 public:
-  HashTblEntry(T *elmnt = NULL, UDT_HASHVAL hashVal = 0);
+  HashTblEntry(T *element = NULL, UDT_HASHVAL hashVal = 0);
   virtual ~HashTblEntry() {}
   virtual void Clean() {}
 
@@ -40,27 +40,27 @@ public:
   HashTblEntry *GetPrev() const;
   void SetPrev(HashTblEntry *newEntry);
 
-  T *GetElmnt() const;
+  T *GetElement() const;
   virtual UDT_HASHVAL GetHashVal() = 0;
 
 protected:
-  T *elmnt_;
+  T *element_;
   HashTblEntry *nxt_;
   HashTblEntry *prev_;
   // The hash value.
   UDT_HASHVAL hashVal_;
 
   void Init_();
-  void Construct_(T *elmnt, UDT_HASHVAL hashVal);
+  void Construct_(T *element, UDT_HASHVAL hashVal);
 };
 
 // A hash table entry when the key is a binary number of a fixed length
 template <class T> class BinHashTblEntry : public HashTblEntry<T> {
 public:
-  BinHashTblEntry(UDT_HASHKEY key, T *_elmnt, UDT_HASHVAL hashVal);
+  BinHashTblEntry(UDT_HASHKEY key, T *_element, UDT_HASHVAL hashVal);
   BinHashTblEntry();
   ~BinHashTblEntry() {}
-  void Construct(UDT_HASHKEY key, T *_elmnt, UDT_HASHVAL hashVal);
+  void Construct(UDT_HASHKEY key, T *_element, UDT_HASHVAL hashVal);
   void Clean() {}
 
   UDT_HASHKEY GetKey();
@@ -75,15 +75,15 @@ private:
 // A hash table entry when the key is a string of an arbitrary length
 template <class T> class StrHashTblEntry : public HashTblEntry<T> {
 public:
-  StrHashTblEntry(const char *name, T *_elmnt, UDT_HASHVAL hashVal,
+  StrHashTblEntry(const char *name, T *_element, UDT_HASHVAL hashVal,
                   UDT_HASHTBL_CPCTY indx = 0);
   ~StrHashTblEntry();
-  void Construct(const char *name, T *elmnt, UDT_HASHVAL hashVal,
+  void Construct(const char *name, T *element, UDT_HASHVAL hashVal,
                  UDT_HASHTBL_CPCTY indx);
   void Clean();
 
-  T *GetElmnt(const char *srchName);
-  T *GetElmnt(const char *srchName, UDT_HASHTBL_CPCTY &indx);
+  T *GetElement(const char *srchName);
+  T *GetElement(const char *srchName, UDT_HASHTBL_CPCTY &indx);
   bool IsThis(const char *srchName);
   UDT_HASHTBL_CPCTY GetIndx();
   UDT_HASHVAL GetHashVal();
@@ -153,7 +153,7 @@ public:
 
   void Clear(bool del, MemAlloc<BinHashTblEntry<T>> *entryAlctr = NULL);
 
-  HashTblEntry<T> *InsertElement(UDT_HASHKEY key, T *elmnt,
+  HashTblEntry<T> *InsertElement(UDT_HASHKEY key, T *element,
                                  MemAlloc<BinHashTblEntry<T>> *entryAlctr);
 
   UDT_HASHVAL HashKey(UDT_HASHKEY key);
@@ -186,10 +186,10 @@ public:
   // Undo the last ExtractMax
   void RestoreLastMax();
 
-  void DeleteEntries(UDT_HASHKEY key, LinkedList<T> *elmntLst);
-  bool DeleteEntry(UDT_HASHKEY key, T *elmnt,
+  void DeleteEntries(UDT_HASHKEY key, LinkedList<T> *elementLst);
+  bool DeleteEntry(UDT_HASHKEY key, T *element,
                    MemAlloc<HashTblEntry<T>> *entryAlctr = NULL);
-  bool DeleteEntry(UDT_HASHVAL hashVal, T *elmnt,
+  bool DeleteEntry(UDT_HASHVAL hashVal, T *element,
                    MemAlloc<HashTblEntry<T>> *entryAlctr = NULL);
 
   // Reinsert a previously removed entry into the exact original location
@@ -234,7 +234,7 @@ public:
                UDT_HASHTBL_CPCTY maxEntryCnt = DFLT_HASHTBL_CPCTY);
   ~StrHashTable();
 
-  FUNC_RESULT InsertElement(const char *name, T *elmnt);
+  FUNC_RESULT InsertElement(const char *name, T *element);
 
   T *FindElement(const char *srchName);
   T *GetElement(const UDT_HASHTBL_CPCTY indx);
@@ -249,8 +249,8 @@ private:
 };
 
 template <class T>
-inline HashTblEntry<T>::HashTblEntry(T *elmnt, UDT_HASHVAL hashVal) {
-  Construct_(elmnt, hashVal);
+inline HashTblEntry<T>::HashTblEntry(T *element, UDT_HASHVAL hashVal) {
+  Construct_(element, hashVal);
 }
 
 template <class T> inline void HashTblEntry<T>::Init_() {
@@ -259,9 +259,9 @@ template <class T> inline void HashTblEntry<T>::Init_() {
 }
 
 template <class T>
-inline void HashTblEntry<T>::Construct_(T *elmnt, UDT_HASHVAL hashVal) {
+inline void HashTblEntry<T>::Construct_(T *element, UDT_HASHVAL hashVal) {
   Init_();
-  elmnt_ = elmnt;
+  element_ = element;
   hashVal_ = hashVal;
 }
 
@@ -282,16 +282,16 @@ inline void HashTblEntry<T>::SetPrev(HashTblEntry *newEntry) {
   prev_ = newEntry;
 }
 
-template <class T> inline T *HashTblEntry<T>::GetElmnt() const {
-  return elmnt_;
+template <class T> inline T *HashTblEntry<T>::GetElement() const {
+  return element_;
 }
 
 template <class T> inline BinHashTblEntry<T>::BinHashTblEntry() { Init_(); }
 
 template <class T>
-inline BinHashTblEntry<T>::BinHashTblEntry(UDT_HASHKEY key, T *elmnt,
+inline BinHashTblEntry<T>::BinHashTblEntry(UDT_HASHKEY key, T *element,
                                            UDT_HASHVAL hashVal) {
-  Construct(key, elmnt, hashVal);
+  Construct(key, element, hashVal);
 }
 
 template <class T> inline void BinHashTblEntry<T>::Init_() {
@@ -300,10 +300,10 @@ template <class T> inline void BinHashTblEntry<T>::Init_() {
 }
 
 template <class T>
-inline void BinHashTblEntry<T>::Construct(UDT_HASHKEY key, T *elmnt,
+inline void BinHashTblEntry<T>::Construct(UDT_HASHKEY key, T *element,
                                           UDT_HASHVAL hashVal) {
   Init_();
-  HashTblEntry<T>::Construct_(elmnt, hashVal);
+  HashTblEntry<T>::Construct_(element, hashVal);
   key_ = key;
 }
 
@@ -316,10 +316,10 @@ template <class T> inline UDT_HASHVAL BinHashTblEntry<T>::GetHashVal() {
 }
 
 template <class T>
-inline StrHashTblEntry<T>::StrHashTblEntry(const char *name, T *elmnt,
+inline StrHashTblEntry<T>::StrHashTblEntry(const char *name, T *element,
                                            UDT_HASHVAL hashVal,
                                            UDT_HASHTBL_CPCTY indx) {
-  Construct(name, elmnt, hashVal, indx);
+  Construct(name, element, hashVal, indx);
 }
 
 template <class T> inline StrHashTblEntry<T>::~StrHashTblEntry() {
@@ -333,11 +333,11 @@ template <class T> inline void StrHashTblEntry<T>::Init_() {
 }
 
 template <class T>
-inline void StrHashTblEntry<T>::Construct(const char *name, T *elmnt,
+inline void StrHashTblEntry<T>::Construct(const char *name, T *element,
                                           UDT_HASHVAL hashVal,
                                           UDT_HASHTBL_CPCTY indx) {
   Init_();
-  HashTblEntry<T>::Construct_(elmnt, hashVal);
+  HashTblEntry<T>::Construct_(element, hashVal);
   name_ = new char[strlen(name) + 1];
 
   strcpy(name_, name);
@@ -354,15 +354,15 @@ template <class T> inline UDT_HASHVAL StrHashTblEntry<T>::GetHashVal() {
 }
 
 template <class T>
-inline T *StrHashTblEntry<T>::GetElmnt(const char *srchName) {
-  return strcmp(srchName, name_) == 0 ? this->elmnt_ : NULL;
+inline T *StrHashTblEntry<T>::GetElement(const char *srchName) {
+  return strcmp(srchName, name_) == 0 ? this->element_ : NULL;
 }
 
 template <class T>
-inline T *StrHashTblEntry<T>::GetElmnt(const char *srchName,
-                                       UDT_HASHTBL_CPCTY &indx) {
+inline T *StrHashTblEntry<T>::GetElement(const char *srchName,
+                                         UDT_HASHTBL_CPCTY &indx) {
   indx = indx_;
-  return GetElmnt(srchName);
+  return GetElement(srchName);
 }
 
 template <class T>
@@ -423,7 +423,7 @@ void HashTable<T>::Clear(bool del, MemAlloc<BinHashTblEntry<T>> *entryAlctr) {
       nxtEntry = crntEntry->GetNxt();
 
       if (del) {
-        delete crntEntry->GetElmnt();
+        delete crntEntry->GetElement();
       }
 
       if (isExtrnlAlctr_) {
@@ -553,12 +553,12 @@ template <class T> void HashTable<T>::GetFullList(LinkedList<T> *lst) {
     if (entryCnts_[crntHash] > 0) {
       for (HashTblEntry<T> *crntEntry = topEntry_[crntHash]; crntEntry != NULL;
            crntEntry = crntEntry->GetNxt()) {
-        lst->InsrtElmnt(crntEntry->GetElmnt());
+        lst->InsrtElement(crntEntry->GetElement());
       }
     }
   }
 
-  assert(lst->GetElmntCnt() == entryCnt_);
+  assert(lst->GetElementCnt() == entryCnt_);
 }
 
 template <class T>
@@ -605,7 +605,7 @@ inline UDT_HASHVAL BinHashTable<T>::HashKey(UDT_HASHKEY key) {
 
 template <class T>
 HashTblEntry<T> *
-BinHashTable<T>::InsertElement(const UDT_HASHKEY key, T *elmnt,
+BinHashTable<T>::InsertElement(const UDT_HASHKEY key, T *element,
                                MemAlloc<BinHashTblEntry<T>> *allocator) {
   if (this->entryCnt_ == this->maxEntryCnt_)
     return NULL;
@@ -617,9 +617,9 @@ BinHashTable<T>::InsertElement(const UDT_HASHKEY key, T *elmnt,
   if (this->isExtrnlAlctr_) {
     assert(allocator != NULL);
     newEntry = allocator->GetObject();
-    newEntry->Construct(key, elmnt, hashVal);
+    newEntry->Construct(key, element, hashVal);
   } else {
-    newEntry = new BinHashTblEntry<T>(key, elmnt, hashVal);
+    newEntry = new BinHashTblEntry<T>(key, element, hashVal);
   }
 
   HashTable<T>::AddNewEntry_(newEntry, hashVal);
@@ -667,7 +667,7 @@ template <class T> void BinHashTable<T>::ReInsertEntry(HashTblEntry<T> *entry) {
 }
 
 template <class T> T *BinHashTable<T>::ExtractMax() {
-  T *elmnt;
+  T *element;
   HashTblEntry<T> *maxEntry;
 
   if (this->entryCnt_ == 0)
@@ -696,9 +696,9 @@ template <class T> T *BinHashTable<T>::ExtractMax() {
 
   RemoveEntry(maxEntry);
   UpdtLastMax_(maxEntry, this->maxHash_);
-  elmnt = maxEntry->GetElmnt();
+  element = maxEntry->GetElement();
 
-  return elmnt;
+  return element;
 }
 
 template <class T> HashTblEntry<T> *BinHashTable<T>::GetMaxEntry() {
@@ -761,7 +761,7 @@ T *BinHashTable<T>::GetFirstMatch(const UDT_HASHKEY key, bool skipCollision) {
   if (skipCollision)
     FindNextMatch_();
 
-  return srchPtr_ == NULL ? NULL : srchPtr_->GetElmnt();
+  return srchPtr_ == NULL ? NULL : srchPtr_->GetElement();
 }
 
 template <class T> T *BinHashTable<T>::GetNextMatch(bool skipCollision) {
@@ -771,7 +771,7 @@ template <class T> T *BinHashTable<T>::GetNextMatch(bool skipCollision) {
   if (skipCollision)
     FindNextMatch_();
 
-  return srchPtr_ == NULL ? NULL : srchPtr_->GetElmnt();
+  return srchPtr_ == NULL ? NULL : srchPtr_->GetElement();
 }
 
 template <class T> void BinHashTable<T>::FindNextMatch_() {
@@ -793,7 +793,7 @@ T *BinHashTable<T>::GetLastMatch(const UDT_HASHKEY key, bool skipCollision) {
   if (skipCollision)
     FindPrevMatch_();
 
-  return srchPtr_ == NULL ? NULL : srchPtr_->GetElmnt();
+  return srchPtr_ == NULL ? NULL : srchPtr_->GetElement();
 }
 
 template <class T> T *BinHashTable<T>::GetPrevMatch(bool skipCollision) {
@@ -803,7 +803,7 @@ template <class T> T *BinHashTable<T>::GetPrevMatch(bool skipCollision) {
   if (skipCollision)
     FindPrevMatch_();
 
-  return srchPtr_ == NULL ? NULL : srchPtr_->GetElmnt();
+  return srchPtr_ == NULL ? NULL : srchPtr_->GetElement();
 }
 
 template <class T> void BinHashTable<T>::FindPrevMatch_() {
@@ -814,24 +814,25 @@ template <class T> void BinHashTable<T>::FindPrevMatch_() {
 }
 
 template <class T>
-void BinHashTable<T>::DeleteEntries(UDT_HASHKEY key, LinkedList<T> *elmntLst) {
+void BinHashTable<T>::DeleteEntries(UDT_HASHKEY key,
+                                    LinkedList<T> *elementLst) {
   UDT_HASHVAL hashVal = this->HashKey_(key);
 
-  for (T *elmnt = elmntLst->GetFrstElmnt(); elmnt != NULL;
-       elmnt = elmntLst->GetNxtElmnt()) {
-    DeleteEntry(hashVal, elmnt);
+  for (T *element = elementLst->GetFrstElement(); element != NULL;
+       element = elementLst->GetNxtElement()) {
+    DeleteEntry(hashVal, element);
   }
 }
 
 template <class T>
-bool BinHashTable<T>::DeleteEntry(UDT_HASHVAL hashVal, T *elmnt,
+bool BinHashTable<T>::DeleteEntry(UDT_HASHVAL hashVal, T *element,
                                   MemAlloc<HashTblEntry<T>> *entryAlctr) {
   if (hashVal < 0 || hashVal > this->maxHash_)
     return false;
 
   for (HashTblEntry<T> *entry = this->topEntry_[hashVal]; entry != NULL;
        entry = entry->GetNxt()) {
-    if (entry->GetElmnt() == elmnt) {
+    if (entry->GetElement() == element) {
       RemoveEntry(entry, true, entryAlctr);
       return true;
     }
@@ -841,10 +842,10 @@ bool BinHashTable<T>::DeleteEntry(UDT_HASHVAL hashVal, T *elmnt,
 }
 
 template <class T>
-bool BinHashTable<T>::DeleteEntry(UDT_HASHKEY key, T *elmnt,
+bool BinHashTable<T>::DeleteEntry(UDT_HASHKEY key, T *element,
                                   MemAlloc<HashTblEntry<T>> *entryAlctr) {
   UDT_HASHVAL hashVal = this->HashKey_(key);
-  return DeleteEntry(hashVal, elmnt, entryAlctr);
+  return DeleteEntry(hashVal, element, entryAlctr);
 }
 
 template <class T>
@@ -883,12 +884,13 @@ template <class T> UDT_HASHVAL StrHashTable<T>::HashString_(const char *strng) {
 
 template <class T> T *StrHashTable<T>::FindElement(const char *srchName) {
   UDT_HASHVAL hashVal = HashString_(srchName);
-  T *elmnt;
+  T *element;
 
   for (HashTblEntry<T> *crnt = this->topEntry_[hashVal]; crnt != NULL;
        crnt = crnt->GetNxt()) {
-    if ((elmnt = ((StrHashTblEntry<T> *)crnt)->GetElmnt(srchName)) != NULL) {
-      return elmnt;
+    if ((element = ((StrHashTblEntry<T> *)crnt)->GetElement(srchName)) !=
+        NULL) {
+      return element;
     }
   }
 
@@ -899,11 +901,11 @@ template <class T>
 T *StrHashTable<T>::GetElement(const UDT_HASHTBL_CPCTY indx) {
   if (!useIndx_)
     return NULL;
-  return indx >= this->entryCnt_ ? NULL : indxdTbl_[indx]->GetElmnt();
+  return indx >= this->entryCnt_ ? NULL : indxdTbl_[indx]->GetElement();
 }
 
 template <class T>
-FUNC_RESULT StrHashTable<T>::InsertElement(const char *name, T *elmnt) {
+FUNC_RESULT StrHashTable<T>::InsertElement(const char *name, T *element) {
   StrHashTblEntry<T> *newEntry;
   UDT_HASHVAL hashVal = HashString_(name);
 
@@ -911,7 +913,7 @@ FUNC_RESULT StrHashTable<T>::InsertElement(const char *name, T *elmnt) {
     return RES_FAIL;
 
   assert(!HashTable<T>::isExtrnlAlctr_);
-  newEntry = new StrHashTblEntry<T>(name, elmnt, hashVal);
+  newEntry = new StrHashTblEntry<T>(name, element, hashVal);
 
   AddNewEntry_(newEntry, hashVal);
 

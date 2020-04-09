@@ -71,14 +71,14 @@ public:
   virtual void Reset();
 
   // Appends a new element to the end of the list.
-  virtual void InsrtElmnt(T *elmnt);
+  virtual void InsrtElement(T *element);
   // Removes the provided element. The list must be dynamically sized.
-  virtual void RmvElmnt(T const *const elmnt);
+  virtual void RmvElement(T const *const element);
   // Removes the last element of the list. The list must be dynamically sized.
-  virtual void RmvLastElmnt();
+  virtual void RmvLastElement();
 
   // Returns the number of elements currently in the list.
-  virtual int GetElmntCnt() const;
+  virtual int GetElementCnt() const;
   // Returns the first/top/head element. Does not affect the "current"
   // element.
   virtual T *GetHead() const;
@@ -87,33 +87,33 @@ public:
   virtual T *GetTail() const;
 
   // Returns the first/top/head element and sets the "current" element to it.
-  virtual T *GetFrstElmnt();
+  virtual T *GetFrstElement();
   // Returns the last/bottom/tail element and sets the "current" element to
   // it.
-  virtual T *GetLastElmnt();
+  virtual T *GetLastElement();
   // Returns the element following the last retrieved one and sets the
   // "current" element to it.
-  virtual T *GetNxtElmnt();
+  virtual T *GetNxtElement();
   // Returns the element preceding the last retrieved one and sets the
   // "current" element to it.
-  virtual T *GetPrevElmnt();
+  virtual T *GetPrevElement();
   // Resets the "current" element (iterator) state.
   virtual void ResetIterator();
   // Removes the "current" element from the list.
-  virtual void RmvCrntElmnt();
+  virtual void RmvCrntElement();
 
   // Searches for an element in the list. Returns true if it is found.
-  virtual bool FindElmnt(T const *const element) const;
+  virtual bool FindElement(T const *const element) const;
   // Searches for an element in the list and records the number of times it.
   // is found in hitCnt. Returns true if the element is found at least once.
-  virtual bool FindElmnt(T const *const element, int &hitCnt) const;
+  virtual bool FindElement(T const *const element, int &hitCnt) const;
 
 protected:
   int maxSize_;
   Entry<T> *allocEntries_;
   int crntAllocIndx_;
   Entry<T> *topEntry_, *bottomEntry_, *rtrvEntry_;
-  int elmntCnt_;
+  int elementCnt_;
   bool itrtrReset_;
   bool wasTopRmvd_;
   bool wasBottomRmvd_;
@@ -139,7 +139,7 @@ template <class T> class Queue : public LinkedList<T> {
 public:
   Queue(int maxSize = INVALID_VALUE) : LinkedList<T>(maxSize) {}
   // Extracts the head of the list.
-  virtual T *ExtractElmnt();
+  virtual T *ExtractElement();
 };
 
 // A stack class that provides a helper head extraction method.
@@ -147,7 +147,7 @@ template <class T> class Stack : public LinkedList<T> {
 public:
   Stack(int maxSize = INVALID_VALUE) : LinkedList<T>(maxSize) {}
   // Extracts the head of the list.
-  virtual T *ExtractElmnt();
+  virtual T *ExtractElement();
 };
 
 // A priority list (queue) class with a configurable value and key types.
@@ -166,16 +166,16 @@ public:
   // Insert a new element by automatically finding its place in the list.
   // If allowDplct is false, the element will not be inserted if another
   // element with the same key exists.
-  KeyedEntry<T, K> *InsrtElmnt(T *elmnt, K key, bool allowDplct);
+  KeyedEntry<T, K> *InsrtElement(T *element, K key, bool allowDplct);
   // Disable the version from LinkedList.
-  void InsrtElmnt(T *) { Logger::Fatal("Unimplemented."); }
+  void InsrtElement(T *) { Logger::Fatal("Unimplemented."); }
   // Updates an entry's key and moves it to its correct place.
   void BoostEntry(KeyedEntry<T, K> *entry, K newKey);
   // Gets the next element in the list, based on the "current" element.
   // Returns NULL when the end of the list has been reached. If key is
   // provided, it is filled with the key of the retrieved element.
-  T *GetNxtPriorityElmnt();
-  T *GetNxtPriorityElmnt(K &key);
+  T *GetNxtPriorityElement();
+  T *GetNxtPriorityElement(K &key);
   // Copies all the data from another list. The existing list must be empty.
   void CopyList(PriorityList<T, K> const *const otherLst);
 
@@ -184,7 +184,7 @@ protected:
 
   // Creates and returns a keyed entry. For dynamically-sized lists, new
   // memory is allocated. For fixed-size lists, existing memory is used.
-  KeyedEntry<T, K> *AllocEntry_(T *elmnt, K key);
+  KeyedEntry<T, K> *AllocEntry_(T *element, K key);
   // Disable the version from LinkedList.
   Entry<T> *AllocEntry_(T *) {
     Logger::Fatal("Unimplemented.");
@@ -229,21 +229,21 @@ template <class T> inline void LinkedList<T>::Reset() {
   Init_();
 }
 
-template <class T> void LinkedList<T>::InsrtElmnt(T *elmnt) {
+template <class T> void LinkedList<T>::InsrtElement(T *element) {
   Entry<T> *newEntry;
 
-  newEntry = AllocEntry_(elmnt);
+  newEntry = AllocEntry_(element);
   AppendEntry_(newEntry);
 }
 
-template <class T> void LinkedList<T>::RmvElmnt(T const *const elmnt) {
+template <class T> void LinkedList<T>::RmvElement(T const *const element) {
   assert(LinkedList<T>::maxSize_ == INVALID_VALUE);
 
   Entry<T> *crntEntry, *prevEntry = NULL;
 
   for (crntEntry = topEntry_; crntEntry != NULL;
        prevEntry = crntEntry, crntEntry = crntEntry->GetNext()) {
-    if (crntEntry->element == elmnt) {
+    if (crntEntry->element == element) {
       // Found.
       if (crntEntry == topEntry_) {
         topEntry_ = crntEntry->GetNext();
@@ -262,7 +262,7 @@ template <class T> void LinkedList<T>::RmvElmnt(T const *const elmnt) {
       }
 
       FreeEntry_(crntEntry);
-      elmntCnt_--;
+      elementCnt_--;
       return;
     }
   }
@@ -270,16 +270,16 @@ template <class T> void LinkedList<T>::RmvElmnt(T const *const elmnt) {
   Logger::Fatal("Invalid linked list removal.");
 }
 
-template <class T> void LinkedList<T>::RmvLastElmnt() {
+template <class T> void LinkedList<T>::RmvLastElement() {
   assert(maxSize_ == INVALID_VALUE);
 
   Entry<T> *rmvdEntry = bottomEntry_;
   assert(bottomEntry_ != NULL);
   bottomEntry_ = bottomEntry_->GetPrev();
-  assert(elmntCnt_ > 0);
-  elmntCnt_--;
+  assert(elementCnt_ > 0);
+  elementCnt_--;
 
-  if (elmntCnt_ == 0) {
+  if (elementCnt_ == 0) {
     assert(bottomEntry_ == NULL);
     topEntry_ = NULL;
   } else {
@@ -290,8 +290,8 @@ template <class T> void LinkedList<T>::RmvLastElmnt() {
   FreeEntry_(rmvdEntry);
 }
 
-template <class T> inline int LinkedList<T>::GetElmntCnt() const {
-  return elmntCnt_;
+template <class T> inline int LinkedList<T>::GetElementCnt() const {
+  return elementCnt_;
 }
 
 template <class T> inline T *LinkedList<T>::GetHead() const {
@@ -302,19 +302,19 @@ template <class T> inline T *LinkedList<T>::GetTail() const {
   return bottomEntry_ == NULL ? NULL : bottomEntry_->element;
 }
 
-template <class T> inline T *LinkedList<T>::GetFrstElmnt() {
+template <class T> inline T *LinkedList<T>::GetFrstElement() {
   wasTopRmvd_ = false;
   wasBottomRmvd_ = false;
   rtrvEntry_ = topEntry_;
   return rtrvEntry_ == NULL ? NULL : rtrvEntry_->element;
 }
 
-template <class T> inline T *LinkedList<T>::GetLastElmnt() {
+template <class T> inline T *LinkedList<T>::GetLastElement() {
   rtrvEntry_ = bottomEntry_;
   return rtrvEntry_ == NULL ? NULL : rtrvEntry_->element;
 }
 
-template <class T> inline T *LinkedList<T>::GetNxtElmnt() {
+template <class T> inline T *LinkedList<T>::GetNxtElement() {
   if (wasTopRmvd_) {
     rtrvEntry_ = topEntry_;
   } else {
@@ -327,11 +327,11 @@ template <class T> inline T *LinkedList<T>::GetNxtElmnt() {
 
   wasTopRmvd_ = false;
   wasBottomRmvd_ = false;
-  T *elmnt = rtrvEntry_ == NULL ? NULL : rtrvEntry_->element;
-  return elmnt;
+  T *element = rtrvEntry_ == NULL ? NULL : rtrvEntry_->element;
+  return element;
 }
 
-template <class T> inline T *LinkedList<T>::GetPrevElmnt() {
+template <class T> inline T *LinkedList<T>::GetPrevElement() {
   rtrvEntry_ = rtrvEntry_->GetPrev();
   return rtrvEntry_ == NULL ? NULL : rtrvEntry_->element;
 }
@@ -344,7 +344,7 @@ template <class T> inline void LinkedList<T>::ResetIterator() {
 }
 
 template <class T>
-bool LinkedList<T>::FindElmnt(T const *const element, int &hitCnt) const {
+bool LinkedList<T>::FindElement(T const *const element, int &hitCnt) const {
   Entry<T> *crntEntry;
   hitCnt = 0;
   for (crntEntry = topEntry_; crntEntry != NULL;
@@ -356,12 +356,13 @@ bool LinkedList<T>::FindElmnt(T const *const element, int &hitCnt) const {
   return hitCnt > 0 ? true : false;
 }
 
-template <class T> bool LinkedList<T>::FindElmnt(T const *const element) const {
+template <class T>
+bool LinkedList<T>::FindElement(T const *const element) const {
   int hitCnt;
-  return FindElmnt(element, hitCnt);
+  return FindElement(element, hitCnt);
 }
 
-template <class T> inline void LinkedList<T>::RmvCrntElmnt() {
+template <class T> inline void LinkedList<T>::RmvCrntElement() {
   assert(rtrvEntry_ != NULL);
   wasTopRmvd_ = rtrvEntry_ == topEntry_;
   wasBottomRmvd_ = rtrvEntry_ == bottomEntry_;
@@ -380,12 +381,12 @@ template <class T> void LinkedList<T>::AppendEntry_(Entry<T> *newEntry) {
   newEntry->SetPrev(bottomEntry_);
   newEntry->SetNext(NULL);
   bottomEntry_ = newEntry;
-  elmntCnt_++;
+  elementCnt_++;
 }
 
 template <class T> void LinkedList<T>::RmvEntry_(Entry<T> *entry, bool free) {
   assert(maxSize_ == INVALID_VALUE);
-  assert(LinkedList<T>::elmntCnt_ > 0);
+  assert(LinkedList<T>::elementCnt_ > 0);
 
   Entry<T> *nextEntry = entry->GetNext();
   Entry<T> *prevEntry = entry->GetPrev();
@@ -409,7 +410,7 @@ template <class T> void LinkedList<T>::RmvEntry_(Entry<T> *entry, bool free) {
   if (free)
     FreeEntry_(entry);
 
-  elmntCnt_--;
+  elementCnt_--;
 }
 
 template <class T> void LinkedList<T>::FreeEntry_(Entry<T> *entry) {
@@ -423,7 +424,7 @@ template <class T> void LinkedList<T>::FreeEntry_(Entry<T> *entry) {
 
 template <class T> inline void LinkedList<T>::Init_() {
   topEntry_ = bottomEntry_ = rtrvEntry_ = NULL;
-  elmntCnt_ = 0;
+  elementCnt_ = 0;
   itrtrReset_ = true;
   wasTopRmvd_ = false;
   wasBottomRmvd_ = false;
@@ -451,13 +452,13 @@ template <class T> void LinkedList<T>::AllocEntries_() {
   crntAllocIndx_ = 0;
 }
 
-template <class T> inline T *Queue<T>::ExtractElmnt() {
+template <class T> inline T *Queue<T>::ExtractElement() {
   // assert(LinkedList<T>::maxSize_ == INVALID_VALUE);
   if (LinkedList<T>::topEntry_ == NULL)
     return NULL;
 
   Entry<T> *headEntry = LinkedList<T>::topEntry_;
-  T *headElmnt = headEntry->element;
+  T *headElement = headEntry->element;
 
   if (LinkedList<T>::bottomEntry_ == LinkedList<T>::topEntry_) {
     LinkedList<T>::bottomEntry_ = NULL;
@@ -469,18 +470,18 @@ template <class T> inline T *Queue<T>::ExtractElmnt() {
     LinkedList<T>::topEntry_->SetPrev(NULL);
   }
 
-  LinkedList<T>::elmntCnt_--;
+  LinkedList<T>::elementCnt_--;
   FreeEntry_(headEntry);
-  return headElmnt;
+  return headElement;
 }
 
-template <class T> inline T *Stack<T>::ExtractElmnt() {
+template <class T> inline T *Stack<T>::ExtractElement() {
   // assert(LinkedList<T>::maxSize_ == INVALID_VALUE);
   if (LinkedList<T>::bottomEntry_ == NULL)
     return NULL;
 
   Entry<T> *trgtEntry = LinkedList<T>::bottomEntry_;
-  T *trgtElmnt = trgtEntry->element;
+  T *trgtElement = trgtEntry->element;
 
   if (LinkedList<T>::bottomEntry_ == LinkedList<T>::topEntry_) {
     LinkedList<T>::topEntry_ = NULL;
@@ -492,9 +493,9 @@ template <class T> inline T *Stack<T>::ExtractElmnt() {
     LinkedList<T>::bottomEntry_->SetNext(NULL);
   }
 
-  LinkedList<T>::elmntCnt_--;
+  LinkedList<T>::elementCnt_--;
   LinkedList<T>::FreeEntry_(trgtEntry);
-  return trgtElmnt;
+  return trgtElement;
 }
 
 template <class T, class K>
@@ -509,8 +510,8 @@ PriorityList<T, K>::PriorityList(int maxSize) : LinkedList<T>(maxSize) {
 }
 
 template <class T, class K>
-KeyedEntry<T, K> *PriorityList<T, K>::InsrtElmnt(T *elmnt, K key,
-                                                 bool allowDplct) {
+KeyedEntry<T, K> *PriorityList<T, K>::InsrtElement(T *element, K key,
+                                                   bool allowDplct) {
   KeyedEntry<T, K> *crnt;
   KeyedEntry<T, K> *next = NULL;
   bool foundDplct = false;
@@ -527,14 +528,14 @@ KeyedEntry<T, K> *PriorityList<T, K>::InsrtElmnt(T *elmnt, K key,
   if (!allowDplct && foundDplct)
     return crnt;
 
-  KeyedEntry<T, K> *newEntry = AllocEntry_(elmnt, key);
+  KeyedEntry<T, K> *newEntry = AllocEntry_(element, key);
   InsrtEntry_(newEntry, next);
   LinkedList<T>::itrtrReset_ = true;
   return newEntry;
 }
 
 template <class T, class K>
-inline T *PriorityList<T, K>::GetNxtPriorityElmnt() {
+inline T *PriorityList<T, K>::GetNxtPriorityElement() {
   assert(LinkedList<T>::itrtrReset_ || LinkedList<T>::rtrvEntry_ != NULL);
 
   if (LinkedList<T>::itrtrReset_) {
@@ -553,7 +554,7 @@ inline T *PriorityList<T, K>::GetNxtPriorityElmnt() {
 }
 
 template <class T, class K>
-inline T *PriorityList<T, K>::GetNxtPriorityElmnt(K &key) {
+inline T *PriorityList<T, K>::GetNxtPriorityElement(K &key) {
   assert(LinkedList<T>::itrtrReset_ || LinkedList<T>::rtrvEntry_ != NULL);
   if (LinkedList<T>::itrtrReset_) {
     LinkedList<T>::rtrvEntry_ = LinkedList<T>::topEntry_;
@@ -614,13 +615,13 @@ void PriorityList<T, K>::BoostEntry(KeyedEntry<T, K> *entry, K newKey) {
 
 template <class T, class K>
 void PriorityList<T, K>::CopyList(PriorityList<T, K> const *const otherLst) {
-  assert(LinkedList<T>::elmntCnt_ == 0);
+  assert(LinkedList<T>::elementCnt_ == 0);
 
   for (KeyedEntry<T, K> *entry = (KeyedEntry<T, K> *)otherLst->topEntry_;
        entry != NULL; entry = entry->GetNext()) {
-    T *elmnt = entry->element;
+    T *element = entry->element;
     K key = entry->key;
-    KeyedEntry<T, K> *newEntry = AllocEntry_(elmnt, key);
+    KeyedEntry<T, K> *newEntry = AllocEntry_(element, key);
     LinkedList<T>::AppendEntry_(newEntry);
 
     if (entry == otherLst->rtrvEntry_) {
@@ -678,7 +679,7 @@ void PriorityList<T, K>::InsrtEntry_(KeyedEntry<T, K> *entry,
 
   entry->SetNext(next);
   entry->SetPrev(prev);
-  LinkedList<T>::elmntCnt_++;
+  LinkedList<T>::elementCnt_++;
 }
 
 } // namespace opt_sched

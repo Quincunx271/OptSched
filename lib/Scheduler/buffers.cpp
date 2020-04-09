@@ -413,7 +413,7 @@ void SpecsBuffer::CombinePieces_(int lngths[], char *strngs[], int startPiece,
   totLngth = ofst;
 }
 
-void SpecsBuffer::readLstElmnt(char *value) {
+void SpecsBuffer::readLstElement(char *value) {
   int lngth[INBUF_MAX_PIECES_PERLINE];
   char *strPtr[INBUF_MAX_PIECES_PERLINE];
   int pieceCnt;
@@ -432,9 +432,9 @@ void SpecsBuffer::readLstElmnt(char *value) {
   value[lngth[0]] = 0;
 }
 
-int SpecsBuffer::readIntLstElmnt() {
+int SpecsBuffer::readIntLstElement() {
   char strVal[INBUF_MAX_LINESIZE];
-  readLstElmnt(strVal);
+  readLstElement(strVal);
   return atoi(strVal);
 }
 

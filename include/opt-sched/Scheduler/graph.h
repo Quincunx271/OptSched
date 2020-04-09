@@ -313,19 +313,21 @@ protected:
   void CreateEdge_(UDT_GNODES frmNodeNum, UDT_GNODES toNodeNum, UDT_GLABEL lbl);
 };
 
-inline bool GraphNode::IsRoot() const { return prdcsrLst_->GetElmntCnt() == 0; }
+inline bool GraphNode::IsRoot() const {
+  return prdcsrLst_->GetElementCnt() == 0;
+}
 
-inline bool GraphNode::IsLeaf() const { return scsrLst_->GetElmntCnt() == 0; }
+inline bool GraphNode::IsLeaf() const { return scsrLst_->GetElementCnt() == 0; }
 
 inline void GraphNode::ApndScsr(GraphEdge *edge) {
   assert(edge->from == this);
-  scsrLst_->InsrtElmnt(edge, edge->to->GetNum(), true);
+  scsrLst_->InsrtElement(edge, edge->to->GetNum(), true);
 }
 
 inline void GraphNode::AddScsr(GraphEdge *edge) {
   assert(edge->from == this);
-  UDT_GEDGES scsrNum = scsrLst_->GetElmntCnt();
-  scsrLst_->InsrtElmnt(edge, edge->to->GetNum(), true);
+  UDT_GEDGES scsrNum = scsrLst_->GetElementCnt();
+  scsrLst_->InsrtElement(edge, edge->to->GetNum(), true);
   edge->succOrder = scsrNum;
   scsrLblSum_ += edge->label;
 
@@ -335,12 +337,12 @@ inline void GraphNode::AddScsr(GraphEdge *edge) {
 }
 
 inline void GraphNode::AddRcrsvPrdcsr(GraphNode *node) {
-  rcrsvPrdcsrLst_->InsrtElmnt(node);
+  rcrsvPrdcsrLst_->InsrtElement(node);
   isRcrsvPrdcsr_->SetBit(node->GetNum());
 }
 
 inline void GraphNode::AddRcrsvScsr(GraphNode *node) {
-  rcrsvScsrLst_->InsrtElmnt(node);
+  rcrsvScsrLst_->InsrtElement(node);
   isRcrsvScsr_->SetBit(node->GetNum());
 }
 
@@ -350,44 +352,44 @@ inline void GraphNode::UpdtMaxEdgLbl(UDT_GLABEL label) {
 }
 
 inline void GraphNode::RmvLastScsr(GraphNode *scsr, bool delEdg) {
-  assert(scsrLst_->GetElmntCnt() > 0);
-  assert(scsrLst_->GetLastElmnt()->to == scsr);
-  assert(scsrLst_->GetLastElmnt()->from == this);
+  assert(scsrLst_->GetElementCnt() > 0);
+  assert(scsrLst_->GetLastElement()->to == scsr);
+  assert(scsrLst_->GetLastElement()->from == this);
   if (delEdg)
-    delete scsrLst_->GetLastElmnt();
-  scsrLst_->RmvLastElmnt();
+    delete scsrLst_->GetLastElement();
+  scsrLst_->RmvLastElement();
 }
 
 inline void GraphNode::ApndPrdcsr(GraphEdge *edge) {
   assert(edge->to == this);
-  prdcsrLst_->InsrtElmnt(edge);
+  prdcsrLst_->InsrtElement(edge);
 }
 
 inline void GraphNode::AddPrdcsr(GraphEdge *edge) {
   assert(edge->to == this);
-  UDT_GEDGES prdcsrNum = prdcsrLst_->GetElmntCnt();
-  prdcsrLst_->InsrtElmnt(edge);
+  UDT_GEDGES prdcsrNum = prdcsrLst_->GetElementCnt();
+  prdcsrLst_->InsrtElement(edge);
   edge->predOrder = prdcsrNum;
   prdcsrLblSum_ += edge->label;
 }
 
 inline void GraphNode::RmvLastPrdcsr(GraphNode *prdcsr, bool delEdg) {
-  assert(prdcsrLst_->GetElmntCnt() > 0);
-  assert(prdcsrLst_->GetLastElmnt()->from == prdcsr);
-  assert(prdcsrLst_->GetLastElmnt()->to == this);
+  assert(prdcsrLst_->GetElementCnt() > 0);
+  assert(prdcsrLst_->GetLastElement()->from == prdcsr);
+  assert(prdcsrLst_->GetLastElement()->to == this);
   if (delEdg)
-    delete prdcsrLst_->GetLastElmnt();
-  prdcsrLst_->RmvLastElmnt();
+    delete prdcsrLst_->GetLastElement();
+  prdcsrLst_->RmvLastElement();
 }
 
 inline void GraphNode::SetColor(GNODE_COLOR color) { color_ = color; }
 
 inline UDT_GEDGES GraphNode::GetPrdcsrCnt() const {
-  return prdcsrLst_->GetElmntCnt();
+  return prdcsrLst_->GetElementCnt();
 }
 
 inline UDT_GEDGES GraphNode::GetScsrCnt() const {
-  return scsrLst_->GetElmntCnt();
+  return scsrLst_->GetElementCnt();
 }
 
 inline GNODE_COLOR GraphNode::GetColor() const { return color_; }
@@ -397,7 +399,7 @@ inline UDT_GNODES GraphNode::GetNum() const { return num_; }
 inline void GraphNode::SetNum(UDT_GNODES num) { num_ = num; }
 
 inline GraphNode *GraphNode::GetFrstScsr(UDT_GLABEL &label) {
-  GraphEdge *edge = scsrLst_->GetFrstElmnt();
+  GraphEdge *edge = scsrLst_->GetFrstElement();
   if (edge == NULL)
     return NULL;
   label = edge->label;
@@ -405,7 +407,7 @@ inline GraphNode *GraphNode::GetFrstScsr(UDT_GLABEL &label) {
 }
 
 inline GraphNode *GraphNode::GetNxtScsr(UDT_GLABEL &label) {
-  GraphEdge *edge = scsrLst_->GetNxtElmnt();
+  GraphEdge *edge = scsrLst_->GetNxtElement();
   if (edge == NULL)
     return NULL;
   label = edge->label;
@@ -413,7 +415,7 @@ inline GraphNode *GraphNode::GetNxtScsr(UDT_GLABEL &label) {
 }
 
 inline GraphNode *GraphNode::GetFrstPrdcsr(UDT_GLABEL &label) {
-  GraphEdge *edge = prdcsrLst_->GetFrstElmnt();
+  GraphEdge *edge = prdcsrLst_->GetFrstElement();
   if (edge == NULL)
     return NULL;
   label = edge->label;
@@ -421,7 +423,7 @@ inline GraphNode *GraphNode::GetFrstPrdcsr(UDT_GLABEL &label) {
 }
 
 inline GraphNode *GraphNode::GetNxtPrdcsr(UDT_GLABEL &label) {
-  GraphEdge *edge = prdcsrLst_->GetNxtElmnt();
+  GraphEdge *edge = prdcsrLst_->GetNxtElement();
   if (edge == NULL)
     return NULL;
   label = edge->label;

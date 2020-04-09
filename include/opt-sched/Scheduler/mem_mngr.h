@@ -88,15 +88,15 @@ inline MemAlloc<T>::MemAlloc(int blockSize, int maxSize)
 }
 
 template <class T> inline MemAlloc<T>::~MemAlloc() {
-  for (T *blk = allocatedBlocks_.GetFrstElmnt(); blk != NULL;
-       blk = allocatedBlocks_.GetNxtElmnt()) {
+  for (T *blk = allocatedBlocks_.GetFrstElement(); blk != NULL;
+       blk = allocatedBlocks_.GetNxtElement()) {
     delete[] blk;
   }
 }
 
 template <class T> inline void MemAlloc<T>::Reset() {
-  assert(allocatedBlocks_.GetElmntCnt() >= 1);
-  currentBlock_ = allocatedBlocks_.GetFrstElmnt();
+  assert(allocatedBlocks_.GetElementCnt() >= 1);
+  currentBlock_ = allocatedBlocks_.GetFrstElement();
   currentIndex_ = 0;
   availableObjects_.Reset();
   allocatedBlocksAvailable_ = true;
@@ -106,7 +106,7 @@ template <class T> inline void MemAlloc<T>::GetNewBlock_() {
   currentBlock_ = NULL;
 
   if (allocatedBlocksAvailable_) {
-    currentBlock_ = allocatedBlocks_.GetNxtElmnt();
+    currentBlock_ = allocatedBlocks_.GetNxtElement();
     currentIndex_ = 0;
   }
 
@@ -118,13 +118,13 @@ template <class T> inline void MemAlloc<T>::GetNewBlock_() {
 
 template <class T> inline void MemAlloc<T>::AllocNewBlock_() {
   T *blk = new T[blockSize_];
-  allocatedBlocks_.InsrtElmnt(blk);
+  allocatedBlocks_.InsrtElement(blk);
   currentIndex_ = 0;
   currentBlock_ = blk;
 }
 
 template <class T> inline T *MemAlloc<T>::GetObjects_(int count) {
-  T *obj = availableObjects_.ExtractElmnt();
+  T *obj = availableObjects_.ExtractElement();
 
   if (obj == NULL) {
     // If there are no recycled objects available for reuse.
@@ -148,7 +148,7 @@ template <class T> inline T *MemAlloc<T>::GetObjects_(int count) {
 template <class T> inline T *MemAlloc<T>::GetObject() { return GetObjects_(1); }
 
 template <class T> inline void MemAlloc<T>::FreeObject(T *obj) {
-  availableObjects_.InsrtElmnt(obj);
+  availableObjects_.InsrtElement(obj);
 }
 
 } // namespace opt_sched

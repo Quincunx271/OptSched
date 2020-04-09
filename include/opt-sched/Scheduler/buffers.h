@@ -98,8 +98,8 @@ public:
   SpecsBuffer();
   void ReadSpec(char const *const title, char *value);
   void readLine(char *value, int maxPieceCnt);
-  void readLstElmnt(char *value);
-  int readIntLstElmnt();
+  void readLstElement(char *value);
+  int readIntLstElement();
   bool ReadFlagSpec(char const *const title, bool dfltValue);
   unsigned long ReadUlongSpec(char const *const title);
   float ReadFloatSpec(char const *const title);

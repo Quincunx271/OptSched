@@ -1146,8 +1146,8 @@ void DataDepGraph::CmputCrtclPathsFrmRcrsvPrdcsr_(SchedInstruction *ref) {
   assert(rcrsvScsrLst != NULL);
 
   // Visit the nodes in reverse topological order
-  for (node = rcrsvScsrLst->GetLastElmnt(); node != NULL;
-       node = rcrsvScsrLst->GetPrevElmnt()) {
+  for (node = rcrsvScsrLst->GetLastElement(); node != NULL;
+       node = rcrsvScsrLst->GetPrevElement()) {
     inst = (SchedInstruction *)node;
     inst->CmputCrtclPathFrmRcrsvPrdcsr(ref);
   }
@@ -1168,8 +1168,8 @@ void DataDepGraph::CmputCrtclPathsFrmRcrsvScsr_(SchedInstruction *ref) {
   assert(rcrsvPrdcsrLst != NULL);
 
   // Visit the nodes in reverse topological order
-  for (node = rcrsvPrdcsrLst->GetLastElmnt(); node != NULL;
-       node = rcrsvPrdcsrLst->GetPrevElmnt()) {
+  for (node = rcrsvPrdcsrLst->GetLastElement(); node != NULL;
+       node = rcrsvPrdcsrLst->GetPrevElement()) {
     inst = (SchedInstruction *)node;
     inst->CmputCrtclPathFrmRcrsvScsr(ref);
   }
@@ -1395,8 +1395,8 @@ DataDepSubGraph::~DataDepSubGraph() {
     delete LCRvrsRlxdSchdulr_;
 
   assert(lostInsts_ != NULL);
-  for (LostInst *inst = lostInsts_->GetFrstElmnt(); inst != NULL;
-       inst = lostInsts_->GetNxtElmnt()) {
+  for (LostInst *inst = lostInsts_->GetFrstElement(); inst != NULL;
+       inst = lostInsts_->GetNxtElement()) {
     delete inst;
   }
   lostInsts_->Reset();
@@ -1482,7 +1482,7 @@ void DataDepSubGraph::InitForSchdulng(bool clearAll) {
   //  SchedInstruction* inst;
   LostInst *lostInst;
 
-  while ((lostInst = lostInsts_->ExtractElmnt()) != NULL) {
+  while ((lostInst = lostInsts_->ExtractElement()) != NULL) {
     InstCount indx = lostInst->indx;
     InstCount num = lostInst->inst->GetNum();
     assert(numToIndx_[num] == INVALID_VALUE);
@@ -1682,7 +1682,7 @@ void DataDepSubGraph::InstLost(SchedInstruction *inst) {
 
   lostInst->inst = inst;
   lostInst->indx = instIndx;
-  lostInsts_->InsrtElmnt(lostInst);
+  lostInsts_->InsrtElement(lostInst);
   numToIndx_[instNum] = INVALID_VALUE;
 
   instsChngd_ = true;
@@ -1696,7 +1696,7 @@ void DataDepSubGraph::UndoInstLost(SchedInstruction *inst) {
   assert(0 <= instNum && instNum < fullGraph_->GetInstCnt());
 
   assert(numToIndx_[instNum] == INVALID_VALUE);
-  LostInst *lostInst = lostInsts_->ExtractElmnt();
+  LostInst *lostInst = lostInsts_->ExtractElement();
 
   assert(lostInst->inst == inst);
   InstCount instIndx = lostInst->indx;
@@ -2298,7 +2298,7 @@ bool DataDepSubGraph::ChkInstRange_(SchedInstruction *inst, InstCount indx,
   /*
   if (dynmcFrwrdLwrBounds_[indx] == deadline) {
     if (dynmcRlxdSchdulr_->IsInstFxd(indx) == false) {
-      fxdLst_->InsrtElmnt(inst);
+      fxdLst_->InsrtElement(inst);
       dynmcRlxdSchdulr_->SetInstFxng(indx);
     }
   }
@@ -3195,8 +3195,8 @@ bool DataDepGraph::DoesFeedUser(SchedInstruction *inst) {
   Logger::Info("Testing inst %d", inst->GetNum());
 #endif
   LinkedList<GraphNode> *rcrsvSuccs = inst->GetRcrsvNghbrLst(DIR_FRWRD);
-  for (GraphNode *succ = rcrsvSuccs->GetFrstElmnt(); succ != NULL;
-       succ = rcrsvSuccs->GetNxtElmnt()) {
+  for (GraphNode *succ = rcrsvSuccs->GetFrstElement(); succ != NULL;
+       succ = rcrsvSuccs->GetNxtElement()) {
     SchedInstruction *succInst = static_cast<SchedInstruction *>(succ);
 
     int curInstAdjUseCnt = succInst->GetAdjustedUseCnt();
@@ -3211,7 +3211,6 @@ bool DataDepGraph::DoesFeedUser(SchedInstruction *inst) {
     // If there is a successor instruction that decreases live intervals
     // or one that does not increase live intervals, then return true.
     return true;
-
   }
 // Return false if there is no recursive successor of inst
 // that uses a live register.
@@ -3301,7 +3300,7 @@ InstCount DataDepSubGraph::GetOrgnlInstCnt() {
 InstCount DataDepSubGraph::GetLwrBound() { return schedLwrBound_ - 2; }
 
 InstCount DataDepSubGraph::GetLostInstCnt_() {
-  return lostInsts_->GetElmntCnt();
+  return lostInsts_->GetElementCnt();
 }
 
 bool DataDepStruct::IncludesUnpipelined() { return includesUnpipelined_; }

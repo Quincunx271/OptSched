@@ -743,7 +743,7 @@ inline HistEnumTreeNode *EnumTreeNode::GetDmntdSubProb() { return dmntdNode_; }
 
 inline void EnumTreeNode::AddChild(EnumTreeNode *node) {
   assert(node->GetHistory() != NULL);
-  chldrn_->InsrtElmnt(node->GetHistory());
+  chldrn_->InsrtElement(node->GetHistory());
 }
 /**************************************************************************/
 
@@ -867,8 +867,8 @@ bool EnumTreeNode::ExaminedInst::IsRsrcDmntd(SchedInstruction *) {
   if (!wasRlxInfsbl_)
     return false;
 
-  for (TightndInst *tightndScsr = tightndScsrs_->GetFrstElmnt();
-       tightndScsr != NULL; tightndScsr = tightndScsrs_->GetNxtElmnt()) {
+  for (TightndInst *tightndScsr = tightndScsrs_->GetFrstElement();
+       tightndScsr != NULL; tightndScsr = tightndScsrs_->GetNxtElement()) {
     SchedInstruction *scsr = tightndScsr->inst;
 
     // If the release time of one successor of the examined instruction
@@ -975,8 +975,8 @@ inline void Enumerator::CreateNewRdyLst_() {
 inline bool Enumerator::ChkCrntNodeForFsblty_() {
   SchedInstruction *inst;
 
-  for (inst = bkwrdTightndLst_->GetFrstElmnt(); inst != NULL;
-       inst = bkwrdTightndLst_->GetNxtElmnt()) {
+  for (inst = bkwrdTightndLst_->GetFrstElement(); inst != NULL;
+       inst = bkwrdTightndLst_->GetNxtElement()) {
     assert(inst->IsSchduld() == false);
 
     if (inst->GetCrntDeadline() < crntCycleNum_) {

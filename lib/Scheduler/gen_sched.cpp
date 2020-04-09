@@ -112,7 +112,7 @@ bool ConstrainedScheduler::Initialize_(InstCount trgtSchedLngth,
     frstRdyLstPerCycle_[0] = new LinkedList<SchedInstruction>;
   }
 
-  frstRdyLstPerCycle_[0]->InsrtElmnt(rootInst_);
+  frstRdyLstPerCycle_[0]->InsrtElement(rootInst_);
 
   if (rsrvSlots_ != NULL) {
     delete[] rsrvSlots_;
@@ -153,7 +153,7 @@ void ConstrainedScheduler::SchdulInst_(SchedInstruction *inst, InstCount) {
 
       // Add this succesor to the first-ready list of the future cycle
       // in which we now know it will become ready
-      frstRdyLstPerCycle_[scsrRdyCycle]->InsrtElmnt(crntScsr);
+      frstRdyLstPerCycle_[scsrRdyCycle]->InsrtElement(crntScsr);
     }
   }
 
@@ -184,7 +184,7 @@ void ConstrainedScheduler::UnSchdulInst_(SchedInstruction *inst) {
       // the scheduling of this instruction has made it ready.
       assert(scsrRdyCycle < schedUprBound_);
       assert(frstRdyLstPerCycle_[scsrRdyCycle] != NULL);
-      frstRdyLstPerCycle_[scsrRdyCycle]->RmvElmnt(crntScsr);
+      frstRdyLstPerCycle_[scsrRdyCycle]->RmvElement(crntScsr);
     }
   }
 

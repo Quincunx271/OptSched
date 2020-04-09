@@ -37,11 +37,11 @@ void GraphTrans::UpdatePrdcsrAndScsr_(SchedInstruction *nodeA,
   nodeA->AddRcrsvScsr(nodeB);
   nodeB->AddRcrsvPrdcsr(nodeA);
 
-  for (GraphNode *X = nodeAPrdcsrLst->GetFrstElmnt(); X != NULL;
-       X = nodeAPrdcsrLst->GetNxtElmnt()) {
+  for (GraphNode *X = nodeAPrdcsrLst->GetFrstElement(); X != NULL;
+       X = nodeAPrdcsrLst->GetNxtElement()) {
 
-    for (GraphNode *Y = nodeBScsrLst->GetFrstElmnt(); Y != NULL;
-         Y = nodeBScsrLst->GetNxtElmnt()) {
+    for (GraphNode *Y = nodeBScsrLst->GetFrstElement(); Y != NULL;
+         Y = nodeBScsrLst->GetNxtElement()) {
       // Check if Y is reachable f
       if (!X->IsRcrsvScsr(Y)) {
         Y->AddRcrsvPrdcsr(X);
