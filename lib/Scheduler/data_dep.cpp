@@ -349,9 +349,9 @@ FUNC_RESULT DataDepGraph::ReadFrmFile(SpecsBuffer *buf,
     return RES_END;
   }
 
-  NXTLINE_TYPE nxtLine = buf->GetNxtVldLine(pieceCnt, strngs, lngths);
+  NXTLINE_TYPE nextLine = buf->GetNextVldLine(pieceCnt, strngs, lngths);
 
-  if (nxtLine == NXT_EOF || pieceCnt == 0) {
+  if (nextLine == NXT_EOF || pieceCnt == 0) {
     endOfFileReached = true;
     return RES_END;
   }
@@ -388,26 +388,26 @@ FUNC_RESULT DataDepGraph::ReadFrmFile(SpecsBuffer *buf,
 
   AllocArrays_(instCnt_);
 
-  buf->GetNxtVldLine(pieceCnt, strngs, lngths);
+  buf->GetNextVldLine(pieceCnt, strngs, lngths);
 
   if (strcmp(strngs[0], "dag_lb") == 0) {
     fileSchedLwrBound_ = atoi(strngs[1]);
 
-    buf->GetNxtVldLine(pieceCnt, strngs, lngths);
+    buf->GetNextVldLine(pieceCnt, strngs, lngths);
     fileSchedUprBound_ = atoi(strngs[1]);
 
-    buf->GetNxtVldLine(pieceCnt, strngs, lngths);
+    buf->GetNextVldLine(pieceCnt, strngs, lngths);
 
     if (strcmp(strngs[0], "dag_tgt_ub") == 0) {
       fileTgtUprBound = atoi(strngs[1]);
       fileSchedTrgtUprBound_ = fileTgtUprBound;
-      buf->GetNxtVldLine(pieceCnt, strngs, lngths); // skip the nodes line
+      buf->GetNextVldLine(pieceCnt, strngs, lngths); // skip the nodes line
     }
 
     if (strcmp(strngs[0], "dag_cost_ub") == 0) {
       fileCostUprBound_ = atoi(strngs[1]);
       fileCostUprBound_ /= 10; // convert denominator from 1000 to 100
-      buf->GetNxtVldLine(pieceCnt, strngs, lngths); // skip the nodes line
+      buf->GetNextVldLine(pieceCnt, strngs, lngths); // skip the nodes line
     }
   } else {
     if (strcmp(strngs[0], "nodes") != 0 && strcmp(strngs[0], "blocks") != 0) {
@@ -434,7 +434,7 @@ FUNC_RESULT DataDepGraph::ReadFrmFile(SpecsBuffer *buf,
       return rslt;
     }
 
-    buf->GetNxtVldLine(pieceCnt, strngs, lngths); // skip the nodes line
+    buf->GetNextVldLine(pieceCnt, strngs, lngths); // skip the nodes line
   }
 
   rslt = ParseF2Nodes_(buf, machMdl_);
@@ -518,7 +518,7 @@ FUNC_RESULT DataDepGraph::ParseF2Blocks_(SpecsBuffer *buf) {
 
 FUNC_RESULT DataDepGraph::ParseF2Nodes_(SpecsBuffer *buf,
                                         MachineModel *machMdl) {
-  NXTLINE_TYPE nxtLine;
+  NXTLINE_TYPE nextLine;
   InstCount i;
   InstCount nodeNum;
   FUNC_RESULT rslt = RES_SUCCESS;
@@ -537,7 +537,7 @@ FUNC_RESULT DataDepGraph::ParseF2Nodes_(SpecsBuffer *buf,
   for (i = 0; i < instCnt_; i++) {
 
     rslt = ReadInstName_(buf, i, instName, prevInstName, opCode, nodeNum,
-                         instType, nxtLine);
+                         instType, nextLine);
 
     if (rslt != RES_SUCCESS)
       break;
@@ -585,7 +585,7 @@ FUNC_RESULT DataDepGraph::ParseF2Nodes_(SpecsBuffer *buf,
         Logger::Error("Invalid block number %d in DAG file. "
                       "Expected a value between %d and %d",
                       blkNum, lastBlkNum_, bscBlkCnt_ - 1);
-        rslt = nxtLine == NXT_EOF ? RES_END : RES_ERROR;
+        rslt = nextLine == NXT_EOF ? RES_END : RES_ERROR;
         break;
       }
 
@@ -615,7 +615,7 @@ FUNC_RESULT DataDepGraph::ParseF2Nodes_(SpecsBuffer *buf,
     AdjstFileSchedCycles_();
   }
 
-  if (nxtLine == NXT_EOF) {
+  if (nextLine == NXT_EOF) {
     rslt = RES_END;
   }
 
@@ -625,13 +625,13 @@ FUNC_RESULT DataDepGraph::ParseF2Nodes_(SpecsBuffer *buf,
 FUNC_RESULT DataDepGraph::ReadInstName_(SpecsBuffer *buf, int i, char *instName,
                                         char *prevInstName, char *opCode,
                                         InstCount &nodeNum, InstType &instType,
-                                        NXTLINE_TYPE &nxtLine) {
+                                        NXTLINE_TYPE &nextLine) {
   int pieceCnt;
   char *strngs[INBUF_MAX_PIECES_PERLINE];
   int lngths[INBUF_MAX_PIECES_PERLINE];
   FUNC_RESULT rslt;
 
-  nxtLine = buf->GetNxtVldLine(pieceCnt, strngs, lngths);
+  nextLine = buf->GetNextVldLine(pieceCnt, strngs, lngths);
   int expctdPieceCnt = 3;
 
   if (pieceCnt > 3 && i > 0 && i < (instCnt_ - 1)) {
@@ -641,7 +641,7 @@ FUNC_RESULT DataDepGraph::ReadInstName_(SpecsBuffer *buf, int i, char *instName,
   if (pieceCnt != expctdPieceCnt || strcmp(strngs[0], "node") != 0) {
     Logger::Error("In defining inst %d: Invalid number of tockens near %s.", i,
                   strngs[0]);
-    rslt = nxtLine == NXT_EOF ? RES_END : RES_ERROR;
+    rslt = nextLine == NXT_EOF ? RES_END : RES_ERROR;
     return rslt;
   }
 
@@ -649,7 +649,7 @@ FUNC_RESULT DataDepGraph::ReadInstName_(SpecsBuffer *buf, int i, char *instName,
   /*
   if (nodeNum != i) {
     Logger::Error("Invalid node number %d for inst %d.", nodeNum, i);
-    rslt = (nxtLine == NXT_EOF) ? RES_END : RES_ERROR;
+    rslt = (nextLine == NXT_EOF) ? RES_END : RES_ERROR;
     break;
   }
   */
@@ -659,7 +659,7 @@ FUNC_RESULT DataDepGraph::ReadInstName_(SpecsBuffer *buf, int i, char *instName,
 
   if (instType == INVALID_INST_TYPE) {
     Logger::Error("Invalid inst type %s for node #%d", instName, nodeNum);
-    rslt = nxtLine == NXT_EOF ? RES_END : RES_ERROR;
+    rslt = nextLine == NXT_EOF ? RES_END : RES_ERROR;
     return rslt;
   }
 
@@ -736,19 +736,19 @@ FUNC_RESULT DataDepGraph::ParseF2Edges_(SpecsBuffer *buf,
   char *strngs[INBUF_MAX_PIECES_PERLINE];
   int lngths[INBUF_MAX_PIECES_PERLINE];
   int ltncy;
-  NXTLINE_TYPE nxtLine;
+  NXTLINE_TYPE nextLine;
   FUNC_RESULT rslt = RES_SUCCESS;
 
   if (buf->checkTitle("dependencies") == RES_ERROR)
     return RES_ERROR;
 
   do {
-    nxtLine = buf->GetNxtVldLine(pieceCnt, strngs, lngths);
+    nextLine = buf->GetNextVldLine(pieceCnt, strngs, lngths);
 
     if (pieceCnt >= 4) {
       if (strncmp(strngs[0], "dep", 3) != 0) {
         Logger::Error("Invalid edge definition. Expected dependence.");
-        rslt = (nxtLine == NXT_EOF) ? RES_END : RES_ERROR;
+        rslt = (nextLine == NXT_EOF) ? RES_END : RES_ERROR;
         break;
         // return RES_ERROR;
       }
@@ -781,24 +781,24 @@ FUNC_RESULT DataDepGraph::ParseF2Edges_(SpecsBuffer *buf,
     } else {
       if (strcmp(strngs[0], "schedule") == 0) {
         do {
-          nxtLine = buf->GetNxtVldLine(pieceCnt, strngs, lngths);
+          nextLine = buf->GetNextVldLine(pieceCnt, strngs, lngths);
         } while (pieceCnt != 1);
       }
 
       if (pieceCnt != 1 || strcmp(strngs[0], "}") != 0) {
         Logger::Error("Invalid DAG def near %s. Expected \"}\".", strngs[0]);
-        rslt = nxtLine == NXT_EOF ? RES_END : RES_ERROR;
+        rslt = nextLine == NXT_EOF ? RES_END : RES_ERROR;
         break;
         // return RES_ERROR;
       }
     }
   } while (pieceCnt >= 4);
 
-  if (nxtLine == NXT_EOF)
+  if (nextLine == NXT_EOF)
     rslt = RES_END;
 
   return rslt;
-  //  return nxtLine==NXT_EOF? RES_END: RES_SUCCESS;
+  //  return nextLine==NXT_EOF? RES_END: RES_SUCCESS;
 }
 
 FUNC_RESULT DataDepGraph::SkipGraph(SpecsBuffer *buf, bool &endOfFileReached) {
@@ -809,9 +809,9 @@ FUNC_RESULT DataDepGraph::SkipGraph(SpecsBuffer *buf, bool &endOfFileReached) {
     int pieceCnt;
     char *strngs[INBUF_MAX_PIECES_PERLINE];
     int lngths[INBUF_MAX_PIECES_PERLINE];
-    NXTLINE_TYPE nxtLine = buf->GetNxtVldLine(pieceCnt, strngs, lngths);
+    NXTLINE_TYPE nextLine = buf->GetNextVldLine(pieceCnt, strngs, lngths);
 
-    if (nxtLine == NXT_EOF) {
+    if (nextLine == NXT_EOF) {
       endOfFileReached = true;
       return RES_END;
     } else if (pieceCnt == 1 && strngs[0][0] == '}') {
@@ -1097,7 +1097,7 @@ void DataDepGraph::WriteDepInfoToF2File_(FILE *file) {
     int ltncy;
     DependenceType depType;
     for (SchedInstruction *scsr = inst->GetFrstScsr(NULL, &ltncy, &depType);
-         scsr != NULL; scsr = inst->GetNxtScsr(NULL, &ltncy, &depType)) {
+         scsr != NULL; scsr = inst->GetNextScsr(NULL, &ltncy, &depType)) {
       char const *bareDepTypeName = GetDependenceTypeName(depType);
       int bareDepTypeLngth = strlen(bareDepTypeName);
       char depTypeName[MAX_NAMESIZE];
@@ -1208,7 +1208,7 @@ void DataDepGraph::CountDeps(InstCount &totDepCnt, InstCount &crossDepCnt) {
     int ltncy;
 
     for (SchedInstruction *child = inst->GetFrstScsr(&ltncy); child != NULL;
-         child = inst->GetNxtScsr(&ltncy)) {
+         child = inst->GetNextScsr(&ltncy)) {
       if (inst->GetIssueType() != child->GetIssueType()) {
         crossDepCnt++;
       }
@@ -1226,7 +1226,7 @@ void DataDepGraph::CountDeps(InstCount &totDepCnt, InstCount &crossDepCnt) {
     DependenceType depType;
     for (SchedInstruction* child = inst->GetFrstScsr(NULL, &ltncy, &depType);
          child != NULL;
-         child = inst->GetNxtScsr(NULL, &ltncy, &depType)) {
+         child = inst->GetNextScsr(NULL, &ltncy, &depType)) {
       if (depType == DEP_DATA) {
         if (machMdl_->IsFloat(inst->GetInstType())) {
           fpDefCnt++;
@@ -1254,7 +1254,7 @@ void DataDepGraph::AddDefsAndUses(RegisterFile regFiles[]) {
     int ltncy;
     for (SchedInstruction* child = inst->GetFrstScsr(NULL, &ltncy, &depType);
          child != NULL;
-         child = inst->GetNxtScsr(NULL, &ltncy, &depType)) {
+         child = inst->GetNextScsr(NULL, &ltncy, &depType)) {
       if (depType == DEP_DATA) {
         if (reg == NULL) {
           int16_t regType;
@@ -1396,7 +1396,7 @@ DataDepSubGraph::~DataDepSubGraph() {
 
   assert(lostInsts_ != NULL);
   for (LostInst *inst = lostInsts_->GetFrstElmnt(); inst != NULL;
-       inst = lostInsts_->GetNxtElmnt()) {
+       inst = lostInsts_->GetNextElmnt()) {
     delete inst;
   }
   lostInsts_->Reset();
@@ -1753,7 +1753,7 @@ void DataDepSubGraph::TightnLwrBound_(DIRECTION dir, InstCount indx,
   UDT_GLABEL ltncy;
 
   for (SchedInstruction *nghbr = inst->GetFrstNghbr(opstDir, &ltncy);
-       nghbr != NULL; nghbr = inst->GetNxtNghbr(opstDir, &ltncy)) {
+       nghbr != NULL; nghbr = inst->GetNextNghbr(opstDir, &ltncy)) {
     if (IsInGraph(nghbr)) {
       InstCount nghbrIndx = numToIndx_[nghbr->GetNum()];
       assert((dir == DIR_FRWRD && nghbrIndx < indx) ||
@@ -1855,7 +1855,7 @@ bool DataDepSubGraph::IsRoot_(SchedInstruction *inst) {
   assert(IsInGraph(inst));
 
   for (pred = inst->GetFrstPrdcsr(&num); pred != NULL;
-       pred = inst->GetNxtPrdcsr(&num)) {
+       pred = inst->GetNextPrdcsr(&num)) {
     assert(pred != inst);
     // If the instruction has a predecessor that belongs to this subDAG, then
     // it is not a root instruction of the subDAG.
@@ -1875,7 +1875,7 @@ bool DataDepSubGraph::IsLeaf_(SchedInstruction *inst) {
   assert(IsInGraph(inst));
 
   for (SchedInstruction *scsr = inst->GetFrstScsr(&num); scsr != NULL;
-       scsr = inst->GetNxtScsr(&num)) {
+       scsr = inst->GetNextScsr(&num)) {
     assert(scsr != inst);
 
     // If the instruction has a successor that belongs to this subDAG, then
@@ -2128,7 +2128,7 @@ void DataDepSubGraph::FindFrstCycleRange_(InstCount &minFrstCycle,
   maxFrstCycle = INVALID_VALUE;
 
   for (SchedInstruction *inst = rootInst_->GetFrstScsr(); inst != NULL;
-       inst = rootInst_->GetNxtScsr()) {
+       inst = rootInst_->GetNextScsr()) {
     InstCount releaseTime = inst->GetCrntReleaseTime();
     InstCount deadline = inst->GetCrntDeadline();
     assert(inst->IsSchduld() == false || releaseTime == deadline);
@@ -2311,7 +2311,7 @@ InstCount DataDepSubGraph::CmputMaxReleaseTime_() {
   InstCount maxReleaseTime = 0;
 
   for (leaf = leafInst_->GetFrstPrdcsr(); leaf != NULL;
-       leaf = leafInst_->GetNxtPrdcsr()) {
+       leaf = leafInst_->GetNextPrdcsr()) {
     if (leaf->GetCrntReleaseTime() > maxReleaseTime) {
       maxReleaseTime = leaf->GetCrntReleaseTime();
     }
@@ -2325,7 +2325,7 @@ InstCount DataDepSubGraph::CmputMaxDeadline_() {
   InstCount maxDeadline = 0;
 
   for (leaf = leafInst_->GetFrstPrdcsr(); leaf != NULL;
-       leaf = leafInst_->GetNxtPrdcsr()) {
+       leaf = leafInst_->GetNextPrdcsr()) {
     if (leaf->GetCrntDeadline() > maxDeadline) {
       maxDeadline = leaf->GetCrntDeadline();
     }
@@ -2525,7 +2525,7 @@ InstCount DataDepSubGraph::CmputExtrnlLtncs_(InstCount rejoinCycle,
     UDT_GLABEL ltncy;
     DependenceType depType;
     for (SchedInstruction *scsr = pred->GetFrstScsr(NULL, &ltncy, &depType);
-         scsr != NULL; scsr = pred->GetNxtScsr(NULL, &ltncy, &depType)) {
+         scsr != NULL; scsr = pred->GetNextScsr(NULL, &ltncy, &depType)) {
       assert(scsr != leafInst_);
 
       if (IsInGraph(scsr) == false && ltncy > 1) {
@@ -2703,10 +2703,10 @@ void InstSchedule::ResetInstIter() { iterSlotNum_ = 0; }
 
 InstCount InstSchedule::GetFrstInst(InstCount &cycleNum, InstCount &slotNum) {
   iterSlotNum_ = 0;
-  return GetNxtInst(cycleNum, slotNum);
+  return GetNextInst(cycleNum, slotNum);
 }
 
-InstCount InstSchedule::GetNxtInst(InstCount &cycleNum, InstCount &slotNum) {
+InstCount InstSchedule::GetNextInst(InstCount &cycleNum, InstCount &slotNum) {
   InstCount instNum;
 
   if (iterSlotNum_ == crntSlotNum_) {
@@ -2973,7 +2973,7 @@ bool InstSchedule::VerifyDataDeps_(DataDepGraph *dataDepGraph) {
     UDT_GLABEL ltncy;
     DependenceType depType;
     for (SchedInstruction *scsr = inst->GetFrstScsr(NULL, &ltncy, &depType);
-         scsr != NULL; scsr = inst->GetNxtScsr(NULL, &ltncy, &depType)) {
+         scsr != NULL; scsr = inst->GetNextScsr(NULL, &ltncy, &depType)) {
       InstCount scsrCycle = GetSchedCycle(scsr);
       if (scsrCycle < (instCycle + ltncy)) {
         Logger::Error("Invalid schedule: Latency from %d to %d not satisfied",
@@ -3196,7 +3196,7 @@ bool DataDepGraph::DoesFeedUser(SchedInstruction *inst) {
 #endif
   LinkedList<GraphNode> *rcrsvSuccs = inst->GetRcrsvNghbrLst(DIR_FRWRD);
   for (GraphNode *succ = rcrsvSuccs->GetFrstElmnt(); succ != NULL;
-       succ = rcrsvSuccs->GetNxtElmnt()) {
+       succ = rcrsvSuccs->GetNextElmnt()) {
     SchedInstruction *succInst = static_cast<SchedInstruction *>(succ);
 
     int curInstAdjUseCnt = succInst->GetAdjustedUseCnt();
@@ -3211,7 +3211,6 @@ bool DataDepGraph::DoesFeedUser(SchedInstruction *inst) {
     // If there is a successor instruction that decreases live intervals
     // or one that does not increase live intervals, then return true.
     return true;
-
   }
 // Return false if there is no recursive successor of inst
 // that uses a live register.

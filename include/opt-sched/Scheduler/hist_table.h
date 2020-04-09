@@ -82,8 +82,8 @@ protected:
   void SetLwrBounds_(InstCount lwrBounds[], SchedInstruction *lastInsts[],
                      InstCount thisTime, InstCount minTimeToExmn,
                      Enumerator *enumrtr);
-  void CmputNxtAvlblCycles_(Enumerator *enumrtr, InstCount instsPerType[],
-                            InstCount nxtAvlblCycles[]);
+  void CmputNextAvlblCycles_(Enumerator *enumrtr, InstCount instsPerType[],
+                             InstCount nextAvlblCycles[]);
 
   virtual void Init_();
   void AllocLastInsts_(ArrayMemAlloc<SchedInstruction *> *lastInstsAlctr,

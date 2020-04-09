@@ -31,7 +31,7 @@ protected:
 
   // An two-dimensional array holding the next available cycle number for each
   // issue type for each release time
-  InstCount *nxtAvlblCycles_[MAX_ISSUTYPE_CNT];
+  InstCount *nextAvlblCycles_[MAX_ISSUTYPE_CNT];
 
   // A two-dimensional array indexed by issue type and cycle number, where
   // each entry indicates the number of slots of that type that are available
@@ -68,7 +68,7 @@ protected:
 
   InstCount SchdulInst_(SchedInstruction *inst, InstCount minCycle,
                         InstCount maxCycle);
-  inline InstCount FindNxtAvlblCycle_(IssueType issuType, InstCount strtCycle);
+  inline InstCount FindNextAvlblCycle_(IssueType issuType, InstCount strtCycle);
 
   inline InstCount CmputDelay_(InstCount schedCycle, InstCount lastCycle,
                                InstCount distFrmLeaf);
@@ -239,8 +239,8 @@ public:
 In line Functions
 ******************************************************************************/
 
-InstCount RelaxedScheduler::FindNxtAvlblCycle_(IssueType issuType,
-                                               InstCount strtCycle) {
+InstCount RelaxedScheduler::FindNextAvlblCycle_(IssueType issuType,
+                                                InstCount strtCycle) {
   for (InstCount cycleNum = strtCycle; cycleNum < schedUprBound_; cycleNum++) {
     assert(issuType < issuTypeCnt_);
 

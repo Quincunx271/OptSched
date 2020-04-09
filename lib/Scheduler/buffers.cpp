@@ -228,7 +228,7 @@ int InputBuffer::skipSpace() {
       return EOF;
 
     lineStrt = true;
-    nxtLineRchd = true;
+    nextLineRchd = true;
     return EOL;
   }
 
@@ -250,12 +250,12 @@ int InputBuffer::skipCmnt() {
     return EOF;
 
   lineStrt = true;
-  nxtLineRchd = true;
+  nextLineRchd = true;
   return EOL;
 }
 
-NXTLINE_TYPE InputBuffer::GetNxtVldLine_(int &pieceCnt, char *strng[],
-                                         int lngth[], int maxPieceCnt) {
+NXTLINE_TYPE InputBuffer::GetNextVldLine_(int &pieceCnt, char *strng[],
+                                          int lngth[], int maxPieceCnt) {
   crntLineOfst = crntOfst;
 
   // If the next line might not fit entirely into the buffer.
@@ -264,7 +264,7 @@ NXTLINE_TYPE InputBuffer::GetNxtVldLine_(int &pieceCnt, char *strng[],
     Reload();
   }
 
-  for (pieceCnt = 0, nxtLineRchd = false; !nxtLineRchd;) {
+  for (pieceCnt = 0, nextLineRchd = false; !nextLineRchd;) {
     assert(pieceCnt < maxPieceCnt);
     lngth[pieceCnt] = 0;
     strng[pieceCnt] = buf + crntOfst;
@@ -319,9 +319,9 @@ void InputBuffer::Unload() {
   }
 }
 
-NXTLINE_TYPE InputBuffer::GetNxtVldLine(int &pieceCnt, char *strngs[],
-                                        int lngths[]) {
-  NXTLINE_TYPE retVal = GetNxtVldLine_(pieceCnt, strngs, lngths);
+NXTLINE_TYPE InputBuffer::GetNextVldLine(int &pieceCnt, char *strngs[],
+                                         int lngths[]) {
+  NXTLINE_TYPE retVal = GetNextVldLine_(pieceCnt, strngs, lngths);
 
   for (int i = 0; i < pieceCnt; i++) {
     (strngs[i])[lngths[i]] = 0;
@@ -362,11 +362,11 @@ void SpecsBuffer::ReadSpec(char const *const title, char *value) {
   bool isMsng = false;
   int totLngth;
 
-  if (nxtLineType == NXT_EOF) {
+  if (nextLineType == NXT_EOF) {
     Logger::Fatal("End of Specs file unexpectedly encountered.");
   }
 
-  nxtLineType = GetNxtVldLine(pieceCnt, strPtr, lngth);
+  nextLineType = GetNextVldLine(pieceCnt, strPtr, lngth);
 
   if (pieceCnt == 1) {
     isMsng = true;
@@ -418,11 +418,11 @@ void SpecsBuffer::readLstElmnt(char *value) {
   char *strPtr[INBUF_MAX_PIECES_PERLINE];
   int pieceCnt;
 
-  if (nxtLineType == NXT_EOF) {
+  if (nextLineType == NXT_EOF) {
     Logger::Fatal("Unexpectedly encountered end of file %s", fullPath);
   }
 
-  nxtLineType = GetNxtVldLine(pieceCnt, strPtr, lngth);
+  nextLineType = GetNextVldLine(pieceCnt, strPtr, lngth);
 
   if (pieceCnt != 1) {
     Logger::Fatal("Invalid number of tockens in file %s", fullPath);
@@ -445,11 +445,11 @@ void SpecsBuffer::readLine(char *value, int maxPieceCnt) {
 
   assert(maxPieceCnt <= INBUF_MAX_PIECES_PERLINE);
 
-  if (nxtLineType == NXT_EOF) {
+  if (nextLineType == NXT_EOF) {
     Logger::Fatal("End of Specs file unexpectedly encountered.");
   }
 
-  nxtLineType = GetNxtVldLine(pieceCnt, strPtr, lngth);
+  nextLineType = GetNextVldLine(pieceCnt, strPtr, lngth);
 
   for (i = 0, ofst = 0; i < pieceCnt; i++) {
     memcpy(value + ofst, strPtr[i], lngth[i]);
@@ -461,7 +461,7 @@ void SpecsBuffer::readLine(char *value, int maxPieceCnt) {
   // Null terminate the concatinated string.
   value[ofst] = 0;
 
-  if (nxtLineType == NXT_ERR) {
+  if (nextLineType == NXT_ERR) {
     Logger::Fatal("Too many pieces on line: %s of input file: %s", value,
                   GetFullPath());
   }
@@ -554,12 +554,12 @@ FUNC_RESULT SpecsBuffer::checkTitle(char const *const title) {
   char *strPtr[INBUF_MAX_PIECES_PERLINE];
   int pieceCnt;
 
-  if (nxtLineType == NXT_EOF) {
+  if (nextLineType == NXT_EOF) {
     Logger::Error("Unexpectedly encountered end of file %s.", fullPath);
     return RES_ERROR;
   }
 
-  nxtLineType = GetNxtVldLine(pieceCnt, strPtr, lngth);
+  nextLineType = GetNextVldLine(pieceCnt, strPtr, lngth);
 
   if (pieceCnt != 1) {
     Logger::Error("Invalid number of tockens in file %s. Expected %s.",
@@ -579,4 +579,4 @@ FUNC_RESULT SpecsBuffer::checkTitle(char const *const title) {
   return RES_SUCCESS;
 }
 
-SpecsBuffer::SpecsBuffer() { nxtLineType = NXT_DATA; }
+SpecsBuffer::SpecsBuffer() { nextLineType = NXT_DATA; }

@@ -93,7 +93,7 @@ public:
   virtual T *GetLastElmnt();
   // Returns the element following the last retrieved one and sets the
   // "current" element to it.
-  virtual T *GetNxtElmnt();
+  virtual T *GetNextElmnt();
   // Returns the element preceding the last retrieved one and sets the
   // "current" element to it.
   virtual T *GetPrevElmnt();
@@ -174,8 +174,8 @@ public:
   // Gets the next element in the list, based on the "current" element.
   // Returns NULL when the end of the list has been reached. If key is
   // provided, it is filled with the key of the retrieved element.
-  T *GetNxtPriorityElmnt();
-  T *GetNxtPriorityElmnt(K &key);
+  T *GetNextPriorityElmnt();
+  T *GetNextPriorityElmnt(K &key);
   // Copies all the data from another list. The existing list must be empty.
   void CopyList(PriorityList<T, K> const *const otherLst);
 
@@ -314,7 +314,7 @@ template <class T> inline T *LinkedList<T>::GetLastElmnt() {
   return rtrvEntry_ == NULL ? NULL : rtrvEntry_->element;
 }
 
-template <class T> inline T *LinkedList<T>::GetNxtElmnt() {
+template <class T> inline T *LinkedList<T>::GetNextElmnt() {
   if (wasTopRmvd_) {
     rtrvEntry_ = topEntry_;
   } else {
@@ -534,7 +534,7 @@ KeyedEntry<T, K> *PriorityList<T, K>::InsrtElmnt(T *elmnt, K key,
 }
 
 template <class T, class K>
-inline T *PriorityList<T, K>::GetNxtPriorityElmnt() {
+inline T *PriorityList<T, K>::GetNextPriorityElmnt() {
   assert(LinkedList<T>::itrtrReset_ || LinkedList<T>::rtrvEntry_ != NULL);
 
   if (LinkedList<T>::itrtrReset_) {
@@ -553,7 +553,7 @@ inline T *PriorityList<T, K>::GetNxtPriorityElmnt() {
 }
 
 template <class T, class K>
-inline T *PriorityList<T, K>::GetNxtPriorityElmnt(K &key) {
+inline T *PriorityList<T, K>::GetNextPriorityElmnt(K &key) {
   assert(LinkedList<T>::itrtrReset_ || LinkedList<T>::rtrvEntry_ != NULL);
   if (LinkedList<T>::itrtrReset_) {
     LinkedList<T>::rtrvEntry_ = LinkedList<T>::topEntry_;

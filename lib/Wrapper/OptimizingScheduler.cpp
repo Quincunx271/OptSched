@@ -445,7 +445,7 @@ void ScheduleDAGOptSched::schedule() {
   CurrentBottom = RegionEnd;
   InstCount cycle, slot;
   for (InstCount i = Sched->GetFrstInst(cycle, slot); i != INVALID_VALUE;
-       i = Sched->GetNxtInst(cycle, slot)) {
+       i = Sched->GetNextInst(cycle, slot)) {
     // Skip artificial instrs.
     if (i > static_cast<int>(SUnits.size()) - 1)
       continue;

@@ -30,7 +30,7 @@ void LocalRegAlloc::AllocRegs() {
   AddLiveIn_(entryInst);
 
   for (InstCount i = instSchedule_->GetFrstInst(cycle, slot);
-       i != INVALID_VALUE; i = instSchedule_->GetNxtInst(cycle, slot)) {
+       i != INVALID_VALUE; i = instSchedule_->GetNextInst(cycle, slot)) {
     int instNum = i;
     SchedInstruction *inst = dataDepGraph_->GetInstByIndx(instNum);
     // Skip artificial entry and exit nodes.
@@ -202,7 +202,7 @@ void LocalRegAlloc::SetupForRegAlloc() {
 void LocalRegAlloc::ScanUses_() {
   InstCount cycle, slot;
   for (InstCount i = instSchedule_->GetFrstInst(cycle, slot);
-       i != INVALID_VALUE; i = instSchedule_->GetNxtInst(cycle, slot)) {
+       i != INVALID_VALUE; i = instSchedule_->GetNextInst(cycle, slot)) {
     SchedInstruction *inst = dataDepGraph_->GetInstByIndx(i);
 
     // Skip artificial entry node.

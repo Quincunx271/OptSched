@@ -131,7 +131,7 @@ void HistEnumTreeNode::SetLwrBounds_(InstCount lwrBounds[],
       // Examine all the unscheduled successors of this instruction
       // to see if any of them is pushed down.
       for (SchedInstruction *scsr = inst->GetFrstScsr(NULL, &ltncy, &depType);
-           scsr != NULL; scsr = inst->GetNxtScsr(NULL, &ltncy, &depType)) {
+           scsr != NULL; scsr = inst->GetNextScsr(NULL, &ltncy, &depType)) {
         if (scsr->IsSchduld() == false) {
           InstCount num = scsr->GetNum();
           InstCount thisBound = cycleNum + ltncy;
@@ -149,8 +149,8 @@ InstCount HistEnumTreeNode::GetMinTimeToExmn_(InstCount nodeTime,
   DataDepGraph *dataDepGraph = enumrtr->dataDepGraph_;
   UDT_GLABEL maxLtncy = dataDepGraph->GetMaxLtncy();
   InstCount crntCycleNum = enumrtr->GetCycleNumFrmTime_(nodeTime);
-  InstCount nxtCycleNum = crntCycleNum + 1;
-  InstCount minCycleNumToExmn = std::max(nxtCycleNum - maxLtncy, 0);
+  InstCount nextCycleNum = crntCycleNum + 1;
+  InstCount minCycleNumToExmn = std::max(nextCycleNum - maxLtncy, 0);
   InstCount minTimeToExmn = minCycleNumToExmn * issuRate + 1;
   return minTimeToExmn;
 }
@@ -165,7 +165,7 @@ bool HistEnumTreeNode::DoesDominate_(EnumTreeNode *node,
   SchedInstruction **lastInsts = enumrtr->lastInsts_;
   SchedInstruction **othrLastInsts = enumrtr->othrLastInsts_;
   InstCount *instsPerType = enumrtr->histInstsPerType_;
-  InstCount *nxtAvlblCycles = enumrtr->histNxtAvlblCycles_;
+  InstCount *nextAvlblCycles = enumrtr->histNextAvlblCycles_;
   bool othrCrntCycleBlkd;
 
   assert(othrHstry != this);
@@ -226,7 +226,7 @@ bool HistEnumTreeNode::DoesDominate_(EnumTreeNode *node,
                              minTimeToExmn, enumrtr);
   }
 
-  CmputNxtAvlblCycles_(enumrtr, instsPerType, nxtAvlblCycles);
+  CmputNextAvlblCycles_(enumrtr, instsPerType, nextAvlblCycles);
 
   for (indx = 0; indx < entryCnt; indx++) {
     time = thisTime - indx;
@@ -242,14 +242,14 @@ bool HistEnumTreeNode::DoesDominate_(EnumTreeNode *node,
       // Examine all the unscheduled successors of this instruction to see if
       // any of them is pushed down.
       for (SchedInstruction *scsr = inst->GetFrstScsr(NULL, &ltncy, &depType);
-           scsr != NULL; scsr = inst->GetNxtScsr(NULL, &ltncy, &depType)) {
+           scsr != NULL; scsr = inst->GetNextScsr(NULL, &ltncy, &depType)) {
         if (scsr->IsSchduld() == false) {
-          InstCount nxtAvlblCycle = nxtAvlblCycles[scsr->GetIssueType()];
+          InstCount nextAvlblCycle = nextAvlblCycles[scsr->GetIssueType()];
           InstCount num = scsr->GetNum();
           InstCount thisBound = cycleNum + ltncy;
-          thisBound = std::max(thisBound, nxtAvlblCycle);
+          thisBound = std::max(thisBound, nextAvlblCycle);
           InstCount sttcBound = scsr->GetLwrBound(DIR_FRWRD);
-          InstCount normBound = std::max(sttcBound, nxtAvlblCycle);
+          InstCount normBound = std::max(sttcBound, nextAvlblCycle);
 
           if (thisBound > normBound || shft > 0) {
             isAbslutDmnnt = false;
@@ -276,9 +276,9 @@ bool HistEnumTreeNode::DoesDominate_(EnumTreeNode *node,
   return true;
 }
 
-void HistEnumTreeNode::CmputNxtAvlblCycles_(Enumerator *enumrtr,
-                                            InstCount instsPerType[],
-                                            InstCount nxtAvlblCycles[]) {
+void HistEnumTreeNode::CmputNextAvlblCycles_(Enumerator *enumrtr,
+                                             InstCount instsPerType[],
+                                             InstCount nextAvlblCycles[]) {
   InstCount thisTime = GetTime();
   InstCount crntCycle = enumrtr->GetCycleNumFrmTime_(thisTime);
   HistEnumTreeNode *crntNode;
@@ -290,7 +290,7 @@ void HistEnumTreeNode::CmputNxtAvlblCycles_(Enumerator *enumrtr,
 
   for (int i = 0; i < issuTypeCnt; i++) {
     instsPerType[i] = 0;
-    nxtAvlblCycles[i] = crntCycle;
+    nextAvlblCycles[i] = crntCycle;
   }
 
   for (crntNode = this, time = thisTime;
@@ -308,7 +308,7 @@ void HistEnumTreeNode::CmputNxtAvlblCycles_(Enumerator *enumrtr,
     instsPerType[issuType]++;
 
     if (instsPerType[issuType] == machMdl->GetSlotsPerCycle(issuType)) {
-      nxtAvlblCycles[issuType] = crntCycle + 1;
+      nextAvlblCycles[issuType] = crntCycle + 1;
     }
   }
 }

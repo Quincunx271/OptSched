@@ -382,7 +382,7 @@ protected:
   FUNC_RESULT ReadInstName_(SpecsBuffer *buf, int i, char *instName,
                             char *prevInstName, char *opCode,
                             InstCount &nodeNum, InstType &instType,
-                            NXTLINE_TYPE &nxtLine);
+                            NXTLINE_TYPE &nextLine);
 
   SchedInstruction *CreateNode_(InstCount instNum, char const *const instName,
                                 InstType instType, char const *const opCode,
@@ -680,7 +680,7 @@ public:
 
   void ResetInstIter();
   InstCount GetFrstInst(InstCount &cycleNum, InstCount &slotNum);
-  InstCount GetNxtInst(InstCount &cycleNum, InstCount &slotNum);
+  InstCount GetNextInst(InstCount &cycleNum, InstCount &slotNum);
 
   bool IsComplete();
 

@@ -58,7 +58,7 @@ public:
   // when the current offset is at the first character of a line
   // (lineStrt==true).
   NXTLINE_TYPE skipSpaceAndCmnts();
-  NXTLINE_TYPE GetNxtVldLine(int &pieceCnt, char *strngs[], int lngths[]);
+  NXTLINE_TYPE GetNextVldLine(int &pieceCnt, char *strngs[], int lngths[]);
 
 protected:
   char *buf;
@@ -72,7 +72,7 @@ protected:
 
   int fileHndl;
   char crntChar, prevChar;
-  bool lastChnk, cmnt, lineStrt, nxtLineRchd;
+  bool lastChnk, cmnt, lineStrt, nextLineRchd;
   char fullPath[MAX_NAMESIZE];
 
   // Keeps going until it encounters a data character or a line start.
@@ -82,8 +82,8 @@ protected:
   // Checks if reloading is necessary and does it or detects end of file.
   int chckReload();
 
-  NXTLINE_TYPE GetNxtVldLine_(int &pieceCnt, char *str[], int lngth[],
-                              int maxPieceCnt = INBUF_MAX_PIECES_PERLINE);
+  NXTLINE_TYPE GetNextVldLine_(int &pieceCnt, char *str[], int lngth[],
+                               int maxPieceCnt = INBUF_MAX_PIECES_PERLINE);
   bool IsWhiteSpaceOrLineEnd(char ch);
   void ReportError(char *msg, char *lineStrt, int frstLngth);
   void ReportFatalError(char *msg, char *lineStrt, int frstLngth);
@@ -110,7 +110,7 @@ public:
   void ErrorHandle(char *value);
 
 protected:
-  NXTLINE_TYPE nxtLineType;
+  NXTLINE_TYPE nextLineType;
   void CombinePieces_(int lngths[], char *strngs[], int startPiece,
                       int endPiece, char *target, int &totLngth);
 };

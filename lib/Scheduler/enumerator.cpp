@@ -29,7 +29,7 @@ EnumTreeNode::~EnumTreeNode() {
 
     assert(exmndInsts_ != NULL);
     for (ExaminedInst *exmndInst = exmndInsts_->GetFrstElmnt();
-         exmndInst != NULL; exmndInst = exmndInsts_->GetNxtElmnt()) {
+         exmndInst != NULL; exmndInst = exmndInsts_->GetNextElmnt()) {
       delete exmndInst;
     }
     exmndInsts_->Reset();
@@ -117,7 +117,7 @@ void EnumTreeNode::Reset() {
 
   if (exmndInsts_ != NULL) {
     for (ExaminedInst *exmndInst = exmndInsts_->GetFrstElmnt();
-         exmndInst != NULL; exmndInst = exmndInsts_->GetNxtElmnt()) {
+         exmndInst != NULL; exmndInst = exmndInsts_->GetNextElmnt()) {
       delete exmndInst;
     }
     exmndInsts_->Reset();
@@ -301,8 +301,8 @@ bool EnumTreeNode::ChkInstRdndncy(SchedInstruction *, int) {
 }
 /*****************************************************************************/
 
-bool EnumTreeNode::IsNxtSlotStall() {
-  if (IsNxtCycleNew_() == false) {
+bool EnumTreeNode::IsNextSlotStall() {
+  if (IsNextCycleNew_() == false) {
     // If a stall has been scheduled in the current cycle then all slots in
     // this cycle must be stalls
     if (inst_ == NULL && time_ > 0) {
@@ -318,7 +318,7 @@ bool EnumTreeNode::WasSprirNodeExmnd(SchedInstruction *cnddtInst) {
     return false;
 
   for (ExaminedInst *exmndInst = exmndInsts_->GetFrstElmnt(); exmndInst != NULL;
-       exmndInst = exmndInsts_->GetNxtElmnt()) {
+       exmndInst = exmndInsts_->GetNextElmnt()) {
     SchedInstruction *inst = exmndInst->GetInst();
     assert(inst != cnddtInst);
 
@@ -353,7 +353,7 @@ bool EnumTreeNode::WasRsrcDmnntNodeExmnd(SchedInstruction *cnddtInst) {
   ExaminedInst *exmndInst;
 
   for (exmndInst = exmndInsts_->GetFrstElmnt(); exmndInst != NULL;
-       exmndInst = exmndInsts_->GetNxtElmnt()) {
+       exmndInst = exmndInsts_->GetNextElmnt()) {
     inst = exmndInst->GetInst();
     assert(inst != cnddtInst);
 
@@ -418,7 +418,7 @@ EnumTreeNode::ExaminedInst::ExaminedInst(SchedInstruction *inst,
 EnumTreeNode::ExaminedInst::~ExaminedInst() {
   if (tightndScsrs_ != NULL) {
     for (TightndInst *inst = tightndScsrs_->GetFrstElmnt(); inst != NULL;
-         inst = tightndScsrs_->GetNxtElmnt()) {
+         inst = tightndScsrs_->GetNextElmnt()) {
       delete inst;
     }
     tightndScsrs_->Reset();
@@ -751,7 +751,7 @@ void PrintSchedule(InstSchedule *const sched,
   InstCount cycle, slot;
   std::stringstream s;
   for (auto inst = sched->GetFrstInst(cycle, slot); inst != INVALID_VALUE;
-       inst = sched->GetNxtInst(cycle, slot)) {
+       inst = sched->GetNextInst(cycle, slot)) {
     s << inst << ' ';
   }
   Logger::Log(level, false, "Schedule: %s", s.str().c_str());
@@ -855,7 +855,7 @@ void AppendAndCheckSuffixSchedules(
   InstCount cycleNum, slotNum;
   for (auto instNum = crntSched_->GetFrstInst(cycleNum, slotNum);
        instNum != INVALID_VALUE;
-       instNum = crntSched_->GetNxtInst(cycleNum, slotNum)) {
+       instNum = crntSched_->GetNextInst(cycleNum, slotNum)) {
     rgn_->SchdulInst(dataDepGraph_->GetInstByIndx(instNum), cycleNum, slotNum,
                      false);
   }
@@ -865,7 +865,7 @@ void AppendAndCheckSuffixSchedules(
 FUNC_RESULT Enumerator::FindFeasibleSchedule_(InstSchedule *sched,
                                               InstCount trgtLngth,
                                               Milliseconds deadline) {
-  EnumTreeNode *nxtNode = NULL;
+  EnumTreeNode *nextNode = NULL;
   bool allNodesExplrd = false;
   bool foundFsblBrnch = false;
   bool isCrntNodeFsbl = true;
@@ -893,7 +893,7 @@ FUNC_RESULT Enumerator::FindFeasibleSchedule_(InstSchedule *sched,
     mostRecentMatchingHistNode_ = nullptr;
 
     if (isCrntNodeFsbl) {
-      foundFsblBrnch = FindNxtFsblBrnch_(nxtNode);
+      foundFsblBrnch = FindNextFsblBrnch_(nextNode);
     } else {
       foundFsblBrnch = false;
     }
@@ -904,7 +904,7 @@ FUNC_RESULT Enumerator::FindFeasibleSchedule_(InstSchedule *sched,
       // then instead of continuing the search, we should generate schedules by
       // concatenating the best known suffix.
 
-      StepFrwrd_(nxtNode);
+      StepFrwrd_(nextNode);
 
       // Find matching history nodes with suffixes.
       auto matchingHistNodesWithSuffix = mostRecentMatchingHistNode_;
@@ -955,7 +955,7 @@ FUNC_RESULT Enumerator::FindFeasibleSchedule_(InstSchedule *sched,
 }
 /****************************************************************************/
 
-bool Enumerator::FindNxtFsblBrnch_(EnumTreeNode *&newNode) {
+bool Enumerator::FindNextFsblBrnch_(EnumTreeNode *&newNode) {
   InstCount i;
   bool isEmptyNode;
   SchedInstruction *inst;
@@ -1257,7 +1257,7 @@ void Enumerator::StepFrwrd_(EnumTreeNode *&newNode) {
 
   crntSched_->AppendInst(instNumToSchdul);
 
-  MovToNxtSlot_(instToSchdul);
+  MovToNextSlot_(instToSchdul);
   assert(crntCycleNum_ <= trgtSchedLngth_);
 
   if (crntSlotNum_ == 0) {
@@ -1567,7 +1567,7 @@ bool Enumerator::WasDmnntSubProbExmnd_(SchedInstruction *,
 bool Enumerator::TightnLwrBounds_(SchedInstruction *newInst) {
   SchedInstruction *inst;
   InstCount newLwrBound = 0;
-  InstCount nxtAvlblCycle[MAX_ISSUTYPE_CNT];
+  InstCount nextAvlblCycle[MAX_ISSUTYPE_CNT];
   bool fsbl;
   InstCount i;
 
@@ -1578,12 +1578,12 @@ bool Enumerator::TightnLwrBounds_(SchedInstruction *newInst) {
     // If this slot is filled with a stall then all subsequent slots are
     // going to be filled with stalls
     if (newInst == NULL) {
-      nxtAvlblCycle[i] = crntCycleNum_ + 1;
+      nextAvlblCycle[i] = crntCycleNum_ + 1;
     } else {
       // If the last slot for this type has been taken in this cycle
       // then an inst. of this type cannot issue any earlier than the
       // next cycle
-      nxtAvlblCycle[i] =
+      nextAvlblCycle[i] =
           avlblSlotsInCrntCycle_[i] == 0 ? crntCycleNum_ + 1 : crntCycleNum_;
     }
   }
@@ -1595,7 +1595,7 @@ bool Enumerator::TightnLwrBounds_(SchedInstruction *newInst) {
 
     if (inst->IsSchduld() == false) {
       IssueType issuType = inst->GetIssueType();
-      newLwrBound = nxtAvlblCycle[issuType];
+      newLwrBound = nextAvlblCycle[issuType];
 
       if (newLwrBound > inst->GetCrntLwrBound(DIR_FRWRD)) {
 #ifdef IS_DEBUG_FLOW
@@ -1619,7 +1619,7 @@ bool Enumerator::TightnLwrBounds_(SchedInstruction *newInst) {
   }
 
   for (inst = tightndLst_->GetFrstElmnt(); inst != NULL;
-       inst = tightndLst_->GetNxtElmnt()) {
+       inst = tightndLst_->GetNextElmnt()) {
     dataDepGraph_->SetCrntFrwrdLwrBound(inst);
   }
 
@@ -1633,7 +1633,7 @@ void Enumerator::UnTightnLwrBounds_(SchedInstruction *newInst) {
   SchedInstruction *inst;
 
   for (inst = tightndLst_->GetFrstElmnt(); inst != NULL;
-       inst = tightndLst_->GetNxtElmnt()) {
+       inst = tightndLst_->GetNextElmnt()) {
     inst->UnTightnLwrBounds();
     dataDepGraph_->SetCrntFrwrdLwrBound(inst);
     assert(inst->IsFxd() == false);
@@ -1648,7 +1648,7 @@ void Enumerator::CmtLwrBoundTightnng_() {
   SchedInstruction *inst;
 
   for (inst = tightndLst_->GetFrstElmnt(); inst != NULL;
-       inst = tightndLst_->GetNxtElmnt()) {
+       inst = tightndLst_->GetNextElmnt()) {
     inst->CmtLwrBoundTightnng();
   }
 
@@ -1666,7 +1666,7 @@ bool Enumerator::FixInsts_(SchedInstruction *newInst) {
   fxdInstCnt_ = 0;
 
   for (SchedInstruction *inst = fxdLst_->GetFrstElmnt(); inst != NULL;
-       inst = fxdLst_->GetNxtElmnt()) {
+       inst = fxdLst_->GetNextElmnt()) {
     assert(inst->IsFxd());
     assert(inst->IsSchduld() == false || inst == newInst);
     fsbl = rlxdSchdulr_->FixInst(inst, inst->GetFxdCycle());
@@ -1711,7 +1711,7 @@ void Enumerator::UnFixInsts_(SchedInstruction *newInst) {
 
   for (inst = fxdLst_->GetFrstElmnt(), unfxdInstCnt = 0;
        inst != NULL && unfxdInstCnt < fxdInstCnt_;
-       inst = fxdLst_->GetNxtElmnt(), unfxdInstCnt++) {
+       inst = fxdLst_->GetNextElmnt(), unfxdInstCnt++) {
     assert(inst->IsFxd() || inst == newInst);
     InstCount cycle = inst == newInst ? crntCycleNum_ : inst->GetFxdCycle();
     rlxdSchdulr_->UnFixInst(inst, cycle);
@@ -1777,7 +1777,7 @@ bool Enumerator::RlxdSchdul_(EnumTreeNode *newNode) {
       rlxdSchdulr_->SchdulAndChkFsblty(crntCycleNum_, trgtSchedLngth_ - 1);
 
   for (SchedInstruction *inst = rsrcFxdLst->GetFrstElmnt(); inst != NULL;
-       inst = rsrcFxdLst->GetNxtElmnt()) {
+       inst = rsrcFxdLst->GetNextElmnt()) {
     assert(inst->IsSchduld() == false);
     fsbl = rlxdSchdulr_->FixInst(inst, inst->GetCrntLwrBound(DIR_FRWRD));
 
@@ -2166,7 +2166,7 @@ bool LengthCostEnumerator::EnumStall_() {
   // Logger::Info("enblStallEnum_ = %d", enblStallEnum_);
   if (!enblStallEnum_)
     return false;
-  if (crntNode_->IsNxtSlotStall())
+  if (crntNode_->IsNextSlotStall())
     return true;
   if (crntNode_ == rootNode_)
     return false;

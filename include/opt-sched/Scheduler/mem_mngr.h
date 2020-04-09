@@ -89,7 +89,7 @@ inline MemAlloc<T>::MemAlloc(int blockSize, int maxSize)
 
 template <class T> inline MemAlloc<T>::~MemAlloc() {
   for (T *blk = allocatedBlocks_.GetFrstElmnt(); blk != NULL;
-       blk = allocatedBlocks_.GetNxtElmnt()) {
+       blk = allocatedBlocks_.GetNextElmnt()) {
     delete[] blk;
   }
 }
@@ -106,7 +106,7 @@ template <class T> inline void MemAlloc<T>::GetNewBlock_() {
   currentBlock_ = NULL;
 
   if (allocatedBlocksAvailable_) {
-    currentBlock_ = allocatedBlocks_.GetNxtElmnt();
+    currentBlock_ = allocatedBlocks_.GetNextElmnt();
     currentIndex_ = 0;
   }
 

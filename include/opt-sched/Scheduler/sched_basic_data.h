@@ -202,9 +202,9 @@ public:
                                   DependenceType *depType = NULL);
   // Returns the next predecessor of this instruction node and moves the
   // predecessor iterator forward. Fills parameters as above.
-  SchedInstruction *GetNxtPrdcsr(InstCount *scsrNum = NULL,
-                                 UDT_GLABEL *ltncy = NULL,
-                                 DependenceType *depType = NULL);
+  SchedInstruction *GetNextPrdcsr(InstCount *scsrNum = NULL,
+                                  UDT_GLABEL *ltncy = NULL,
+                                  DependenceType *depType = NULL);
 
   // Returns the first successor of this instruction node and resets the
   // successor iterator. Writes edge properties into the parameters if
@@ -218,9 +218,9 @@ public:
                                 DependenceType *depType = NULL);
   // Returns the next successor of this instruction node and moves the
   // successor iterator forward. Fills parameters as above.
-  SchedInstruction *GetNxtScsr(InstCount *prdcsrNum = NULL,
-                               UDT_GLABEL *ltncy = NULL,
-                               DependenceType *depType = NULL);
+  SchedInstruction *GetNextScsr(InstCount *prdcsrNum = NULL,
+                                UDT_GLABEL *ltncy = NULL,
+                                DependenceType *depType = NULL);
 
   // Returns the last successor of this instruction node and moves the
   // successor iterator to the end of the list. If prdcsrNum is provided, this
@@ -240,7 +240,7 @@ public:
   // depending on the value of dir, filling in the latency from the
   // predecessor to this instruction into ltncy, if provided. Moves the
   // predecessor iterator forward (the two iterator are independent).
-  SchedInstruction *GetNxtNghbr(DIRECTION dir, UDT_GLABEL *ltncy = NULL);
+  SchedInstruction *GetNextNghbr(DIRECTION dir, UDT_GLABEL *ltncy = NULL);
   /***************************************************************************/
 
   // Sets the instruction's current forward and backward lower bounds to the

@@ -208,7 +208,7 @@ void ReadyList::AddLatestSubLists(LinkedList<SchedInstruction> *lst1,
 void ReadyList::Print(std::ostream &out) {
   out << "Ready List: ";
   for (const auto *crntInst = prirtyLst_->GetFrstElmnt(); crntInst != NULL;
-       crntInst = prirtyLst_->GetNxtElmnt()) {
+       crntInst = prirtyLst_->GetNextElmnt()) {
     out << " " << crntInst->GetNum();
   }
   out << '\n';
@@ -251,7 +251,7 @@ void ReadyList::RemoveLatestSubList() {
 #endif
 
   for (SchedInstruction *inst = latestSubLst_->GetFrstElmnt(); inst != NULL;
-       inst = latestSubLst_->GetNxtElmnt()) {
+       inst = latestSubLst_->GetNextElmnt()) {
     assert(inst->IsInReadyList());
     inst->RemoveFromReadyList();
 #ifdef IS_DEBUG_READY_LIST2
@@ -282,7 +282,7 @@ void ReadyList::AddList(LinkedList<SchedInstruction> *lst) {
 
   if (lst != NULL)
     for (crntInst = lst->GetFrstElmnt(); crntInst != NULL;
-         crntInst = lst->GetNxtElmnt()) {
+         crntInst = lst->GetNextElmnt()) {
       AddInst(crntInst);
     }
 
@@ -292,11 +292,11 @@ void ReadyList::AddList(LinkedList<SchedInstruction> *lst) {
 InstCount ReadyList::GetInstCnt() const { return prirtyLst_->GetElmntCnt(); }
 
 SchedInstruction *ReadyList::GetNextPriorityInst() {
-  return prirtyLst_->GetNxtPriorityElmnt();
+  return prirtyLst_->GetNextPriorityElmnt();
 }
 
 SchedInstruction *ReadyList::GetNextPriorityInst(unsigned long &key) {
-  return prirtyLst_->GetNxtPriorityElmnt(key);
+  return prirtyLst_->GetNextPriorityElmnt(key);
 }
 
 void ReadyList::UpdatePriorities() {
@@ -305,7 +305,7 @@ void ReadyList::UpdatePriorities() {
   SchedInstruction *inst;
   bool instChanged = false;
   for (inst = prirtyLst_->GetFrstElmnt(); inst != NULL;
-       inst = prirtyLst_->GetNxtElmnt()) {
+       inst = prirtyLst_->GetNextElmnt()) {
     unsigned long key = CmputKey_(inst, true, instChanged);
     if (instChanged) {
       prirtyLst_->BoostEntry(keyedEntries_[inst->GetNum()], key);

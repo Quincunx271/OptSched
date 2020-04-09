@@ -39,7 +39,7 @@ GraphNode::~GraphNode() {
 
 void GraphNode::DelPrdcsrLst() {
   for (GraphEdge *crntEdge = prdcsrLst_->GetFrstElmnt(); crntEdge != NULL;
-       crntEdge = prdcsrLst_->GetNxtElmnt()) {
+       crntEdge = prdcsrLst_->GetNextElmnt()) {
     delete crntEdge;
   }
 
@@ -48,7 +48,7 @@ void GraphNode::DelPrdcsrLst() {
 
 void GraphNode::DelScsrLst() {
   for (GraphEdge *crntEdge = scsrLst_->GetFrstElmnt(); crntEdge != NULL;
-       crntEdge = scsrLst_->GetNxtElmnt()) {
+       crntEdge = scsrLst_->GetNextElmnt()) {
     delete crntEdge;
   }
 
@@ -63,7 +63,7 @@ void GraphNode::DepthFirstVisit(GraphNode *tplgclOrdr[],
   // This recursion will bottom up when the exit node is reached, which then
   // gets added to the very bottom of the topological sort list.
   for (GraphEdge *crntEdge = scsrLst_->GetFrstElmnt(); crntEdge != NULL;
-       crntEdge = scsrLst_->GetNxtElmnt()) {
+       crntEdge = scsrLst_->GetNextElmnt()) {
     GraphNode *scsr = crntEdge->GetOtherNode(this);
 
     if (scsr->GetColor() == COL_WHITE) {
@@ -137,7 +137,7 @@ bool GraphNode::IsScsrDmntd(GraphNode *cnddtDmnnt) {
 
   UDT_GLABEL thisLbl;
   for (GraphNode *thisScsr = GetFrstScsr(thisLbl); thisScsr != NULL;
-       thisScsr = GetNxtScsr(thisLbl)) {
+       thisScsr = GetNextScsr(thisLbl)) {
     GraphNode *cnddtScsr = NULL;
     if (!cnddtDmnnt->FindScsr_(cnddtScsr, thisScsr->GetNum(), thisLbl)) {
       return false;
@@ -155,10 +155,10 @@ bool GraphNode::FindScsr_(GraphNode *&crntScsr, UDT_GNODES trgtNum,
   if (crntScsr == NULL) {
     crntScsr = GetFrstScsr(crntLbl);
   } else {
-    crntScsr = GetNxtScsr(crntLbl);
+    crntScsr = GetNextScsr(crntLbl);
   }
 
-  for (; crntScsr != NULL; crntScsr = GetNxtScsr(crntLbl)) {
+  for (; crntScsr != NULL; crntScsr = GetNextScsr(crntLbl)) {
     // Verify the fact that the list is sorted in ascending order.
     assert(crntNum == INVALID_VALUE || crntNum >= crntScsr->GetNum());
 
@@ -188,7 +188,7 @@ void GraphNode::FindRcrsvNghbrs_(GraphNode *root, DIRECTION dir,
   // This recursion will bottom up when the root or leaf node is reached, which
   // then gets added to the very top of the recursive neighbor list.
   for (GraphEdge *crntEdge = nghbrLst->GetFrstElmnt(); crntEdge != NULL;
-       crntEdge = nghbrLst->GetNxtElmnt()) {
+       crntEdge = nghbrLst->GetNextElmnt()) {
     GraphNode *nghbr = crntEdge->GetOtherNode(this);
     if (nghbr->GetColor() == COL_WHITE) {
       nghbr->FindRcrsvNghbrs_(root, dir, graph);
@@ -230,8 +230,8 @@ bool GraphNode::IsScsrEquvlnt(GraphNode *othrNode) {
 
   for (GraphNode *thisScsr = GetFrstScsr(thisLbl),
                  *othrScsr = othrNode->GetFrstScsr(othrLbl);
-       thisScsr != NULL; thisScsr = GetNxtScsr(thisLbl),
-                 othrScsr = othrNode->GetNxtScsr(othrLbl)) {
+       thisScsr != NULL; thisScsr = GetNextScsr(thisLbl),
+                 othrScsr = othrNode->GetNextScsr(othrLbl)) {
     if (thisScsr != othrScsr || thisLbl != othrLbl)
       return false;
   }
@@ -255,10 +255,10 @@ bool GraphNode::IsPrdcsrEquvlnt(GraphNode *othrNode) {
   GraphNode *othrPrdcsr = othrNode->GetFrstPrdcsr(othrLbl);
   if (thisPrdcsr == NULL)
     return true;
-  for (thisPrdcsr = GetNxtPrdcsr(thisLbl),
-      othrPrdcsr = othrNode->GetNxtPrdcsr(othrLbl);
-       thisPrdcsr != NULL; thisPrdcsr = GetNxtPrdcsr(thisLbl),
-      othrPrdcsr = othrNode->GetNxtPrdcsr(othrLbl)) {
+  for (thisPrdcsr = GetNextPrdcsr(thisLbl),
+      othrPrdcsr = othrNode->GetNextPrdcsr(othrLbl);
+       thisPrdcsr != NULL; thisPrdcsr = GetNextPrdcsr(thisLbl),
+      othrPrdcsr = othrNode->GetNextPrdcsr(othrLbl)) {
     if (thisPrdcsr != othrPrdcsr || thisLbl != othrLbl)
       return false;
   }
@@ -271,7 +271,7 @@ GraphEdge *GraphNode::FindScsr(GraphNode *trgtNode) {
 
   // Linear search for the target node in the current node's adjacency list.
   for (crntEdge = scsrLst_->GetFrstElmnt(); crntEdge != NULL;
-       crntEdge = scsrLst_->GetNxtElmnt()) {
+       crntEdge = scsrLst_->GetNextElmnt()) {
     if (crntEdge->GetOtherNode(this) == trgtNode)
       return crntEdge;
   }
@@ -284,7 +284,7 @@ GraphEdge *GraphNode::FindPrdcsr(GraphNode *trgtNode) {
 
   // Linear search for the target node in the current node's adjacency list
   for (crntEdge = prdcsrLst_->GetFrstElmnt(); crntEdge != NULL;
-       crntEdge = prdcsrLst_->GetNxtElmnt())
+       crntEdge = prdcsrLst_->GetNextElmnt())
     if (crntEdge->GetOtherNode(this) == trgtNode) {
       return crntEdge;
     }
@@ -294,7 +294,7 @@ GraphEdge *GraphNode::FindPrdcsr(GraphNode *trgtNode) {
 
 void GraphNode::PrntScsrLst(FILE *outFile) {
   for (GraphEdge *crnt = scsrLst_->GetFrstElmnt(); crnt != NULL;
-       crnt = scsrLst_->GetNxtElmnt()) {
+       crnt = scsrLst_->GetNextElmnt()) {
     UDT_GNODES othrNodeNum = crnt->GetOtherNode(this)->GetNum();
     UDT_GNODES label = crnt->label;
     fprintf(outFile, "%d,%d  ", othrNodeNum + 1, label);
@@ -305,7 +305,7 @@ void GraphNode::PrntScsrLst(FILE *outFile) {
 void GraphNode::LogScsrLst() {
   Logger::Info("Successor List For Node #%d", num_);
   for (GraphNode *thisScsr = GetFrstScsr(); thisScsr != NULL;
-       thisScsr = GetNxtScsr()) {
+       thisScsr = GetNextScsr()) {
     Logger::Info("%d", thisScsr->GetNum());
   }
 }

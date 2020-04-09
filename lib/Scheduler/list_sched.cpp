@@ -65,7 +65,7 @@ FUNC_RESULT ListScheduler::FindSchedule(InstSchedule *sched, SchedRegion *rgn) {
     }
 
     crntSched_->AppendInst(instNum);
-    bool cycleAdvanced = MovToNxtSlot_(inst);
+    bool cycleAdvanced = MovToNextSlot_(inst);
     if (cycleAdvanced) {
       bool schedIsLegal = ChkSchedLglty_(isEmptyCycle);
       if (!schedIsLegal)

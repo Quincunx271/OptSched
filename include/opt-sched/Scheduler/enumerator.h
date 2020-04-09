@@ -163,7 +163,7 @@ private:
   inline void CreateTmpHstry_();
   void FormPrtilSchedSig_();
   void Init_();
-  inline bool IsNxtCycleNew_();
+  inline bool IsNextCycleNew_();
 
 public:
   EnumTreeNode();
@@ -277,7 +277,7 @@ public:
   inline InstCount GetSpillCostSum();
 
   bool ChkInstRdndncy(SchedInstruction *inst, int brnchNum);
-  bool IsNxtSlotStall();
+  bool IsNextSlotStall();
 
   bool GetCrntCycleBlkd() { return crntCycleBlkd_; }
   void SetCrntCycleBlkd(bool blkd) { crntCycleBlkd_ = blkd; }
@@ -340,7 +340,7 @@ protected:
   InstCount neededSlots_[MAX_ISSUTYPE_CNT];
 
   // To be used by the history node
-  InstCount histNxtAvlblCycles_[MAX_ISSUTYPE_CNT];
+  InstCount histNextAvlblCycles_[MAX_ISSUTYPE_CNT];
   InstCount histInstsPerType_[MAX_ISSUTYPE_CNT];
 
   // Used for saving the original location when the scheduler advances
@@ -434,7 +434,7 @@ protected:
   // Try to find a new feasible branch from the current node.
   // If a feasible branch is found, a new node is created and
   // true is returned. Otherwise, false is returned
-  bool FindNxtFsblBrnch_(EnumTreeNode *&newNode);
+  bool FindNextFsblBrnch_(EnumTreeNode *&newNode);
   inline bool ChkCrntNodeForFsblty_();
 
   void RestoreCrntState_(SchedInstruction *inst, EnumTreeNode *newNode);
@@ -851,15 +851,15 @@ void EnumTreeNode::SetSpillCostSum(InstCount cost) {
 InstCount EnumTreeNode::GetSpillCostSum() { return spillCostSum_; }
 /*****************************************************************************/
 
-bool EnumTreeNode::IsNxtCycleNew_() {
+bool EnumTreeNode::IsNextCycleNew_() {
   if (enumrtr_->issuRate_ == 1) {
     return true;
   }
 
   InstCount crntCycle = enumrtr_->GetCycleNumFrmTime_(time_);
-  InstCount nxtCycle = enumrtr_->GetCycleNumFrmTime_(time_ + 1);
-  assert(nxtCycle >= crntCycle);
-  return (nxtCycle > crntCycle);
+  InstCount nextCycle = enumrtr_->GetCycleNumFrmTime_(time_ + 1);
+  assert(nextCycle >= crntCycle);
+  return (nextCycle > crntCycle);
 }
 /*****************************************************************************/
 
@@ -868,7 +868,7 @@ bool EnumTreeNode::ExaminedInst::IsRsrcDmntd(SchedInstruction *) {
     return false;
 
   for (TightndInst *tightndScsr = tightndScsrs_->GetFrstElmnt();
-       tightndScsr != NULL; tightndScsr = tightndScsrs_->GetNxtElmnt()) {
+       tightndScsr != NULL; tightndScsr = tightndScsrs_->GetNextElmnt()) {
     SchedInstruction *scsr = tightndScsr->inst;
 
     // If the release time of one successor of the examined instruction
@@ -976,7 +976,7 @@ inline bool Enumerator::ChkCrntNodeForFsblty_() {
   SchedInstruction *inst;
 
   for (inst = bkwrdTightndLst_->GetFrstElmnt(); inst != NULL;
-       inst = bkwrdTightndLst_->GetNxtElmnt()) {
+       inst = bkwrdTightndLst_->GetNextElmnt()) {
     assert(inst->IsSchduld() == false);
 
     if (inst->GetCrntDeadline() < crntCycleNum_) {

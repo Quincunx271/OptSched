@@ -232,7 +232,7 @@ std::unique_ptr<InstSchedule> ACOScheduler::FindOneSchedule() {
     }
     /* Logger::Info("Chose instruction %d (for some reason)", instNum); */
     schedule->AppendInst(instNum);
-    if (MovToNxtSlot_(inst))
+    if (MovToNextSlot_(inst))
       InitNewCycle_();
     rdyLst_->ResetIterator();
     ready.clear();
@@ -341,7 +341,7 @@ void ACOScheduler::UpdatePheremone(InstSchedule *schedule) {
 #endif
     lastInst = inst;
 
-    instNum = schedule->GetNxtInst(cycleNum, slotNum);
+    instNum = schedule->GetNextInst(cycleNum, slotNum);
   }
   schedule->ResetInstIter();
 
@@ -426,7 +426,7 @@ void PrintSchedule(InstSchedule *schedule) {
   instNum = schedule->GetFrstInst(cycleNum, slotNum);
   while (instNum != INVALID_VALUE) {
     std::cerr << instNum << " ";
-    instNum = schedule->GetNxtInst(cycleNum, slotNum);
+    instNum = schedule->GetNextInst(cycleNum, slotNum);
   }
   std::cerr << std::endl;
   schedule->ResetInstIter();

@@ -25,7 +25,7 @@ MachineModel::MachineModel(const string &modelFile) {
     int pieceCnt;
     char *strngs[INBUF_MAX_PIECES_PERLINE];
     int lngths[INBUF_MAX_PIECES_PERLINE];
-    buf.GetNxtVldLine(pieceCnt, strngs, lngths);
+    buf.GetNextVldLine(pieceCnt, strngs, lngths);
 
     if (pieceCnt != 2)
       Logger::Fatal("Invalid issue type spec");
@@ -48,7 +48,7 @@ MachineModel::MachineModel(const string &modelFile) {
     int pieceCnt;
     char *strngs[INBUF_MAX_PIECES_PERLINE];
     int lngths[INBUF_MAX_PIECES_PERLINE];
-    buf.GetNxtVldLine(pieceCnt, strngs, lngths);
+    buf.GetNextVldLine(pieceCnt, strngs, lngths);
 
     if (pieceCnt != 2) {
       Logger::Fatal("Invalid register type spec");

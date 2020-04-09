@@ -165,7 +165,7 @@ void SchedInstruction::AllocMem_(InstCount instCnt, bool isCP_FromScsr,
 
   InstCount predecessorIndex = 0;
   for (GraphEdge *edge = prdcsrLst_->GetFrstElmnt(); edge != NULL;
-       edge = prdcsrLst_->GetNxtElmnt()) {
+       edge = prdcsrLst_->GetNextElmnt()) {
     ltncyPerPrdcsr_[predecessorIndex++] = edge->label;
     sortedPrdcsrLst_->InsrtElmnt((SchedInstruction *)edge->GetOtherNode(this),
                                  edge->label, true);
@@ -225,7 +225,7 @@ InstCount SchedInstruction::CmputCrtclPath_(DIRECTION dir,
   LinkedList<GraphEdge> *nghbrLst = (dir == DIR_FRWRD) ? prdcsrLst_ : scsrLst_;
 
   for (GraphEdge *edg = nghbrLst->GetFrstElmnt(); edg != NULL;
-       edg = nghbrLst->GetNxtElmnt()) {
+       edg = nghbrLst->GetNextElmnt()) {
     UDT_GLABEL edgLbl = edg->label;
     SchedInstruction *nghbr = (SchedInstruction *)(edg->GetOtherNode(this));
 
@@ -376,10 +376,10 @@ SchedInstruction *SchedInstruction::GetFrstPrdcsr(InstCount *scsrNum,
   return (SchedInstruction *)(edge->from);
 }
 
-SchedInstruction *SchedInstruction::GetNxtPrdcsr(InstCount *scsrNum,
-                                                 UDT_GLABEL *ltncy,
-                                                 DependenceType *depType) {
-  GraphEdge *edge = prdcsrLst_->GetNxtElmnt();
+SchedInstruction *SchedInstruction::GetNextPrdcsr(InstCount *scsrNum,
+                                                  UDT_GLABEL *ltncy,
+                                                  DependenceType *depType) {
+  GraphEdge *edge = prdcsrLst_->GetNextElmnt();
   if (!edge)
     return NULL;
   if (scsrNum)
@@ -406,10 +406,10 @@ SchedInstruction *SchedInstruction::GetFrstScsr(InstCount *prdcsrNum,
   return (SchedInstruction *)(edge->to);
 }
 
-SchedInstruction *SchedInstruction::GetNxtScsr(InstCount *prdcsrNum,
-                                               UDT_GLABEL *ltncy,
-                                               DependenceType *depType) {
-  GraphEdge *edge = scsrLst_->GetNxtElmnt();
+SchedInstruction *SchedInstruction::GetNextScsr(InstCount *prdcsrNum,
+                                                UDT_GLABEL *ltncy,
+                                                DependenceType *depType) {
+  GraphEdge *edge = scsrLst_->GetNextElmnt();
   if (!edge)
     return NULL;
   if (prdcsrNum)
@@ -449,9 +449,9 @@ SchedInstruction *SchedInstruction::GetFrstNghbr(DIRECTION dir,
   return (SchedInstruction *)((dir == DIR_FRWRD) ? edge->to : edge->from);
 }
 
-SchedInstruction *SchedInstruction::GetNxtNghbr(DIRECTION dir,
-                                                UDT_GLABEL *ltncy) {
-  GraphEdge *edge = (dir == DIR_FRWRD ? scsrLst_ : prdcsrLst_)->GetNxtElmnt();
+SchedInstruction *SchedInstruction::GetNextNghbr(DIRECTION dir,
+                                                 UDT_GLABEL *ltncy) {
+  GraphEdge *edge = (dir == DIR_FRWRD ? scsrLst_ : prdcsrLst_)->GetNextElmnt();
   if (edge == NULL)
     return NULL;
   if (ltncy)
@@ -670,7 +670,7 @@ bool SchedInstruction::ProbeScsrsCrntLwrBounds(InstCount cycle) {
 
   LinkedList<GraphEdge> *nghbrLst = scsrLst_;
   for (GraphEdge *edg = nghbrLst->GetFrstElmnt(); edg != NULL;
-       edg = nghbrLst->GetNxtElmnt()) {
+       edg = nghbrLst->GetNextElmnt()) {
     UDT_GLABEL edgLbl = edg->label;
     SchedInstruction *nghbr = (SchedInstruction *)(edg->GetOtherNode(this));
     InstCount nghbrNewLwrBound = cycle + edgLbl;
@@ -707,7 +707,7 @@ void SchedInstruction::SetScsrNums_() {
   InstCount scsrNum = 0;
 
   for (GraphEdge *edge = scsrLst_->GetFrstElmnt(); edge != NULL;
-       edge = scsrLst_->GetNxtElmnt()) {
+       edge = scsrLst_->GetNextElmnt()) {
     edge->succOrder = scsrNum++;
   }
 
@@ -718,7 +718,7 @@ void SchedInstruction::SetPrdcsrNums_() {
   InstCount prdcsrNum = 0;
 
   for (GraphEdge *edge = prdcsrLst_->GetFrstElmnt(); edge != NULL;
-       edge = prdcsrLst_->GetNxtElmnt()) {
+       edge = prdcsrLst_->GetNextElmnt()) {
     edge->predOrder = prdcsrNum++;
   }
 
@@ -820,7 +820,7 @@ bool SchedRange::TightnLwrBoundRcrsvly(DIRECTION dir, InstCount newBound,
       return false;
 
     for (GraphEdge *edg = nghbrLst->GetFrstElmnt(); edg != NULL;
-         edg = nghbrLst->GetNxtElmnt()) {
+         edg = nghbrLst->GetNextElmnt()) {
       UDT_GLABEL edgLbl = edg->label;
       SchedInstruction *nghbr = (SchedInstruction *)(edg->GetOtherNode(inst_));
       InstCount nghbrNewBound = newBound + edgLbl;

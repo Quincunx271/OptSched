@@ -137,7 +137,7 @@ void ConstrainedScheduler::SchdulInst_(SchedInstruction *inst, InstCount) {
 
   // Notify each successor of this instruction that it has been scheduled.
   for (SchedInstruction *crntScsr = inst->GetFrstScsr(&prdcsrNum);
-       crntScsr != NULL; crntScsr = inst->GetNxtScsr(&prdcsrNum)) {
+       crntScsr != NULL; crntScsr = inst->GetNextScsr(&prdcsrNum)) {
     bool wasLastPrdcsr =
         crntScsr->PrdcsrSchduld(prdcsrNum, crntCycleNum_, scsrRdyCycle);
 
@@ -228,7 +228,7 @@ void ConstrainedScheduler::InitNewCycle_() {
   isCrntCycleBlkd_ = false;
 }
 
-bool ConstrainedScheduler::MovToNxtSlot_(SchedInstruction *inst) {
+bool ConstrainedScheduler::MovToNextSlot_(SchedInstruction *inst) {
   // If we are currently in the last slot of the current cycle.
   if (crntSlotNum_ == (issuRate_ - 1)) {
     crntCycleNum_++;

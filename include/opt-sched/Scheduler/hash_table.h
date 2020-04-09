@@ -35,8 +35,8 @@ public:
   virtual ~HashTblEntry() {}
   virtual void Clean() {}
 
-  HashTblEntry *GetNxt() const;
-  void SetNxt(HashTblEntry *newEntry);
+  HashTblEntry *GetNext() const;
+  void SetNext(HashTblEntry *newEntry);
   HashTblEntry *GetPrev() const;
   void SetPrev(HashTblEntry *newEntry);
 
@@ -45,7 +45,7 @@ public:
 
 protected:
   T *elmnt_;
-  HashTblEntry *nxt_;
+  HashTblEntry *next_;
   HashTblEntry *prev_;
   // The hash value.
   UDT_HASHVAL hashVal_;
@@ -254,7 +254,7 @@ inline HashTblEntry<T>::HashTblEntry(T *elmnt, UDT_HASHVAL hashVal) {
 }
 
 template <class T> inline void HashTblEntry<T>::Init_() {
-  nxt_ = NULL;
+  next_ = NULL;
   prev_ = NULL;
 }
 
@@ -265,12 +265,13 @@ inline void HashTblEntry<T>::Construct_(T *elmnt, UDT_HASHVAL hashVal) {
   hashVal_ = hashVal;
 }
 
-template <class T> HashTblEntry<T> *HashTblEntry<T>::GetNxt() const {
-  return nxt_;
+template <class T> HashTblEntry<T> *HashTblEntry<T>::GetNext() const {
+  return next_;
 }
 
-template <class T> inline void HashTblEntry<T>::SetNxt(HashTblEntry *newEntry) {
-  nxt_ = newEntry;
+template <class T>
+inline void HashTblEntry<T>::SetNext(HashTblEntry *newEntry) {
+  next_ = newEntry;
 }
 
 template <class T> HashTblEntry<T> *HashTblEntry<T>::GetPrev() const {
@@ -411,7 +412,7 @@ template <class T>
 void HashTable<T>::Clear(bool del, MemAlloc<BinHashTblEntry<T>> *entryAlctr) {
   UDT_HASHVAL i;
   HashTblEntry<T> *crntEntry;
-  HashTblEntry<T> *nxtEntry;
+  HashTblEntry<T> *nextEntry;
   assert(isCnstrctd_);
 
   if (entryCnt_ == 0) {
@@ -419,8 +420,8 @@ void HashTable<T>::Clear(bool del, MemAlloc<BinHashTblEntry<T>> *entryAlctr) {
   }
 
   for (i = 0; i <= maxHash_; i++) {
-    for (crntEntry = topEntry_[i]; crntEntry != NULL; crntEntry = nxtEntry) {
-      nxtEntry = crntEntry->GetNxt();
+    for (crntEntry = topEntry_[i]; crntEntry != NULL; crntEntry = nextEntry) {
+      nextEntry = crntEntry->GetNext();
 
       if (del) {
         delete crntEntry->GetElmnt();
@@ -470,7 +471,7 @@ void HashTable<T>::AddNewEntry_(HashTblEntry<T> *newEntry,
   if (lastEntry_[hashVal] == NULL) {
     topEntry_[hashVal] = newEntry;
   } else {
-    lastEntry_[hashVal]->SetNxt(newEntry);
+    lastEntry_[hashVal]->SetNext(newEntry);
   }
 
   lastEntry_[hashVal] = newEntry;
@@ -497,21 +498,21 @@ void HashTable<T>::RemoveEntry(HashTblEntry<T> *entry, bool del,
   assert(entryCnt_ > 0);
 
   UDT_HASHVAL hashVal = entry->GetHashVal();
-  HashTblEntry<T> *nxtEntry = entry->GetNxt();
+  HashTblEntry<T> *nextEntry = entry->GetNext();
   HashTblEntry<T> *prevEntry = entry->GetPrev();
 
   // Update the top entry pointer if the entry to remove is the top entry.
   if (prevEntry == NULL) {
-    topEntry_[hashVal] = nxtEntry;
+    topEntry_[hashVal] = nextEntry;
   } else {
-    prevEntry->SetNxt(nxtEntry);
+    prevEntry->SetNext(nextEntry);
   }
 
   // Update the bottom entry pointer if the entry to remove is the bottom entry.
-  if (nxtEntry == NULL) {
+  if (nextEntry == NULL) {
     lastEntry_[hashVal] = prevEntry;
   } else {
-    nxtEntry->SetPrev(prevEntry);
+    nextEntry->SetPrev(prevEntry);
   }
 
   entryCnts_[hashVal]--;
@@ -539,9 +540,9 @@ UDT_HASHVAL HashTable<T>::FindNextHash_(UDT_HASHVAL crntHash) {
 
   assert(crntHash > 0);
 
-  for (UDT_HASHVAL nxtHash = crntHash - 1; nxtHash != 0; nxtHash--) {
-    if (entryCnts_[nxtHash] > 0)
-      return nxtHash;
+  for (UDT_HASHVAL nextHash = crntHash - 1; nextHash != 0; nextHash--) {
+    if (entryCnts_[nextHash] > 0)
+      return nextHash;
   }
 
   return 0;
@@ -552,7 +553,7 @@ template <class T> void HashTable<T>::GetFullList(LinkedList<T> *lst) {
        crntHash--) {
     if (entryCnts_[crntHash] > 0) {
       for (HashTblEntry<T> *crntEntry = topEntry_[crntHash]; crntEntry != NULL;
-           crntEntry = crntEntry->GetNxt()) {
+           crntEntry = crntEntry->GetNext()) {
         lst->InsrtElmnt(crntEntry->GetElmnt());
       }
     }
@@ -640,18 +641,18 @@ template <class T> void BinHashTable<T>::ReInsertEntry(HashTblEntry<T> *entry) {
   assert(hashVal < HashTable<T>::tblSize_);
 
   HashTblEntry<T> *prev = entry->GetPrev();
-  HashTblEntry<T> *nxt = entry->GetNxt();
+  HashTblEntry<T> *next = entry->GetNext();
 
-  if (nxt == NULL) {
+  if (next == NULL) {
     this->lastEntry_[hashVal] = entry;
   } else {
-    nxt->SetPrev(entry);
+    next->SetPrev(entry);
   }
 
   if (prev == NULL) {
     this->topEntry_[hashVal] = entry;
   } else {
-    prev->SetNxt(entry);
+    prev->SetNext(entry);
   }
 
   if (key > maxKey_) {
@@ -685,8 +686,8 @@ template <class T> T *BinHashTable<T>::ExtractMax() {
     maxEntry = this->topEntry_[this->maxHash_];
     maxKey = maxEntry->GetKey();
 
-    for (crntEnt = maxEntry->GetNxt(); crntEnt != NULL;
-         crntEnt = crntEnt->GetNxt()) {
+    for (crntEnt = maxEntry->GetNext(); crntEnt != NULL;
+         crntEnt = crntEnt->GetNext()) {
       if (crntEnt->GetKey() > maxKey) {
         maxEntry = crntEnt;
         maxKey = crntEnt->GetKey();
@@ -716,15 +717,15 @@ template <class T>
 HashTblEntry<T> *BinHashTable<T>::GetNextEntry(HashTblEntry<T> *crntEntry) {
   assert(HashTable<T>::entryCnt_ != 0);
   assert(keyBitCnt_ == hashBitCnt_);
-  HashTblEntry<T> *nxtEntry = crntEntry->GetNxt();
+  HashTblEntry<T> *nextEntry = crntEntry->GetNext();
   UDT_HASHVAL hashVal = crntEntry->GetHashVal();
 
-  if (nxtEntry == NULL && hashVal > 0) {
+  if (nextEntry == NULL && hashVal > 0) {
     hashVal = this->FindNextHash_(hashVal);
-    nxtEntry = this->topEntry_[hashVal];
+    nextEntry = this->topEntry_[hashVal];
   }
 
-  return nxtEntry;
+  return nextEntry;
 }
 
 template <class T>
@@ -766,7 +767,7 @@ T *BinHashTable<T>::GetFirstMatch(const UDT_HASHKEY key, bool skipCollision) {
 
 template <class T> T *BinHashTable<T>::GetNextMatch(bool skipCollision) {
   assert(srchPtr_ != NULL);
-  srchPtr_ = srchPtr_->GetNxt();
+  srchPtr_ = srchPtr_->GetNext();
 
   if (skipCollision)
     FindNextMatch_();
@@ -775,7 +776,7 @@ template <class T> T *BinHashTable<T>::GetNextMatch(bool skipCollision) {
 }
 
 template <class T> void BinHashTable<T>::FindNextMatch_() {
-  for (; srchPtr_ != NULL; srchPtr_ = srchPtr_->GetNxt()) {
+  for (; srchPtr_ != NULL; srchPtr_ = srchPtr_->GetNext()) {
     if (((BinHashTblEntry<T> *)srchPtr_)->GetKey() == srchKey_)
       return;
   }
@@ -818,7 +819,7 @@ void BinHashTable<T>::DeleteEntries(UDT_HASHKEY key, LinkedList<T> *elmntLst) {
   UDT_HASHVAL hashVal = this->HashKey_(key);
 
   for (T *elmnt = elmntLst->GetFrstElmnt(); elmnt != NULL;
-       elmnt = elmntLst->GetNxtElmnt()) {
+       elmnt = elmntLst->GetNextElmnt()) {
     DeleteEntry(hashVal, elmnt);
   }
 }
@@ -830,7 +831,7 @@ bool BinHashTable<T>::DeleteEntry(UDT_HASHVAL hashVal, T *elmnt,
     return false;
 
   for (HashTblEntry<T> *entry = this->topEntry_[hashVal]; entry != NULL;
-       entry = entry->GetNxt()) {
+       entry = entry->GetNext()) {
     if (entry->GetElmnt() == elmnt) {
       RemoveEntry(entry, true, entryAlctr);
       return true;
@@ -886,7 +887,7 @@ template <class T> T *StrHashTable<T>::FindElement(const char *srchName) {
   T *elmnt;
 
   for (HashTblEntry<T> *crnt = this->topEntry_[hashVal]; crnt != NULL;
-       crnt = crnt->GetNxt()) {
+       crnt = crnt->GetNext()) {
     if ((elmnt = ((StrHashTblEntry<T> *)crnt)->GetElmnt(srchName)) != NULL) {
       return elmnt;
     }

@@ -191,7 +191,7 @@ protected:
 
   // Moves forward by one slot and updates the cycle and slot numbers. Returns
   // true if the cycle is advanced.
-  bool MovToNxtSlot_(SchedInstruction *inst);
+  bool MovToNextSlot_(SchedInstruction *inst);
 
   // Moves backward by one slot and updates the cycle and slot numbers.
   // Returns true if this causes a move back to the previous cycle.

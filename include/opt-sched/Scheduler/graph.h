@@ -128,13 +128,13 @@ public:
   // Returns a pointer to the next successor of the node and writes the label
   // of the edge between them to the label argument. Must be called after
   // GetFrstScsr() which starts the successor iterator.
-  GraphNode *GetNxtScsr(UDT_GLABEL &label);
+  GraphNode *GetNextScsr(UDT_GLABEL &label);
   // Returns a pointer to the first successor of the node. Sets the successor
   // iterator.
   GraphNode *GetFrstScsr();
   // Returns a pointer to the next successor of the node. Must be called after
   // GetFrstScsr() which starts the successor iterator.
-  GraphNode *GetNxtScsr();
+  GraphNode *GetNextScsr();
   // Checks if a given node is successor-equivalent to this node. Two nodes
   // are successor-equivalent if they have identical successor lists.
   bool IsScsrEquvlnt(GraphNode *othrNode);
@@ -143,7 +143,7 @@ public:
   GraphNode *GetFrstPrdcsr(UDT_GLABEL &label);
   // Returns a pointer to the next predecessor of the node. Must be called after
   // GetFrstPrdcsr() which starts the predecessor iterator.
-  GraphNode *GetNxtPrdcsr(UDT_GLABEL &label);
+  GraphNode *GetNextPrdcsr(UDT_GLABEL &label);
   // Checks if a given node is predecessor-equivalent to this node. Two nodes
   // are predecessor-equivalent if they have identical predecessor lists.
   bool IsPrdcsrEquvlnt(GraphNode *othrNode);
@@ -404,8 +404,8 @@ inline GraphNode *GraphNode::GetFrstScsr(UDT_GLABEL &label) {
   return edge->to;
 }
 
-inline GraphNode *GraphNode::GetNxtScsr(UDT_GLABEL &label) {
-  GraphEdge *edge = scsrLst_->GetNxtElmnt();
+inline GraphNode *GraphNode::GetNextScsr(UDT_GLABEL &label) {
+  GraphEdge *edge = scsrLst_->GetNextElmnt();
   if (edge == NULL)
     return NULL;
   label = edge->label;
@@ -420,8 +420,8 @@ inline GraphNode *GraphNode::GetFrstPrdcsr(UDT_GLABEL &label) {
   return edge->to;
 }
 
-inline GraphNode *GraphNode::GetNxtPrdcsr(UDT_GLABEL &label) {
-  GraphEdge *edge = prdcsrLst_->GetNxtElmnt();
+inline GraphNode *GraphNode::GetNextPrdcsr(UDT_GLABEL &label) {
+  GraphEdge *edge = prdcsrLst_->GetNextElmnt();
   if (edge == NULL)
     return NULL;
   label = edge->label;
@@ -433,9 +433,9 @@ inline GraphNode *GraphNode::GetFrstScsr() {
   return GetFrstScsr(label);
 }
 
-inline GraphNode *GraphNode::GetNxtScsr() {
+inline GraphNode *GraphNode::GetNextScsr() {
   UDT_GLABEL label;
-  return GetNxtScsr(label);
+  return GetNextScsr(label);
 }
 
 inline UDT_GLABEL GraphNode::GetScsrLblSum() const { return scsrLblSum_; }
