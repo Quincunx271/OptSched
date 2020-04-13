@@ -61,7 +61,7 @@ BBWithSpill::BBWithSpill(const OptSchedTarget *OST_, DataDepGraph *dataDepGraph,
   livePhysRegs_ = new WeightedBitVector[regTypeCnt_];
   spillCosts_ = new InstCount[dataDepGraph_->GetInstCnt()];
   peakRegPressures_ = new InstCount[regTypeCnt_];
-  regPressures_.resize(regTypeCnt_);
+  RegPressures.resize(regTypeCnt_);
   sumOfLiveIntervalLengths_.resize(regTypeCnt_, 0);
 
   entryInstCnt_ = 0;
@@ -348,7 +348,7 @@ void BBWithSpill::InitForCostCmputtn_() {
     //    if (chkCnflcts_)
     //      regFiles_[i].ResetConflicts();
     peakRegPressures_[i] = 0;
-    regPressures_[i] = 0;
+    RegPressures[i] = 0;
   }
 
   for (i = 0; i < dataDepGraph_->GetInstCnt(); i++)
@@ -401,8 +401,8 @@ void BBWithSpill::CmputCrntSpillCost_() {
   switch (spillCostFunc_) {
   case SCF_PERP:
   case SCF_PRP:
-  case SCF_PEAK_PER_TYPE:
   case SCF_TARGET:
+  case SCF_PEAK_PER_TYPE:
     crntSpillCost_ = peakSpillCost_;
     break;
   case SCF_SUM:
@@ -428,7 +428,7 @@ void BBWithSpill::UpdateSpillInfoForSchdul_(SchedInstruction *inst,
   int defCnt, useCnt, regNum, physRegNum;
   Register **defs, **uses;
   Register *def, *use;
-  int liveRegs;
+  int excessRegs, liveRegs;
   InstCount newSpillCost;
 
   defCnt = inst->GetDefs(defs);
@@ -525,10 +525,11 @@ void BBWithSpill::UpdateSpillInfoForSchdul_(SchedInstruction *inst,
   }
 #endif
 
+
   for (int16_t i = 0; i < regTypeCnt_; i++) {
     liveRegs = liveRegs_[i].GetWghtedCnt();
     // Set current RP for register type "i"
-    regPressures_[i] = liveRegs;
+    RegPressures[i] = liveRegs;
     // Update peak RP for register type "i"
     if (liveRegs > peakRegPressures_[i])
       peakRegPressures_[i] = liveRegs;
@@ -546,6 +547,21 @@ void BBWithSpill::UpdateSpillInfoForSchdul_(SchedInstruction *inst,
       }
     }
 
+#ifdef IS_DEBUG_REG_PRESSURE
+    Logger::Info("Reg type %d has %d live regs", i, liveRegs);
+#endif
+
+    if (spillCostFunc_ == SCF_PEAK_PER_TYPE)
+      excessRegs = peakRegPressures_[i] - machMdl_->GetPhysRegCnt(i);
+    else if (spillCostFunc_ == SCF_PRP)
+      excessRegs = liveRegs;
+    else
+      excessRegs = liveRegs - machMdl_->GetPhysRegCnt(i);
+
+    if (excessRegs > 0) {
+      newSpillCost += excessRegs;
+    }
+
     // FIXME: Can this be taken out of this loop?
     if (spillCostFunc_ == SCF_SLIL) {
       slilSpillCost_ = std::accumulate(sumOfLiveIntervalLengths_.begin(),
@@ -554,7 +570,7 @@ void BBWithSpill::UpdateSpillInfoForSchdul_(SchedInstruction *inst,
   }
 
   if (spillCostFunc_ == SCF_TARGET) {
-    newSpillCost = OST->getCost(regPressures_);
+    newSpillCost = OST->getCost(RegPressures);
 
   } else if (spillCostFunc_ == SCF_SLIL) {
     slilSpillCost_ = std::accumulate(sumOfLiveIntervalLengths_.begin(),
@@ -562,7 +578,7 @@ void BBWithSpill::UpdateSpillInfoForSchdul_(SchedInstruction *inst,
 
   } else if (spillCostFunc_ == SCF_PRP) {
     newSpillCost =
-        std::accumulate(regPressures_.begin(), regPressures_.end(), 0);
+        std::accumulate(RegPressures.begin(), RegPressures.end(), 0);
 
   } else if (spillCostFunc_ == SCF_PEAK_PER_TYPE) {
     for (int i = 0; i < regTypeCnt_; i++)
@@ -573,7 +589,7 @@ void BBWithSpill::UpdateSpillInfoForSchdul_(SchedInstruction *inst,
     // Default is PERP (Some SCF like SUM rely on PERP being the default here)
     int i = 0;
     std::for_each(
-        regPressures_.begin(), regPressures_.end(), [&](InstCount RP) {
+        RegPressures.begin(), RegPressures.end(), [&](InstCount RP) {
           newSpillCost += std::max(0, RP - machMdl_->GetPhysRegCnt(i++));
         });
   }
@@ -597,9 +613,8 @@ void BBWithSpill::UpdateSpillInfoForSchdul_(SchedInstruction *inst,
 #endif
 
   totSpillCost_ += newSpillCost;
-
-  peakSpillCost_ = std::max(peakSpillCost_, newSpillCost);
-
+  if (newSpillCost > peakSpillCost_)
+    peakSpillCost_ = newSpillCost;
   CmputCrntSpillCost_();
 
   schduldInstCnt_++;
@@ -927,8 +942,6 @@ bool BBWithSpill::ChkCostFsblty(InstCount trgtLngth, EnumTreeNode *node) {
 
   fsbl = dynmcCostLwrBound < bestCost_;
 
-  // FIXME: RP tracking should be limited to the current SCF. We need RP
-  // tracking interface.
   if (fsbl) {
     node->SetCost(crntCost);
     node->SetCostLwrBound(dynmcCostLwrBound);

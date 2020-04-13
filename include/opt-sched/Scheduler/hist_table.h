@@ -105,7 +105,6 @@ public:
   void SetCostInfo(EnumTreeNode *node, bool isTemp, Enumerator *enumrtr);
 
 protected:
-  // Why do we need to copy this data from region->tree_node->hist_node
   InstCount cost_;
   InstCount peakSpillCost_;
   InstCount spillCostSum_;
