@@ -44,7 +44,7 @@ if(OPTSCHEDSUPER_AUTO_DOWNLOAD_REPO)
 endif()
 
 # Search for `repo`. We need repo to run the superbuild.
-find_program(REPO_COMMAND repo HINTS $ENV{HOME}/bin PATHS ${REPO_BIN_DIR})
+find_program(REPO_COMMAND repo HINTS $ENV{HOME}/bin ${REPO_BIN_DIR})
 if(NOT REPO_COMMAND)
   message(FATAL_ERROR
     "Google repo is required to run the AMDGPU superbuild.\n"
