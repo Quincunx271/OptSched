@@ -51,6 +51,7 @@ set(OPT_SCHED_SRCS Scheduler/aco.cpp
   Scheduler/sched_basic_data.cpp
   Scheduler/sched_region.cpp
   Scheduler/stats.cpp
+  Scheduler/tred_graph_trans.cpp
   Wrapper/OptimizingScheduler.cpp
   Wrapper/OptSchedMachineWrapper.cpp
   Wrapper/OptSchedDDGWrapperBasic.cpp

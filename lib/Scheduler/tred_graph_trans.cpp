@@ -12,7 +12,8 @@ FUNC_RESULT TransitiveReductionTrans::ApplyTrans() {
   int numRemoved = 0;
   Logger::Info("Applying transitive reduction graph transformation.");
 
-  // For every distinct nodes w, u, v, if (w, u), (u, v), and (w, v) are edges,
+  // For every distinct nodes w, u, v,
+  // if there are paths w --> u, u --> v, and edge (w, v),
   // then remove the transitive edge (w, v)
   for (int i = 0; i < numNodes; i++) {
     for (int j = 0; j < numNodes; j++) {
@@ -29,14 +30,14 @@ FUNC_RESULT TransitiveReductionTrans::ApplyTrans() {
         SchedInstruction *u = graph->GetInstByIndx(j);
         SchedInstruction *v = graph->GetInstByIndx(k);
 
-        // Look up the three edges in question
-        GraphEdge *wuS = w->FindScsr(u);
-        GraphEdge *uvS = u->FindScsr(v);
-        GraphEdge *wvS = w->FindScsr(v);
+        // Look up the paths and edge in question
+        BitVector *wfwd = w->GetRcrsvNghbrBitVector(DIR_FRWRD);
+        BitVector *ufwd = w->GetRcrsvNghbrBitVector(DIR_FRWRD);
+        GraphEdge *wvS = w->FindScsr(v); // nullptr if no edge
 
-        // If none of the three are nullptr, then we know that the edge existed
-        // and must be removed.
-        if (wuS && uvS && wvS) {
+        const bool pathWtoU = wfwd->GetBit(u->GetNum());
+        const bool pathUtoV = ufwd->GetBit(v->GetNum());
+        if (pathWtoU && pathUtoV && wvS) {
           w->RemoveSuccTo(v);
           v->RemovePredFrom(w);
           delete wvS;
