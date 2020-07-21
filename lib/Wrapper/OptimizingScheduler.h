@@ -168,6 +168,8 @@ protected:
   // (StaticNodeSup must be enabled).
   bool MultiPassStaticNodeSup;
 
+  bool TransReduction;
+
   // Should we run the LLVM converging scheduler as input to the enumerator.
   bool UseLLVMScheduler;
 
