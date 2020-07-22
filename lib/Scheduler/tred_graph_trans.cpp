@@ -58,14 +58,14 @@ FUNC_RESULT TransitiveReductionTrans::ApplyTrans() {
           edgesToRemove.push_back(uvp);
         }
       });
-    }
 
-    numRemoved += edgesToRemove.size();
-    for (GraphEdge *e : edgesToRemove) {
-      GraphNode *vp = e->to;
-      u->RemoveSuccTo(vp);
-      vp->RemovePredFrom(u);
-      delete e;
+      numRemoved += edgesToRemove.size();
+      for (GraphEdge *e : edgesToRemove) {
+        GraphNode *vp = e->to;
+        u->RemoveSuccTo(vp);
+        vp->RemovePredFrom(u);
+        delete e;
+      }
     }
   }
 
