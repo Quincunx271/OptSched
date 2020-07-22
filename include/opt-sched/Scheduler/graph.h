@@ -142,6 +142,8 @@ public:
   // Returns a pointer to the next successor of the node. Must be called after
   // GetFrstScsr() which starts the successor iterator.
   GraphNode *GetNxtScsr();
+  // Gets an iterable range of the successors of this node
+  const LinkedList<GraphEdge> &GetSuccessors() const;
   // Checks if a given node is successor-equivalent to this node. Two nodes
   // are successor-equivalent if they have identical successor lists.
   bool IsScsrEquvlnt(GraphNode *othrNode);
@@ -151,6 +153,8 @@ public:
   // Returns a pointer to the next predecessor of the node. Must be called after
   // GetFrstPrdcsr() which starts the predecessor iterator.
   GraphNode *GetNxtPrdcsr(UDT_GLABEL &label);
+  // Gets an iterable range of the successors of this node
+  const LinkedList<GraphEdge> &GetPredecessors() const;
   // Checks if a given node is predecessor-equivalent to this node. Two nodes
   // are predecessor-equivalent if they have identical predecessor lists.
   bool IsPrdcsrEquvlnt(GraphNode *othrNode);
@@ -466,6 +470,10 @@ inline GraphNode *GraphNode::GetNxtScsr(UDT_GLABEL &label) {
   return edge->to;
 }
 
+inline const LinkedList<GraphEdge> &GraphNode::GetSuccessors() const {
+  return *scsrLst_;
+}
+
 inline GraphNode *GraphNode::GetFrstPrdcsr(UDT_GLABEL &label) {
   GraphEdge *edge = prdcsrLst_->GetFrstElmnt();
   if (edge == NULL)
@@ -480,6 +488,10 @@ inline GraphNode *GraphNode::GetNxtPrdcsr(UDT_GLABEL &label) {
     return NULL;
   label = edge->label;
   return edge->to;
+}
+
+inline const LinkedList<GraphEdge> &GraphNode::GetPredecessors() const {
+  return *prdcsrLst_;
 }
 
 inline GraphNode *GraphNode::GetFrstScsr() {

@@ -1,9 +1,32 @@
 #include "opt-sched/Scheduler/tred_graph_trans.h"
 
 #include "opt-sched/Scheduler/logger.h"
+#include "llvm/ADT/SmallPtrSet.h"
+#include "llvm/ADT/SmallVector.h"
 #include <cassert>
 
 using namespace llvm::opt_sched;
+
+template <typename F>
+static void DepthFirstVisit_(llvm::SmallPtrSetImpl<GraphNode *> &seen,
+                             GraphNode *node, F f) {
+  seen.insert(node);
+  f(node);
+
+  for (GraphEdge &edge : node->GetSuccessors()) {
+    GraphNode *next = edge.to;
+    if (!seen.count(next)) {
+      DepthFirstVisit_(seen, next, f);
+    }
+  }
+}
+
+template <typename F>
+static void DepthFirstVisit(llvm::SmallPtrSetImpl<GraphNode *> &seen,
+                            GraphNode *node, F f) {
+  seen.clear();
+  DepthFirstVisit_(seen, node, f);
+}
 
 FUNC_RESULT TransitiveReductionTrans::ApplyTrans() {
   const InstCount numNodes = GetNumNodesInGraph_();
@@ -12,38 +35,37 @@ FUNC_RESULT TransitiveReductionTrans::ApplyTrans() {
   int numRemoved = 0;
   Logger::Info("Applying transitive reduction graph transformation.");
 
-  // For every distinct nodes w, u, v,
-  // if there are paths w --> u, u --> v, and edge (w, v),
-  // then remove the transitive edge (w, v)
+  // Outside the loop: reuse memory across each iteration.
+  llvm::SmallPtrSet<GraphNode *, 32> depthFirstHasSeen;
+  // 1KB on a 64-bit machine, 1/2 a KB on a 32-bit machine
+  llvm::SmallVector<GraphEdge *, 128> edgesToRemove;
+
+  // For every node u,
+  // For each neighbor v (that is, (u, v) is an edge),
+  // Check every v' reachable from v (DFS); if (u, v') exists, remove it.
   for (int i = 0; i < numNodes; i++) {
-    for (int j = 0; j < numNodes; j++) {
-      if (i == j) {
-        continue;
-      }
-      for (int k = 0; k < numNodes; k++) {
-        if (i == k || j == k) {
-          continue;
+    edgesToRemove.clear();
+
+    // TODO: evaluate if graph->GetInstByTplgclOrdr(i); would be faster.
+    SchedInstruction *u = graph->GetInstByIndx(i);
+
+    for (GraphEdge &edge : u->GetSuccessors()) {
+      GraphNode *v = edge.to;
+
+      ::DepthFirstVisit(depthFirstHasSeen, v, [&](GraphNode *vp) {
+        GraphEdge *uvp = u->FindScsr(vp);
+        if (uvp) {
+          edgesToRemove.push_back(uvp);
         }
+      });
+    }
 
-        assert(i != j && j != k && i != k);
-        SchedInstruction *w = graph->GetInstByIndx(i);
-        SchedInstruction *u = graph->GetInstByIndx(j);
-        SchedInstruction *v = graph->GetInstByIndx(k);
-
-        // Look up the paths and edge in question
-        BitVector *wfwd = w->GetRcrsvNghbrBitVector(DIR_FRWRD);
-        BitVector *ufwd = w->GetRcrsvNghbrBitVector(DIR_FRWRD);
-        GraphEdge *wvS = w->FindScsr(v); // nullptr if no edge
-
-        const bool pathWtoU = wfwd->GetBit(u->GetNum());
-        const bool pathUtoV = ufwd->GetBit(v->GetNum());
-        if (pathWtoU && pathUtoV && wvS) {
-          w->RemoveSuccTo(v);
-          v->RemovePredFrom(w);
-          delete wvS;
-          ++numRemoved;
-        }
-      }
+    numRemoved += edgesToRemove.size();
+    for (GraphEdge *e : edgesToRemove) {
+      GraphNode *vp = e->to;
+      u->RemoveSuccTo(vp);
+      vp->RemovePredFrom(u);
+      delete e;
     }
   }
 
