@@ -83,7 +83,7 @@ public:
 
   LinkedListIterator<T> &operator--();
 
-  LinkedList<T> *GetList() const { return list_; }
+  const LinkedList<T> *GetList() const { return list_; }
 
   Entry<T> *GetEntry() const { return current_; }
 
