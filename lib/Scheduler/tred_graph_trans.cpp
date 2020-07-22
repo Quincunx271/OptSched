@@ -40,7 +40,9 @@ FUNC_RESULT TransitiveReductionTrans::ApplyTrans() {
   const InstCount numNodes = GetNumNodesInGraph_();
   DataDepGraph *const graph = GetDataDepGraph_();
 
+  int numEdges = 0;
   int numRemoved = 0;
+
   Logger::Info("Applying transitive reduction graph transformation.");
 
   // Outside the loop: reuse memory across each iteration.
@@ -52,11 +54,11 @@ FUNC_RESULT TransitiveReductionTrans::ApplyTrans() {
   // For each neighbor v (that is, (u, v) is an edge),
   // Check every v' reachable from v (DFS); if (u, v') exists, remove it.
   for (int i = 0; i < numNodes; i++) {
-    edgesToRemove.clear();
-
     // TODO: evaluate if graph->GetInstByTplgclOrdr(i); would be faster.
     SchedInstruction *u = graph->GetInstByIndx(i);
     DEBUG_LOG(" Checking from u = %d", u->GetNum());
+
+    numEdges += u->GetSuccessors().GetElmntCnt();
 
     for (GraphEdge &edge : u->GetSuccessors()) {
       GraphNode *v = edge.to;
@@ -76,13 +78,15 @@ FUNC_RESULT TransitiveReductionTrans::ApplyTrans() {
         GraphNode *vp = e->to;
         u->RemoveSuccTo(vp);
         vp->RemovePredFrom(u);
-        DEBUG_LOG("  Deleting GraphEdge* at %p", (void *)e);
+        DEBUG_LOG("  Deleting GraphEdge* at %p: (%d, %d)", (void *)e,
+                  u->GetNum(), vp->GetNum());
         delete e;
       }
+      edgesToRemove.clear();
     }
   }
 
-  Logger::Info("Removed edges: %d", numRemoved);
+  Logger::Info("Removed edges: %d / %d", numRemoved, numEdges);
 
   return RES_SUCCESS;
 }
