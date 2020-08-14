@@ -204,10 +204,14 @@ public:
   // Returns the node's recursive predecessor or successor list, depending on
   // the specified direction.
   LinkedList<GraphNode> *GetRcrsvNghbrLst(DIRECTION dir);
+  LinkedList<GraphNode> *GetRecursiveSuccessors();
+  LinkedList<GraphNode> *GetRecursivePredecessors();
   // Returns the node's recursive predecessor or successor bitset, depending
   // on the specified direction. Nodes which are in the list have the bits
   // indexed by their number set.
   BitVector *GetRcrsvNghbrBitVector(DIRECTION dir);
+  BitVector *GetRecursiveSuccessorsBitVector();
+  BitVector *GetRecursivePredecessorsBitVector();
 
   // Performs a depth-first visit starting from this node, which includes
   // visiting all of its successors recursively and deducing a topological
@@ -516,8 +520,24 @@ inline LinkedList<GraphNode> *GraphNode::GetRcrsvNghbrLst(DIRECTION dir) {
   return dir == DIR_FRWRD ? rcrsvScsrLst_ : rcrsvPrdcsrLst_;
 }
 
+inline LinkedList<GraphNode> *GraphNode::GetRecursiveSuccessors() {
+  return rcrsvScsrLst_;
+}
+
+inline LinkedList<GraphNode> *GraphNode::GetRecursivePredecessors() {
+  return rcrsvPrdcsrLst_;
+}
+
 inline BitVector *GraphNode::GetRcrsvNghbrBitVector(DIRECTION dir) {
   return dir == DIR_FRWRD ? isRcrsvScsr_ : isRcrsvPrdcsr_;
+}
+
+inline BitVector *GraphNode::GetRecursiveSuccessorsBitVector() {
+  return isRcrsvScsr_;
+}
+
+inline BitVector *GraphNode::GetRecursivePredecessorsBitVector() {
+  return isRcrsvPrdcsr_;
 }
 
 inline bool GraphNode::IsRcrsvPrdcsr(GraphNode *node) const {
