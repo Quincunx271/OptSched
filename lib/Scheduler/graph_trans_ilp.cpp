@@ -9,6 +9,15 @@
 using namespace llvm::opt_sched;
 
 namespace {
+size_t ComputeIndex(int i, int j, size_t Rows, size_t Columns) {
+  assert(i >= 0);
+  assert(j >= 0);
+
+  size_t index = size_t(i) * Columns + size_t(j);
+  assert(index < Rows * Columns);
+  return index;
+}
+
 template <typename T> class MutableArrayRef2D {
 public:
   explicit MutableArrayRef2D(llvm::MutableArrayRef<T> Ref, size_t Rows,
@@ -21,8 +30,7 @@ public:
   size_t Columns() const { return Columns_; }
 
   T &operator[](size_t(&&RCIndices)[2]) const {
-    size_t index = RCIndices[0] * Columns_ + RCIndices[1];
-    return Ref_[index];
+    return Ref_[ComputeIndex(RCIndices[0], RCIndices[1], Rows_, Columns_)];
   }
 
   llvm::MutableArrayRef<T> UnderlyingData() const { return Ref_; }
@@ -43,7 +51,6 @@ struct ILPTransformState {
   // Part of the algorithm
   bool ShouldContinue() const;
   void UpdateDistanceTable(int i, int j);
-  void UpdateSuperiorArray(int i, int j);
   void RemoveRedundantEdges(int i, int j);
   void UpdateSuperiorNodes(int i, int j);
 
@@ -54,7 +61,10 @@ struct ILPTransformState {
   }
 
   // Accessors
-  MutableArrayRef2D<int> DistanceTable();
+  int DistanceTable(int i, int j) const;
+  void SetDistanceTable(int i, int j, int val);
+  void UpdateSuperiorArray(int i, int j);
+  int ComputeSuperiorArrayValue(int i, int j) const;
   MutableArrayRef2D<int> SuperiorArray();
 
   // Initialization only
@@ -70,8 +80,26 @@ struct ILPTransformState {
 };
 } // namespace
 
-MutableArrayRef2D<int> ILPTransformState::DistanceTable() {
-  return MutableArrayRef2D<int>(DistanceTable_, NumNodes_, NumNodes_);
+int ILPTransformState::DistanceTable(int i, int j) const {
+  return DistanceTable_[ComputeIndex(i, j, NumNodes_, NumNodes_)];
+}
+
+void ILPTransformState::SetDistanceTable(int i, int j, int val) {
+  MutableArrayRef2D<int> DistanceTable(DistanceTable_, NumNodes_, NumNodes_);
+  int oldDistance = DistanceTable[{i, j}];
+  DistanceTable[{i, j}] = val;
+
+  if (val > oldDistance) {
+    SchedInstruction *NodeI = DDG_.GetInstByIndx(i);
+    SchedInstruction *NodeJ = DDG_.GetInstByIndx(j);
+
+    for (GraphEdge &e : NodeI->GetPredecessors()) {
+      UpdateSuperiorArray(e.from->GetNum(), j);
+    }
+    for (GraphEdge &e : NodeJ->GetSuccessors()) {
+      UpdateSuperiorArray(i, e.to->GetNum());
+    }
+  }
 }
 
 MutableArrayRef2D<int> ILPTransformState::SuperiorArray() {
@@ -125,6 +153,39 @@ static bool AreNodesIndependent(SchedInstruction *A, SchedInstruction *B) {
   return A != B && !A->IsRcrsvPrdcsr(B) && !A->IsRcrsvScsr(B);
 }
 
+int ILPTransformState::ComputeSuperiorArrayValue(int i, int j) const {
+  SchedInstruction *NodeI = DDG_.GetInstByIndx(i);
+  SchedInstruction *NodeJ = DDG_.GetInstByIndx(j);
+
+  if (NodeI->GetInstType() != NodeJ->GetInstType() ||
+      !AreNodesIndependent(NodeI, NodeJ)) {
+    return -1;
+  }
+
+  const int NumBadPredecessors =
+      llvm::count_if(NodeI->GetPredecessors(), [&](GraphEdge &e) {
+        return e.label > DistanceTable(e.from->GetNum(), i);
+      });
+
+  const int NumBadSuccessors =
+      llvm::count_if(NodeJ->GetSuccessors(), [&](GraphEdge &e) {
+        return e.label > DistanceTable(j, e.to->GetNum());
+      });
+
+  return NumBadPredecessors + NumBadSuccessors;
+}
+
+void ILPTransformState::UpdateSuperiorArray(int i, int j) {
+  const int OldValue = SuperiorArray()[{i, j}];
+  const int NewValue = ComputeSuperiorArrayValue(i, j);
+  SuperiorArray()[{i, j}] = NewValue;
+  assert(NewValue <= OldValue);
+
+  if (NewValue == 0) {
+    SuperiorNodesList_.push_back({i, j});
+  }
+}
+
 std::vector<int> ILPTransformState::CreateSuperiorArray() {
   std::vector<int> Superior_;
   Superior_.resize(NumNodes_ * NumNodes_, -1);
@@ -137,17 +198,7 @@ std::vector<int> ILPTransformState::CreateSuperiorArray() {
 
       if (NodeI->GetInstType() == NodeJ->GetInstType() &&
           AreNodesIndependent(NodeI, NodeJ)) {
-        const int NumBadPredecessors =
-            llvm::count_if(NodeI->GetPredecessors(), [&](GraphEdge &e) {
-              return e.label > DistanceTable()[{e.from->GetNum(), I}];
-            });
-
-        const int NumBadSuccessors =
-            llvm::count_if(NodeJ->GetSuccessors(), [&](GraphEdge &e) {
-              return e.label > DistanceTable()[{J, e.to->GetNum()}];
-            });
-
-        Superior[{I, J}] = NumBadPredecessors + NumBadSuccessors;
+        Superior[{I, J}] = ComputeSuperiorArrayValue(I, J);
       }
     }
   }
@@ -202,7 +253,7 @@ static void AddNecessaryResourceEdges(DataDepGraph &ddg, int i, int j) {}
 
 void ILPTransformState::UpdateDistanceTable(int i, int j) {
   // Adding the edge (i, j) increases DISTANCE(i, j) to 0 (from -infinity).
-  DistanceTable()[{i, j}] = 0;
+  SetDistanceTable(i, j, 0);
 
   const int MaxLatency = DDG_.GetMaxLtncy();
 
@@ -214,30 +265,47 @@ void ILPTransformState::UpdateDistanceTable(int i, int j) {
 
   for (GraphNode &Succ : *JSuccessors) {
     const int k = Succ.GetNum();
-    const int OldDistance = DistanceTable()[{i, k}];
-    const int NewPossibleDistance = DistanceTable()[{j, k}];
+    const int OldDistance = DistanceTable(i, k);
+    const int NewDistance = std::min(MaxLatency, DistanceTable(j, k));
 
-    if (NewPossibleDistance > OldDistance) {
-      const int NewDistance = std::min(MaxLatency, NewPossibleDistance);
-      DistanceTable()[{i, k}] = NewDistance;
+    if (NewDistance > OldDistance) {
+      SetDistanceTable(i, k, NewDistance);
 
       for (GraphNode &Pred : *IPredecessors) {
         const int p = Pred.GetNum();
-        const int NewPossiblePK = NewDistance + DistanceTable()[{p, i}];
-        const int OldPK = DistanceTable()[{p, k}];
+        const int NewPossiblePK = NewDistance + DistanceTable(p, i);
+        const int OldPK = DistanceTable(p, k);
 
-        DistanceTable()[{p, k}] =
-            std::min(MaxLatency, std::max(NewPossiblePK, OldPK));
+        SetDistanceTable(p, k,
+                         std::min(MaxLatency, std::max(NewPossiblePK, OldPK)));
       }
     }
   }
 }
 
-void ILPTransformState::UpdateSuperiorArray(int i, int j) {}
+void ILPTransformState::RemoveRedundantEdges(int i, int j) {
+  SchedInstruction *NodeI = DDG_.GetInstByIndx(i);
+  SchedInstruction *NodeJ = DDG_.GetInstByIndx(j);
 
-void ILPTransformState::RemoveRedundantEdges(int i, int j) {}
+  for (GraphNode &Pred : *NodeI->GetRecursivePredecessors()) {
+    LinkedList<GraphEdge> &PSuccs = Pred.GetSuccessors();
 
-void ILPTransformState::UpdateSuperiorNodes(int i, int j) {}
+    for (auto it = PSuccs.begin(); it != PSuccs.end();) {
+      GraphEdge &e = *it;
+
+      if (NodeJ->IsRcrsvScsr(e.to) &&
+          e.label <= DistanceTable(e.from->GetNum(), e.to->GetNum())) {
+        it = PSuccs.RemoveAt(it);
+        e.to->RemovePredFrom(&Pred);
+        // DEBUG_LOG("  Deleting GraphEdge* at %p: (%d, %d)", (void *)e,
+        //           u->GetNum(), vp->GetNum());
+        delete &e;
+      } else {
+        ++it;
+      }
+    }
+  }
+}
 
 StaticNodeSupILPTrans::StaticNodeSupILPTrans(DataDepGraph *dataDepGraph)
     : GraphTrans(dataDepGraph) {}
@@ -252,6 +320,9 @@ FUNC_RESULT StaticNodeSupILPTrans::ApplyTrans() {
     auto ij = state.PopNextSuperiorNodePair();
     const int i = ij.first;
     const int j = ij.second;
+    if (!AreNodesIndependent(ddg.GetInstByIndx(i), ddg.GetInstByIndx(j))) {
+      continue;
+    }
 
     AddLatencyZeroEdge(ddg, i, j);
     AddNecessaryResourceEdges(ddg, i, j);
@@ -259,7 +330,6 @@ FUNC_RESULT StaticNodeSupILPTrans::ApplyTrans() {
     state.UpdateDistanceTable(i, j);
     state.UpdateSuperiorArray(i, j);
     state.RemoveRedundantEdges(i, j);
-    state.UpdateSuperiorNodes(i, j);
   }
 
   return RES_SUCCESS;
