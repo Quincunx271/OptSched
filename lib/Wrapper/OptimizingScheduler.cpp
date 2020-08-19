@@ -12,6 +12,7 @@
 #include "opt-sched/Scheduler/config.h"
 #include "opt-sched/Scheduler/data_dep.h"
 #include "opt-sched/Scheduler/graph_trans.h"
+#include "opt-sched/Scheduler/graph_trans_ilp.h"
 #include "opt-sched/Scheduler/random.h"
 #include "opt-sched/Scheduler/register.h"
 #include "opt-sched/Scheduler/sched_region.h"
@@ -190,6 +191,11 @@ void ScheduleDAGOptSched::addGraphTransformations(
     } else {
       Logger::Info("Skipping RP-only graph transforms for non-unity pass.");
     }
+  }
+
+  if (ILPStaticNodeSup) {
+    GraphTransformations->push_back(
+        llvm::make_unique<StaticNodeSupILPTrans>(BDDG));
   }
 }
 
@@ -559,6 +565,7 @@ void ScheduleDAGOptSched::loadOptSchedConfig() {
   StaticNodeSup = schedIni.GetBool("STATIC_NODE_SUPERIORITY", false);
   MultiPassStaticNodeSup =
       schedIni.GetBool("MULTI_PASS_NODE_SUPERIORITY", false);
+  ILPStaticNodeSup = schedIni.GetBool("STATIC_NODE_SUPERIORITY_ILP", false);
   // setup pruning
   PruningStrategy.rlxd = schedIni.GetBool("APPLY_RELAXED_PRUNING");
   PruningStrategy.nodeSup = schedIni.GetBool("DYNAMIC_NODE_SUPERIORITY");
@@ -851,6 +858,9 @@ void ScheduleDAGOptSched::scheduleOptSchedBalanced() {
   // Disable RP-only graph transformations in balanced mode
   StaticNodeSup = false;
   MultiPassStaticNodeSup = false;
+
+  // Disable ILP-only graph transformations in balanced mode
+  ILPStaticNodeSup = false;
 
   schedule();
   Logger::Info("End of second pass through");
