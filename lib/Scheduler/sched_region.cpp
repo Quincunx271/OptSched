@@ -158,6 +158,19 @@ FUNC_RESULT SchedRegion::FindOptimalSchedule(
     return rslt;
   }
 
+  if (/* DumpDDGs */ !GraphTransformations->empty()) {
+    Logger::Info("Writing DDG.");
+    std::string path = /* DDG_DUMP_PATH */
+        "/home/jbassett/Projects/CompilerResearch/local-results/ddgs/";
+    path += dataDepGraph_->GetDagID();
+    path += ".ddg";
+    std::replace(path.begin(), path.end(), ':', '.');
+
+    auto f = fopen(path.c_str(), "w");
+    dataDepGraph_->WriteToFile(f, RES_SUCCESS, 1, 0);
+    fclose(f);
+  }
+
   // Apply graph transformations
   for (auto &GT : *GraphTransformations) {
     rslt = GT->ApplyTrans();
@@ -170,6 +183,21 @@ FUNC_RESULT SchedRegion::FindOptimalSchedule(
     if (rslt != RES_SUCCESS) {
       Logger::Info("Invalid DAG after graph transformations");
       return rslt;
+    }
+
+    if (/* DumpDDGs */ true) {
+      Logger::Info("Writing DDG.");
+      std::string path = /* DDG_DUMP_PATH */
+          "/home/jbassett/Projects/CompilerResearch/local-results/ddgs/";
+      path += dataDepGraph_->GetDagID();
+      path += '.';
+      path += GT->Name();
+      path += ".ddg";
+      std::replace(path.begin(), path.end(), ':', '.');
+
+      auto f = fopen(path.c_str(), "w");
+      dataDepGraph_->WriteToFile(f, RES_SUCCESS, 1, 0);
+      fclose(f);
     }
   }
 

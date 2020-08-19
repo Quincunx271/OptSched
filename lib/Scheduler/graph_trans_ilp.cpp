@@ -8,6 +8,8 @@
 
 using namespace llvm::opt_sched;
 
+#define IS_DEBUG_ILP_GRAPH_TRANS
+
 #ifdef IS_DEBUG_ILP_GRAPH_TRANS
 #define DEBUG_LOG(...) Logger::Info(__VA_ARGS__)
 #else
@@ -49,13 +51,12 @@ private:
 
 struct ILPTransformState {
   explicit ILPTransformState(DataDepGraph &DDG)
-      : DDG_(DDG), DistanceTable_(CreateDistanceTable()),
-        Superior_(CreateSuperiorArray()),
-        SuperiorNodesList_(CreateSuperiorNodesList()),
-        NumNodes_(DDG.GetNodeCnt()) {}
+      : DDG_(DDG), NumNodes_(DDG.GetNodeCnt()),
+        DistanceTable_(CreateDistanceTable()), Superior_(CreateSuperiorArray()),
+        SuperiorNodesList_(CreateSuperiorNodesList()) {}
 
   // Part of the algorithm
-  bool ShouldContinue() const;
+  bool ShouldContinue() const { return !SuperiorNodesList_.empty(); }
   void UpdateDistanceTable(int i, int j);
   void RemoveRedundantEdges(int i, int j);
   void UpdateSuperiorNodes(int i, int j);
@@ -81,10 +82,10 @@ struct ILPTransformState {
   std::vector<std::pair<int, int>> CreateSuperiorNodesList();
 
   DataDepGraph &DDG_;
+  int NumNodes_;
   std::vector<int> DistanceTable_;
   std::vector<int> Superior_;
   std::vector<std::pair<int, int>> SuperiorNodesList_;
-  int NumNodes_;
 
   int NumEdgesAdded = 0;
   int NumEdgesRemoved = 0;
@@ -204,7 +205,7 @@ void ILPTransformState::UpdateSuperiorArray(int i, int j) {
   assert(NewValue <= OldValue);
 
   if (NewValue == 0) {
-    DEBUG_LOG("   Tracking (%d, %d) as a possible superior edge");
+    DEBUG_LOG("   Tracking (%d, %d) as a possible superior edge", i, j);
     SuperiorNodesList_.push_back({i, j});
   }
 }
@@ -277,7 +278,7 @@ void ILPTransformState::AddLatencyZeroEdge(int i, int j) {
   SchedInstruction *NodeI = DDG_.GetInstByIndx(i);
   SchedInstruction *NodeJ = DDG_.GetInstByIndx(j);
   DDG_.CreateEdge(NodeI, NodeJ, 0, DEP_OTHER);
-  ++NumResourceEdgesAdded;
+  ++NumEdgesAdded;
   DEBUG_LOG(" Added (%d, %d) superior edge", i, j);
   UpdatePredecessorsAndSuccessors(NodeI, NodeJ);
 }
@@ -329,28 +330,29 @@ void ILPTransformState::UpdateDistanceTable(int i, int j) {
 }
 
 void ILPTransformState::RemoveRedundantEdges(int i, int j) {
-  DEBUG_LOG(" Removing redundant edges");
-  SchedInstruction *NodeI = DDG_.GetInstByIndx(i);
-  SchedInstruction *NodeJ = DDG_.GetInstByIndx(j);
+  // DEBUG_LOG(" Removing redundant edges");
+  // SchedInstruction *NodeI = DDG_.GetInstByIndx(i);
+  // SchedInstruction *NodeJ = DDG_.GetInstByIndx(j);
 
-  for (GraphNode &Pred : *NodeI->GetRecursivePredecessors()) {
-    LinkedList<GraphEdge> &PSuccs = Pred.GetSuccessors();
+  // for (GraphNode &Pred : *NodeI->GetRecursivePredecessors()) {
+  //   LinkedList<GraphEdge> &PSuccs = Pred.GetSuccessors();
 
-    for (auto it = PSuccs.begin(); it != PSuccs.end();) {
-      GraphEdge &e = *it;
+  //   for (auto it = PSuccs.begin(); it != PSuccs.end();) {
+  //     GraphEdge &e = *it;
 
-      if (NodeJ->IsRcrsvScsr(e.to) &&
-          e.label <= DistanceTable(e.from->GetNum(), e.to->GetNum())) {
-        it = PSuccs.RemoveAt(it);
-        e.to->RemovePredFrom(&Pred);
-        DEBUG_LOG("  Deleting GraphEdge* at %p: (%d, %d)", (void *)&e,
-                  e.from->GetNum(), e.to->GetNum());
-        delete &e;
-      } else {
-        ++it;
-      }
-    }
-  }
+  //     if (NodeJ->IsRcrsvScsr(e.to) &&
+  //         e.label <= DistanceTable(e.from->GetNum(), e.to->GetNum())) {
+  //       it = PSuccs.RemoveAt(it);
+  //       e.to->RemovePredFrom(&Pred);
+  //       DEBUG_LOG("  Deleting GraphEdge* at %p: (%d, %d)", (void *)&e,
+  //                 e.from->GetNum(), e.to->GetNum());
+  //       delete &e;
+  //       ++NumEdgesRemoved;
+  //     } else {
+  //       ++it;
+  //     }
+  //   }
+  // }
 }
 
 StaticNodeSupILPTrans::StaticNodeSupILPTrans(DataDepGraph *dataDepGraph)

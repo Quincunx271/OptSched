@@ -18,6 +18,8 @@ class StaticNodeSupILPTrans : public GraphTrans {
 public:
   StaticNodeSupILPTrans(DataDepGraph *dataDepGraph);
 
+  const char *Name() const override { return "ilp.nodesup"; }
+
   FUNC_RESULT ApplyTrans() override;
 };
 
