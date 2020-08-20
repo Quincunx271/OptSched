@@ -28,6 +28,8 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(OPTSCHED_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 set(OPTSCHED_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
+add_compile_options(-g)
+
 # OptSched sources
 set(OPT_SCHED_SRCS Scheduler/aco.cpp
   Scheduler/bb_spill.cpp

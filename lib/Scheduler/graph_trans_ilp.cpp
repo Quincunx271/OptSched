@@ -183,14 +183,22 @@ int ILPTransformState::ComputeSuperiorArrayValue(int i, int j) const {
     return -1;
   }
 
+  DEBUG_LOG("   Counting bad IPred");
   const int NumBadPredecessors =
       llvm::count_if(NodeI->GetPredecessors(), [&](GraphEdge &e) {
-        return e.label > DistanceTable(e.from->GetNum(), i);
+        DEBUG_LOG("    LATENCY(%d, %d) = %d <> DISTANCE(%d, %d) = %d",
+                  e.from->GetNum(), i, e.label, //
+                  e.from->GetNum(), j, DistanceTable(e.from->GetNum(), j));
+        return e.label > DistanceTable(e.from->GetNum(), j);
       });
 
+  DEBUG_LOG("   Counting bad ISucc");
   const int NumBadSuccessors =
       llvm::count_if(NodeJ->GetSuccessors(), [&](GraphEdge &e) {
-        return e.label > DistanceTable(j, e.to->GetNum());
+        DEBUG_LOG("    LATENCY(%d, %d) = %d <> DISTANCE(%d, %d) = %d", //
+                  j, e.from->GetNum(), e.label,                        //
+                  i, e.from->GetNum(), DistanceTable(i, e.to->GetNum()));
+        return e.label > DistanceTable(i, e.to->GetNum());
       });
 
   return NumBadPredecessors + NumBadSuccessors;
@@ -330,29 +338,29 @@ void ILPTransformState::UpdateDistanceTable(int i, int j) {
 }
 
 void ILPTransformState::RemoveRedundantEdges(int i, int j) {
-  // DEBUG_LOG(" Removing redundant edges");
-  // SchedInstruction *NodeI = DDG_.GetInstByIndx(i);
-  // SchedInstruction *NodeJ = DDG_.GetInstByIndx(j);
+  DEBUG_LOG(" Removing redundant edges");
+  SchedInstruction *NodeI = DDG_.GetInstByIndx(i);
+  SchedInstruction *NodeJ = DDG_.GetInstByIndx(j);
 
-  // for (GraphNode &Pred : *NodeI->GetRecursivePredecessors()) {
-  //   LinkedList<GraphEdge> &PSuccs = Pred.GetSuccessors();
+  for (GraphNode &Pred : *NodeI->GetRecursivePredecessors()) {
+    LinkedList<GraphEdge> &PSuccs = Pred.GetSuccessors();
 
-  //   for (auto it = PSuccs.begin(); it != PSuccs.end();) {
-  //     GraphEdge &e = *it;
+    for (auto it = PSuccs.begin(); it != PSuccs.end();) {
+      GraphEdge &e = *it;
 
-  //     if (NodeJ->IsRcrsvScsr(e.to) &&
-  //         e.label <= DistanceTable(e.from->GetNum(), e.to->GetNum())) {
-  //       it = PSuccs.RemoveAt(it);
-  //       e.to->RemovePredFrom(&Pred);
-  //       DEBUG_LOG("  Deleting GraphEdge* at %p: (%d, %d)", (void *)&e,
-  //                 e.from->GetNum(), e.to->GetNum());
-  //       delete &e;
-  //       ++NumEdgesRemoved;
-  //     } else {
-  //       ++it;
-  //     }
-  //   }
-  // }
+      if (NodeJ->IsRcrsvScsr(e.to) &&
+          e.label <= DistanceTable(e.from->GetNum(), e.to->GetNum())) {
+        it = PSuccs.RemoveAt(it);
+        e.to->RemovePredFrom(&Pred);
+        DEBUG_LOG("  Deleting GraphEdge* at %p: (%d, %d)", (void *)&e,
+                  e.from->GetNum(), e.to->GetNum());
+        delete &e;
+        ++NumEdgesRemoved;
+      } else {
+        ++it;
+      }
+    }
+  }
 }
 
 StaticNodeSupILPTrans::StaticNodeSupILPTrans(DataDepGraph *dataDepGraph)
