@@ -338,29 +338,32 @@ void ILPTransformState::UpdateDistanceTable(int i, int j) {
 }
 
 void ILPTransformState::RemoveRedundantEdges(int i, int j) {
-  DEBUG_LOG(" Removing redundant edges");
-  SchedInstruction *NodeI = DDG_.GetInstByIndx(i);
-  SchedInstruction *NodeJ = DDG_.GetInstByIndx(j);
+  // We can't remove redundant edges at this time, because the LinkedList class
+  // doesn't support removal if it uses its custom allocator.
 
-  for (GraphNode &Pred : *NodeI->GetRecursivePredecessors()) {
-    LinkedList<GraphEdge> &PSuccs = Pred.GetSuccessors();
+  // DEBUG_LOG(" Removing redundant edges");
+  // SchedInstruction *NodeI = DDG_.GetInstByIndx(i);
+  // SchedInstruction *NodeJ = DDG_.GetInstByIndx(j);
 
-    for (auto it = PSuccs.begin(); it != PSuccs.end();) {
-      GraphEdge &e = *it;
+  // for (GraphNode &Pred : *NodeI->GetRecursivePredecessors()) {
+  //   LinkedList<GraphEdge> &PSuccs = Pred.GetSuccessors();
 
-      if (NodeJ->IsRcrsvScsr(e.to) &&
-          e.label <= DistanceTable(e.from->GetNum(), e.to->GetNum())) {
-        it = PSuccs.RemoveAt(it);
-        e.to->RemovePredFrom(&Pred);
-        DEBUG_LOG("  Deleting GraphEdge* at %p: (%d, %d)", (void *)&e,
-                  e.from->GetNum(), e.to->GetNum());
-        delete &e;
-        ++NumEdgesRemoved;
-      } else {
-        ++it;
-      }
-    }
-  }
+  //   for (auto it = PSuccs.begin(); it != PSuccs.end();) {
+  //     GraphEdge &e = *it;
+
+  //     if (NodeJ->IsRcrsvScsr(e.to) &&
+  //         e.label <= DistanceTable(e.from->GetNum(), e.to->GetNum())) {
+  //       it = PSuccs.RemoveAt(it);
+  //       e.to->RemovePredFrom(&Pred);
+  //       DEBUG_LOG("  Deleting GraphEdge* at %p: (%d, %d)", (void *)&e,
+  //                 e.from->GetNum(), e.to->GetNum());
+  //       delete &e;
+  //       ++NumEdgesRemoved;
+  //     } else {
+  //       ++it;
+  //     }
+  //   }
+  // }
 }
 
 StaticNodeSupILPTrans::StaticNodeSupILPTrans(DataDepGraph *dataDepGraph)
