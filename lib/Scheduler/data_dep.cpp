@@ -251,8 +251,11 @@ FUNC_RESULT DataDepGraph::SetupForSchdulng(bool cmputTrnstvClsr) {
       return RES_ERROR;
     if (FindRcrsvNghbrs(DIR_BKWRD) == RES_ERROR)
       return RES_ERROR;
+
+    Logger::Info("Computing Relative Critical Paths");
     CmputRltvCrtclPaths_(DIR_FRWRD);
     CmputRltvCrtclPaths_(DIR_BKWRD);
+    Logger::Info("Finished Computing Relative Critical Paths");
   }
 
   CmputAbslutUprBound_();
@@ -1150,7 +1153,9 @@ void DataDepGraph::CmputCrtclPathsFrmRcrsvPrdcsr_(SchedInstruction *ref) {
   for (node = rcrsvScsrLst->GetLastElmnt(); node != NULL;
        node = rcrsvScsrLst->GetPrevElmnt()) {
     inst = (SchedInstruction *)node;
-    inst->CmputCrtclPathFrmRcrsvPrdcsr(ref);
+    InstCount value = inst->CmputCrtclPathFrmRcrsvPrdcsr(ref);
+    Logger::Info(" CP for %d -> %d = %d (%p)", ref->GetNum(), inst->GetNum(),
+                 value, inst);
   }
 
   assert(inst == GetLeafInst()); // the last instruction must be the leaf

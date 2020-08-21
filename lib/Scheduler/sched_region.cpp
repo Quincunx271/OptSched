@@ -513,6 +513,8 @@ FUNC_RESULT SchedRegion::FindOptimalSchedule(
     }
   }
 
+  bestSched_->Print(Logger::GetLogStream(), "");
+
   Milliseconds vrfyStart = Utilities::GetProcessorTime();
   if (vrfySched_) {
     bool isValidSchdul = bestSched->Verify(machMdl_, dataDepGraph_);

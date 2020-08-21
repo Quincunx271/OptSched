@@ -159,9 +159,9 @@ std::vector<int> ILPTransformState::CreateDistanceTable() {
       }
 
       DistanceTable[{Start, To}] = CurrentMax;
-      DEBUG_LOG(" Distance %d -> %d is %d. Old computation as %d.", Start, To,
-                CurrentMax,
-                StartNode->GetRltvCrtclPath(DIRECTION::DIR_FRWRD, ToNode));
+      DEBUG_LOG(" Distance %d -> %d is %d. Old computation as (%p), %d.", Start,
+                To, CurrentMax, ToNode,
+                ToNode->GetRltvCrtclPath(DIRECTION::DIR_BKWRD, StartNode));
     }
   }
 
