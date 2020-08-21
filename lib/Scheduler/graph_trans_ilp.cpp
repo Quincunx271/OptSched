@@ -121,6 +121,10 @@ MutableArrayRef2D<int> ILPTransformState::SuperiorArray() {
   return MutableArrayRef2D<int>(Superior_, NumNodes_, NumNodes_);
 }
 
+static bool AreNodesIndependent(SchedInstruction *A, SchedInstruction *B) {
+  return A != B && !A->IsRcrsvPrdcsr(B) && !A->IsRcrsvScsr(B);
+}
+
 std::vector<int> ILPTransformState::CreateDistanceTable() {
   const int MaxLatency = DDG_.GetMaxLtncy();
   DEBUG_LOG("Creating DISTANCE() table with MaxLatency: %d", MaxLatency);
@@ -133,45 +137,22 @@ std::vector<int> ILPTransformState::CreateDistanceTable() {
   MutableArrayRef2D<int> DistanceTable(DistanceTable_, NumNodes_, NumNodes_);
 
   // DISTANCE(i, i) = 0
-  for (int Index = 0; Index < NumNodes_; ++Index) {
-    DistanceTable[{Index, Index}] = 0;
-  }
+  for (int I = 0; I < NumNodes_; ++I) {
+    for (int J = 0; J < NumNodes_; ++J) {
+      SchedInstruction *NodeI = DDG_.GetInstByIndx(I);
+      SchedInstruction *NodeJ = DDG_.GetInstByIndx(J);
 
-  for (int StartIndex = 0; StartIndex < NumNodes_; ++StartIndex) {
-    SchedInstruction *StartNode = DDG_.GetInstByTplgclOrdr(StartIndex);
-    const int Start = StartNode->GetNum();
-
-    for (int Index = StartIndex + 1; Index < NumNodes_; ++Index) {
-      SchedInstruction *ToNode = DDG_.GetInstByTplgclOrdr(Index);
-      const int To = ToNode->GetNum();
-
-      int CurrentMax = -1;
-
-      for (GraphEdge &e : ToNode->GetPredecessors()) {
-        const int From = e.from->GetNum();
-        CurrentMax =
-            std::max(CurrentMax, e.label + DistanceTable[{Start, From}]);
-
-        if (CurrentMax >= MaxLatency) {
-          CurrentMax = MaxLatency;
-          break;
-        }
-      }
-
-      DistanceTable[{Start, To}] = CurrentMax;
-      DEBUG_LOG(" Distance %d -> %d is %d. Old computation as (%p), %d.", Start,
-                To, CurrentMax, ToNode,
-                ToNode->GetRltvCrtclPath(DIRECTION::DIR_BKWRD, StartNode));
+      DistanceTable[{I, J}] =
+          AreNodesIndependent(NodeI, NodeJ)
+              ? -1
+              : std::min(NodeJ->GetRltvCrtclPath(DIR_FRWRD, NodeI), MaxLatency);
+      DEBUG_LOG(" DISTANCE(%d, %d) = %d", I, J, (DistanceTable[{I, J}]));
     }
   }
 
   DEBUG_LOG("Finished creating DISTANCE() table\n");
 
   return DistanceTable_;
-}
-
-static bool AreNodesIndependent(SchedInstruction *A, SchedInstruction *B) {
-  return A != B && !A->IsRcrsvPrdcsr(B) && !A->IsRcrsvScsr(B);
 }
 
 int ILPTransformState::ComputeSuperiorArrayValue(int i, int j) const {

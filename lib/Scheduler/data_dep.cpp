@@ -1154,8 +1154,6 @@ void DataDepGraph::CmputCrtclPathsFrmRcrsvPrdcsr_(SchedInstruction *ref) {
        node = rcrsvScsrLst->GetPrevElmnt()) {
     inst = (SchedInstruction *)node;
     InstCount value = inst->CmputCrtclPathFrmRcrsvPrdcsr(ref);
-    Logger::Info(" CP for %d -> %d = %d (%p)", ref->GetNum(), inst->GetNum(),
-                 value, inst);
   }
 
   assert(inst == GetLeafInst()); // the last instruction must be the leaf
