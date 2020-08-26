@@ -158,7 +158,10 @@ FUNC_RESULT SchedRegion::FindOptimalSchedule(
     return rslt;
   }
 
-  if (/* DumpDDGs */ !GraphTransformations->empty()) {
+  const bool DumpDDGs =
+      SchedulerOptions::getInstance().GetBool("DUMP_DDGS", false);
+
+  if (DumpDDGs) {
     Logger::Info("Writing DDG.");
     std::string path = /* DDG_DUMP_PATH */
         "/home/jbassett/Projects/CompilerResearch/local-results/ddgs/";
@@ -185,7 +188,7 @@ FUNC_RESULT SchedRegion::FindOptimalSchedule(
       return rslt;
     }
 
-    if (/* DumpDDGs */ true) {
+    if (DumpDDGs) {
       Logger::Info("Writing DDG.");
       std::string path = /* DDG_DUMP_PATH */
           "/home/jbassett/Projects/CompilerResearch/local-results/ddgs/";
