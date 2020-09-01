@@ -123,9 +123,9 @@ FUNC_RESULT StaticNodeSupTrans::ApplyTrans() {
   return RES_SUCCESS;
 }
 
-bool StaticNodeSupTrans::NodeIsSuperior_(SchedInstruction *nodeA,
-                                         SchedInstruction *nodeB) {
-  DataDepGraph *graph = GetDataDepGraph_();
+bool StaticNodeSupTrans::isNodeSuperior(DataDepGraph &DDG, int A, int B) {
+  SchedInstruction *nodeA = DDG.GetInstByIndx(A);
+  SchedInstruction *nodeB = DDG.GetInstByIndx(B);
 
   if (nodeA->GetIssueType() != nodeB->GetIssueType()) {
 #ifdef IS_DEBUG_GRAPH_TRANS
@@ -175,7 +175,7 @@ bool StaticNodeSupTrans::NodeIsSuperior_(SchedInstruction *nodeA,
   // of A.
   // TODO (austin) modify wrapper code so it is easier to identify physical
   // registers.
-  const int regTypes = graph->GetRegTypeCnt();
+  const int regTypes = DDG.GetRegTypeCnt();
 
   const llvm::ArrayRef<const Register *> usesA = nodeA->GetUses();
   const llvm::ArrayRef<const Register *> usesB = nodeB->GetUses();

@@ -89,12 +89,17 @@ public:
 
   FUNC_RESULT ApplyTrans() override;
 
+  static bool isNodeSuperior(DataDepGraph &DDG, int A, int B);
+
 private:
   // Are multiple passes enabled.
   bool IsMultiPass;
 
   // Return true if node A is superior to node B.
-  bool NodeIsSuperior_(SchedInstruction *nodeA, SchedInstruction *nodeB);
+  bool NodeIsSuperior_(SchedInstruction *nodeA, SchedInstruction *nodeB) {
+    return isNodeSuperior(*GetDataDepGraph_(), nodeA->GetNum(),
+                          nodeB->GetNum());
+  }
 
   // Check if there is superiority involving nodes A and B. If yes, choose which
   // edge to add.
