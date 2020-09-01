@@ -50,22 +50,27 @@ public:
   static llvm::SmallVector<std::pair<int, int>, SmallSize>
   createSuperiorNodesList(ArrayRef2D<int> SuperiorArray);
 
-  class DataDeleter : public std::default_delete<Data> {
+  class DataAlloc {
     friend class StaticNodeSupILPTrans;
 
-    struct Alloc;
-
-    DataDeleter(std::unique_ptr<Alloc> Data);
+  public:
+    explicit DataAlloc(
+        DataDepGraph &DDG, llvm::SmallVector<int, SmallSize> DistanceTable,
+        llvm::SmallVector<int, SmallSize> SuperiorArray,
+        llvm::SmallVector<std::pair<int, int>, SmallSize> SuperiorNodesList);
+    Data &getData() { return *Data_; }
 
   public:
-    ~DataDeleter();
-    DataDeleter(DataDeleter &&) noexcept = default;
-    DataDeleter &operator=(DataDeleter &&) noexcept = default;
+    llvm::SmallVector<int, SmallSize> DistanceTable;
+    llvm::SmallVector<int, SmallSize> SuperiorArray;
+    llvm::SmallVector<std::pair<int, int>, SmallSize> SuperiorNodesList;
+    Statistics Stats = {};
 
   private:
-    std::unique_ptr<Alloc> Data;
+    std::unique_ptr<Data> Data_;
   };
-  static std::unique_ptr<Data, DataDeleter> createData(DataDepGraph &DDG);
+
+  static DataAlloc createData(DataDepGraph &DDG);
 
   static void updateSuperiorArray(Data &Data, int i, int j);
 
@@ -94,7 +99,7 @@ public:
   static void removeRedundantEdges(Data &Data, int i, int j) {
     removeRedundantEdges(Data.DDG, Data.DistanceTable, i, j, Data.Stats);
   }
-};
+}; // namespace opt_sched
 
 } // namespace opt_sched
 } // namespace llvm

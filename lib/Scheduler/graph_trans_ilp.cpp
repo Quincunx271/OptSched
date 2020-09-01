@@ -147,44 +147,25 @@ StaticNodeSupILPTrans::createSuperiorNodesList(ArrayRef2D<int> SuperiorArray) {
   return SuperiorNodes;
 }
 
-struct StaticNodeSupILPTrans::DataDeleter::Alloc {
-  llvm::SmallVector<int, SmallSize> DistanceTable;
-  llvm::SmallVector<int, SmallSize> SuperiorArray;
-  llvm::SmallVector<std::pair<int, int>, SmallSize> SuperiorNodesList;
-  StaticNodeSupILPTrans::Statistics Stats = {};
-};
-
-StaticNodeSupILPTrans::DataDeleter::DataDeleter(std::unique_ptr<Alloc> Data)
-    : Data(std::move(Data)) {}
-StaticNodeSupILPTrans::DataDeleter::~DataDeleter() = default;
-
-auto StaticNodeSupILPTrans::createData(DataDepGraph &DDG)
-    -> std::unique_ptr<Data, DataDeleter> {
-  const int NumNodes = DDG.GetNodeCnt();
-
-  std::unique_ptr<DataDeleter::Alloc> AllocatedData =
-      llvm::make_unique<DataDeleter::Alloc>();
-
-  AllocatedData->DistanceTable = createDistanceTable(DDG);
-  MutableArrayRef2D<int> DistanceTable(AllocatedData->DistanceTable, NumNodes,
-                                       NumNodes);
-
-  AllocatedData->SuperiorArray = createSuperiorArray(DDG, DistanceTable);
-  MutableArrayRef2D<int> SuperiorArray(AllocatedData->SuperiorArray, NumNodes,
-                                       NumNodes);
-
-  AllocatedData->SuperiorNodesList = createSuperiorNodesList(SuperiorArray);
-  std::unique_ptr<Data> Data_ = llvm::make_unique<Data>(Data{
-      DDG,
-      DistanceTable,
-      SuperiorArray,
-      AllocatedData->SuperiorNodesList,
-      AllocatedData->Stats,
-  });
-
-  return std::unique_ptr<Data, DataDeleter>(
-      Data_.release(), DataDeleter(std::move(AllocatedData)));
+static MutableArrayRef2D<int> wrapAs2D(llvm::MutableArrayRef<int> Ref,
+                                       int NumNodes) {
+  return MutableArrayRef2D<int>(Ref, NumNodes, NumNodes);
 }
+
+StaticNodeSupILPTrans::DataAlloc::DataAlloc(
+    DataDepGraph &DDG, llvm::SmallVector<int, SmallSize> DistanceTable,
+    llvm::SmallVector<int, SmallSize> SuperiorArray,
+    llvm::SmallVector<std::pair<int, int>, SmallSize> SuperiorNodesList)
+    : DistanceTable(std::move(DistanceTable)),
+      SuperiorArray(std::move(SuperiorArray)),
+      SuperiorNodesList(std::move(SuperiorNodesList)), Stats(),
+      Data_(llvm::make_unique<Data>(Data{
+          DDG,
+          wrapAs2D(this->DistanceTable, DDG.GetNodeCnt()),
+          wrapAs2D(this->SuperiorArray, DDG.GetNodeCnt()),
+          this->SuperiorNodesList,
+          this->Stats,
+      })) {}
 
 void StaticNodeSupILPTrans::updateSuperiorArray(Data &Data, int i_, int j_) {
   const size_t i = castUnsigned(i_);
@@ -333,7 +314,7 @@ FUNC_RESULT StaticNodeSupILPTrans::ApplyTrans() {
   Logger::Info("Performing ILP graph transformations");
 
   auto Data_ = createData(DDG);
-  Data &Data = *Data_;
+  Data &Data = Data_.getData();
 
   DEBUG_LOG("Starting main algorithm");
   while (!Data.SuperiorNodesList.empty()) {
