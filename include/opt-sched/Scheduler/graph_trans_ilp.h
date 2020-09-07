@@ -54,10 +54,7 @@ public:
     friend class StaticNodeSupILPTrans;
 
   public:
-    explicit DataAlloc(
-        DataDepGraph &DDG, llvm::SmallVector<int, SmallSize> DistanceTable,
-        llvm::SmallVector<int, SmallSize> SuperiorArray,
-        llvm::SmallVector<std::pair<int, int>, SmallSize> SuperiorNodesList);
+    explicit DataAlloc(DataDepGraph &DDG);
     Data &getData() { return *Data_; }
 
   public:
@@ -70,7 +67,7 @@ public:
     std::unique_ptr<Data> Data_;
   };
 
-  static DataAlloc createData(DataDepGraph &DDG);
+  static DataAlloc createData(DataDepGraph &DDG) { return DataAlloc(DDG); }
 
   static void updateSuperiorArray(Data &Data, int i, int j);
 

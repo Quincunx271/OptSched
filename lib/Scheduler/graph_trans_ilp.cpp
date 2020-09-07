@@ -152,20 +152,19 @@ static MutableArrayRef2D<int> wrapAs2D(llvm::MutableArrayRef<int> Ref,
   return MutableArrayRef2D<int>(Ref, NumNodes, NumNodes);
 }
 
-StaticNodeSupILPTrans::DataAlloc::DataAlloc(
-    DataDepGraph &DDG, llvm::SmallVector<int, SmallSize> DistanceTable,
-    llvm::SmallVector<int, SmallSize> SuperiorArray,
-    llvm::SmallVector<std::pair<int, int>, SmallSize> SuperiorNodesList)
-    : DistanceTable(std::move(DistanceTable)),
-      SuperiorArray(std::move(SuperiorArray)),
-      SuperiorNodesList(std::move(SuperiorNodesList)), Stats(),
-      Data_(llvm::make_unique<Data>(Data{
-          DDG,
-          wrapAs2D(this->DistanceTable, DDG.GetNodeCnt()),
-          wrapAs2D(this->SuperiorArray, DDG.GetNodeCnt()),
-          this->SuperiorNodesList,
-          this->Stats,
-      })) {}
+StaticNodeSupILPTrans::DataAlloc::DataAlloc(DataDepGraph &DDG)
+    : DistanceTable(createDistanceTable(DDG)),
+      SuperiorArray(
+          createSuperiorArray(DDG, wrapAs2D(DistanceTable, DDG.GetNodeCnt()))),
+      SuperiorNodesList(
+          createSuperiorNodesList(wrapAs2D(SuperiorArray, DDG.GetNodeCnt()))),
+      Stats(), Data_(llvm::make_unique<Data>(Data{
+                   DDG,
+                   wrapAs2D(this->DistanceTable, DDG.GetNodeCnt()),
+                   wrapAs2D(this->SuperiorArray, DDG.GetNodeCnt()),
+                   this->SuperiorNodesList,
+                   this->Stats,
+               })) {}
 
 void StaticNodeSupILPTrans::updateSuperiorArray(Data &Data, int i_, int j_) {
   const size_t i = castUnsigned(i_);
