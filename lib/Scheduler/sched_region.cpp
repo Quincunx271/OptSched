@@ -165,6 +165,11 @@ static void dumpDDG(DataDepGraph *DDG, llvm::StringRef DDGDumpPath,
   std::fclose(f);
 }
 
+bool SchedRegion::needsTransitiveClosure(Milliseconds rgnTimeout) const {
+  return isBbEnabled(SchedulerOptions::getInstance(), rgnTimeout) ||
+         !dataDepGraph_->GetGraphTrans()->empty() || spillCostFunc_ == SCF_SLIL;
+}
+
 FUNC_RESULT SchedRegion::FindOptimalSchedule(
     Milliseconds rgnTimeout, Milliseconds lngthTimeout, bool &isLstOptml,
     InstCount &bestCost, InstCount &bestSchedLngth, InstCount &hurstcCost,
@@ -195,7 +200,7 @@ FUNC_RESULT SchedRegion::FindOptimalSchedule(
   bool AcoAfterEnum = false;
 
   // Do we need to compute the graph's transitive closure?
-  bool needTransitiveClosure = false;
+  const bool NeedTransitiveClosure = needsTransitiveClosure(rgnTimeout);
 
   // Algorithm run order:
   // 1) Heuristic Scheduler
@@ -237,12 +242,7 @@ FUNC_RESULT SchedRegion::FindOptimalSchedule(
 
   stats::problemSize.Record(dataDepGraph_->GetInstCnt());
 
-  const auto *GraphTransformations = dataDepGraph_->GetGraphTrans();
-  if (BbSchedulerEnabled || GraphTransformations->size() > 0 ||
-      spillCostFunc_ == SCF_SLIL)
-    needTransitiveClosure = true;
-
-  rslt = dataDepGraph_->SetupForSchdulng(needTransitiveClosure);
+  rslt = dataDepGraph_->SetupForSchdulng(NeedTransitiveClosure);
   if (rslt != RES_SUCCESS) {
     Logger::Info("Invalid input DAG");
     return rslt;
@@ -252,23 +252,15 @@ FUNC_RESULT SchedRegion::FindOptimalSchedule(
     dumpDDG(dataDepGraph_, DDGDumpPath_);
   }
 
-  // Apply graph transformations
-  for (auto &GT : *GraphTransformations) {
-    rslt = GT->ApplyTrans();
+  const bool IsSeqListSched = GetHeuristicSchedulerType() == SCHED_SEQ;
 
-    if (DumpDDGs_) {
-      dumpDDG(dataDepGraph_, DDGDumpPath_, GT->Name());
-    }
+  // The SeqListSched won't respect the added edges if we do graph
+  // transformations now, so we delay until after the Seq scheduler.
+  if (!IsSeqListSched) {
+    rslt = applyGraphTransformations();
 
     if (rslt != RES_SUCCESS)
       return rslt;
-
-    // Update graph after each transformation
-    rslt = dataDepGraph_->UpdateSetupForSchdulng(needTransitiveClosure);
-    if (rslt != RES_SUCCESS) {
-      Logger::Info("Invalid DAG after graph transformations");
-      return rslt;
-    }
   }
 
   SetupForSchdulng_();
@@ -279,7 +271,7 @@ FUNC_RESULT SchedRegion::FindOptimalSchedule(
   // Note: Heuristic scheduler is required for the two-pass scheduler
   // to use the sequential list scheduler which inserts stalls into
   // the schedule found in the first pass.
-  if (HeuristicSchedulerEnabled || IsSecondPass()) {
+  if (HeuristicSchedulerEnabled || IsSeqListSched) {
     Milliseconds hurstcStart = Utilities::GetProcessorTime();
     lstSched = new InstSchedule(machMdl_, dataDepGraph_, vrfySched_);
 
@@ -304,13 +296,20 @@ FUNC_RESULT SchedRegion::FindOptimalSchedule(
   // to the DDG. Some mutations were adding artificial edges which caused a
   // conflict with the sequential scheduler. Therefore, wait until the
   // sequential scheduler is done before adding artificial edges.
-  if (IsSecondPass()) {
+  if (IsSeqListSched) {
     static_cast<OptSchedDDGWrapperBasic *>(dataDepGraph_)->addArtificialEdges();
-    rslt = dataDepGraph_->UpdateSetupForSchdulng(needTransitiveClosure);
+    rslt = dataDepGraph_->UpdateSetupForSchdulng(NeedTransitiveClosure);
     if (rslt != RES_SUCCESS) {
       Logger::Info("Invalid DAG after adding artificial cluster edges");
       return rslt;
     }
+  }
+
+  if (IsSeqListSched) {
+    rslt = applyGraphTransformations();
+
+    if (rslt != RES_SUCCESS)
+      return rslt;
   }
 
   // This must be done after SetupForSchdulng() or UpdateSetupForSchdulng() to
@@ -976,4 +975,36 @@ FUNC_RESULT SchedRegion::runACO(InstSchedule *ReturnSched,
   FUNC_RESULT Rslt = AcoSchdulr->FindSchedule(ReturnSched, this);
   delete AcoSchdulr;
   return Rslt;
+}
+
+static FUNC_RESULT applyGraphTransformation(DataDepGraph *DDG, GraphTrans *GT) {
+  FUNC_RESULT result = GT->ApplyTrans();
+
+  if (result != RES_SUCCESS)
+    return result;
+
+  // Update graph after each transformation
+  result = DDG->UpdateSetupForSchdulng(/* need transitive closure? = */ true);
+  if (result != RES_SUCCESS) {
+    Logger::Error("Invalid DAG after graph transformations");
+    return result;
+  }
+
+  return result;
+}
+
+FUNC_RESULT SchedRegion::applyGraphTransformations() {
+  FUNC_RESULT result = RES_SUCCESS;
+
+  for (auto &GT : *dataDepGraph_->GetGraphTrans()) {
+    result = applyGraphTransformation(dataDepGraph_, GT.get());
+
+    if (result != RES_SUCCESS)
+      return result;
+
+    if (DumpDDGs_)
+      dumpDDG(dataDepGraph_, DDGDumpPath_, GT->Name());
+  }
+
+  return result;
 }
