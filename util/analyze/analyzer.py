@@ -1,5 +1,7 @@
 import csv
 import sys
+import functools
+import copy
 
 
 class Analyzer:
@@ -59,3 +61,39 @@ class Analyzer:
         out = csv.DictWriter(out, fieldnames=self.stats[0].keys())
         out.writeheader()
         out.writerows(self.stats)
+
+
+def analyze_all(*analyzer_classes):
+    assert analyzer_classes
+    if len(analyzer_classes) == 1:
+        return analyzer_classes[0]
+
+    return analyze_combined(
+        *analyzer_classes,
+        combiner=lambda s1, s2: [a.update(b) for a, b in zip(s1, s2)])
+
+
+def analyze_combined(*analyzer_classes, combiner):
+    assert len(analyzer_classes) >= 2
+    assert all(len(cls.POSITIONAL) ==
+               len(analyzer_classes[0].POSITIONAL) for cls in analyzer_classes)
+
+    class CombinedAnalyzer(Analyzer):
+        POSITIONAL = analyzer_classes[0].POSITIONAL
+        OPTIONS = functools.reduce(lambda a, b: dict(
+            a, **b), (cls.OPTIONS for cls in analyzer_classes))
+
+        def __init__(self, **options):
+            super().__init__(**options)
+            self._analyzers = [cls(**options) for cls in analyzer_classes]
+
+        def run(self, args):
+            self.stats = None
+            for analyzer in self._analyzers:
+                analyzer.run(args)
+                if not self.stats:
+                    self.stats = copy.deepcopy(analyzer.stats)
+                else:
+                    combiner(self.stats, analyzer.stats)
+
+    return CombinedAnalyzer
