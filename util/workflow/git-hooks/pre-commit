@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+
+shopt -s globstar
+CPP_SOURCES="lib/**/*.[ch]pp include/**/*.h unittests/**/*.[ch]pp"
+
+diff -u <(cat $CPP_SOURCES) <(clang-format-9 -style=file $CPP_SOURCES)
+if [ $? -ne 0 ]; then
+    echo 'Needs to be clang-formatted'
+    echo 'Run: util/workflow/run-clang-format.sh'
+    exit 1
+fi
+
+git diff HEAD --staged --check
+if [ $? -ne 0 ]; then
+    echo 'Has trailing whitespace'
+    exit 1
+fi
+
+EASTCONST=$(grep -E '[a-zA-Z_0-9]+ const\b' --with-filename -n -r include lib unittests \
+    | grep -Ev '(static|constexpr|inline|virtual|else|new|sizeof|typedef|typename|volatile|consteval|constinit)\s+const\b')
+if [[ $EASTCONST = *[![:space:]]* ]]; then
+    echo "$EASTCONST"
+    echo 'Has east const'
+    echo 'Run: util/workflow/fix-east-const.py'
+    exit 1
+fi
