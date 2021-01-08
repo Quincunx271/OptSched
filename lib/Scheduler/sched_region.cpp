@@ -254,15 +254,6 @@ FUNC_RESULT SchedRegion::FindOptimalSchedule(
 
   const bool IsSeqListSched = GetHeuristicSchedulerType() == SCHED_SEQ;
 
-  // The SeqListSched won't respect the added edges if we do graph
-  // transformations now, so we delay until after the Seq scheduler.
-  if (!IsSeqListSched) {
-    rslt = applyGraphTransformations();
-
-    if (rslt != RES_SUCCESS)
-      return rslt;
-  }
-
   SetupForSchdulng_();
   CmputAbslutUprBound_();
   schedLwrBound_ = dataDepGraph_->GetSchedLwrBound();
@@ -303,13 +294,6 @@ FUNC_RESULT SchedRegion::FindOptimalSchedule(
       Logger::Info("Invalid DAG after adding artificial cluster edges");
       return rslt;
     }
-  }
-
-  if (IsSeqListSched) {
-    rslt = applyGraphTransformations();
-
-    if (rslt != RES_SUCCESS)
-      return rslt;
   }
 
   // This must be done after SetupForSchdulng() or UpdateSetupForSchdulng() to
@@ -362,6 +346,87 @@ FUNC_RESULT SchedRegion::FindOptimalSchedule(
   // TODO(justin): Remove once relevant scripts have been updated:
   // plaidbench-validation-test.py, runspec-wrapper-SLIL.py
   Logger::Info("Lower bound of cost before scheduling: %d", costLwrBound_);
+
+  if (!isLstOptml) {
+    rslt = applyGraphTransformations();
+
+    if (rslt != RES_SUCCESS)
+      return rslt;
+
+    if (!IsSeqListSched) {
+      // If we are the SeqListSched, we're not finding anything different
+      // COPY-n-PASTE!!
+
+      // Step #1: Find the heuristic schedule if enabled.
+      // Note: Heuristic scheduler is required for the two-pass scheduler
+      // to use the sequential list scheduler which inserts stalls into
+      // the schedule found in the first pass.
+      if (HeuristicSchedulerEnabled || IsSeqListSched) {
+        Milliseconds hurstcStart = Utilities::GetProcessorTime();
+        lstSched = new InstSchedule(machMdl_, dataDepGraph_, vrfySched_);
+
+        lstSchdulr = AllocHeuristicScheduler_();
+
+        rslt = lstSchdulr->FindSchedule(lstSched, this);
+
+        if (rslt != RES_SUCCESS) {
+          llvm::report_fatal_error("List scheduling failed", false);
+          delete lstSchdulr;
+          delete lstSched;
+          return rslt;
+        }
+
+        hurstcTime = Utilities::GetProcessorTime() - hurstcStart;
+        stats::heuristicTime.Record(hurstcTime);
+        if (hurstcTime > 0)
+          Logger::Info("Heuristic_Time %d", hurstcTime);
+      }
+
+      // This must be done after SetupForSchdulng() or UpdateSetupForSchdulng()
+      // to avoid resetting lower bound values.
+      if (!BbSchedulerEnabled)
+        costLwrBound_ = CmputCostLwrBound();
+      else
+        CmputLwrBounds_(false);
+
+      // Cost calculation must be below lower bounds calculation
+      if (HeuristicSchedulerEnabled || IsSecondPass()) {
+        heuristicScheduleLength = lstSched->GetCrntLngth();
+        InstCount hurstcExecCost;
+        // Compute cost for Heuristic list scheduler, this must be called before
+        // calling GetCost() on the InstSchedule instance.
+        CmputNormCost_(lstSched, CCM_DYNMC, hurstcExecCost, true);
+        hurstcCost_ = lstSched->GetCost();
+
+        // This schedule is optimal so ACO will not be run
+        // so set bestSched here.
+        if (hurstcCost_ == 0) {
+          isLstOptml = true;
+          bestSched = bestSched_ = lstSched;
+          bestSchedLngth_ = heuristicScheduleLength;
+          bestCost_ = hurstcCost_;
+        }
+
+        FinishHurstc_();
+
+        Logger::Event("HeuristicResult2", "length", heuristicScheduleLength, //
+                      "spill_cost", lstSched->GetSpillCost(), "cost",
+                      hurstcCost_);
+
+#ifdef IS_DEBUG_PRINT_SCHEDS
+        lstSched->Print(Logger::GetLogStream(), "Heuristic");
+#endif
+#ifdef IS_DEBUG_PRINT_BOUNDS
+        dataDepGraph_->PrintLwrBounds(DIR_FRWRD, Logger::GetLogStream(),
+                                      "CP Lower Bounds");
+#endif
+      }
+
+      // Log the lower bound on the cost, allowing tools reading the log to
+      // compare absolute rather than relative costs.
+      Logger::Event("CostLowerBound2", "cost", costLwrBound_);
+    }
+  }
 
   // Step #2: Use ACO to find a schedule if enabled and no optimal schedule is
   // yet to be found.
