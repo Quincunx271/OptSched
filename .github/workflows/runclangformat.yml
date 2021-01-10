@@ -50,7 +50,7 @@ jobs:
 
           # Rebases every commit since when this PR branched off of master.
           # The sed command tells git that we want to edit the code for each commit.
-          GIT_EDITOR="sed -iE 's/^pick/edit/g'" git rebase -i $(git merge-base master HEAD)
+          GIT_EDITOR="sed -iE 's/^pick/edit/g'" git rebase -X ours -i $(git merge-base master HEAD)
 
           # Abort on error
           set -e
