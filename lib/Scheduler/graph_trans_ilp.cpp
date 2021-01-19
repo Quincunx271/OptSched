@@ -311,11 +311,11 @@ static bool isRedundant(ArrayRef2D<int> DistanceTable, GraphEdge &e) {
 }
 
 static LinkedList<GraphEdge>::iterator
-removeEdge(LinkedList<GraphEdge> &succs, LinkedList<GraphEdge>::iterator it,
+removeEdge(LinkedList<GraphEdge> &Succs, LinkedList<GraphEdge>::iterator it,
            Statistics &stats) {
   GraphEdge &e = *it;
-  it = PSuccs.RemoveAt(it);
-  e.to->RemovePredFrom(*e.from);
+  it = Succs.RemoveAt(it);
+  e.to->RemovePredFrom(e.from);
   DEBUG_LOG("  Deleting GraphEdge* at %p: (%zu, %zu)", (void *)&e, From, To);
   delete &e;
   ++stats.NumEdgesRemoved;
