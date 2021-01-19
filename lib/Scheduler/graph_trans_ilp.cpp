@@ -303,7 +303,7 @@ void StaticNodeSupILPTrans::updateDistanceTable(Data &Data, int i_, int j_) {
   }
 }
 
-static void isRedundant(ArrayRef2D<int> DistanceTable, GraphEdge &e) {
+static bool isRedundant(ArrayRef2D<int> DistanceTable, GraphEdge &e) {
   const size_t From = castUnsigned(e.from->GetNum());
   const size_t To = castUnsigned(e.to->GetNum());
 
@@ -315,7 +315,7 @@ removeEdge(LinkedList<GraphEdge> &succs, LinkedList<GraphEdge>::iterator it,
            Statistics &stats) {
   GraphEdge &e = *it;
   it = PSuccs.RemoveAt(it);
-  e.to->RemovePredFrom(&Pred);
+  e.to->RemovePredFrom(*e.from);
   DEBUG_LOG("  Deleting GraphEdge* at %p: (%zu, %zu)", (void *)&e, From, To);
   delete &e;
   ++stats.NumEdgesRemoved;
