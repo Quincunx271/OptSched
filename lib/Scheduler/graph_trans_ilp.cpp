@@ -303,8 +303,13 @@ void StaticNodeSupILPTrans::updateDistanceTable(Data &Data, int i_, int j_) {
   }
 }
 
-static bool isRedundant(SchedInstruction *NodeJ, ArrayRef2D<int> DistanceTable,
-                        GraphEdge &e) {
+static bool isRedundant(SchedInstruction *NodeI, SchedInstruction *NodeJ,
+                        ArrayRef2D<int> DistanceTable, GraphEdge &e) {
+  // If this is the edge we just added, it's not redundant
+  if (e.from == NodeI && e.to == NodeJ) {
+    return false;
+  }
+
   const size_t From = castUnsigned(e.from->GetNum());
   const size_t To = castUnsigned(e.to->GetNum());
 
@@ -337,12 +342,7 @@ void StaticNodeSupILPTrans::removeRedundantEdges(DataDepGraph &DDG,
   {
     LinkedList<GraphEdge> &ISuccs = NodeI->GetSuccessors();
     for (auto it = ISuccs.begin(); it != ISuccs.end();) {
-      // Don't remove the edge we just added.
-      if (it->to == NodeJ) {
-        continue;
-      }
-
-      if (isRedundant(NodeJ, DistanceTable, *it)) {
+      if (isRedundant(NodeI, NodeJ, DistanceTable, *it)) {
         it = removeEdge(ISuccs, it, stats);
       } else {
         ++it;
@@ -357,7 +357,7 @@ void StaticNodeSupILPTrans::removeRedundantEdges(DataDepGraph &DDG,
     LinkedList<GraphEdge> &PSuccs = Pred.GetSuccessors();
 
     for (auto it = PSuccs.begin(); it != PSuccs.end();) {
-      if (isRedundant(NodeJ, DistanceTable, *it)) {
+      if (isRedundant(NodeI, NodeJ, DistanceTable, *it)) {
         it = removeEdge(PSuccs, it, stats);
       } else {
         ++it;
