@@ -18,10 +18,13 @@ class NodesExamined(analyze.Analyzer):
 
     def run_bench(self, args):
         logs = args[0]
-        nodes_examined = sum(blk.single('NodeExamineCount')[
-                             'num_nodes'] for blk in logs.all_blocks() if 'NodeExamineCount' in blk)
+        nodes_examined = self.calc(logs.all_blocks())
 
         self.stat(nodes_examined=nodes_examined)
+
+    def calc(self, blocks):
+        return sum(blk.single('NodeExamineCount')[
+                    'num_nodes'] for blk in blocks if 'NodeExamineCount' in blk)
 
 
 class NumBlocks(analyze.Analyzer):

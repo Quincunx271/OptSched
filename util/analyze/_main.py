@@ -1,8 +1,11 @@
 import sys
 import pickle
 import argparse
+import json
+import fnmatch
 
 from .analyzer import Analyzer
+from .logs import Logs, Benchmark
 
 from . import import_cpu2006
 from . import import_plaidml
@@ -46,10 +49,34 @@ def basemain(*, positional, options, description, action, manual_options={}):
         default=manual_options.get('output', None),
         help='Where to output the report',
     )
+    parser.add_argument(
+        '--filter',
+        default='{}',
+        help='Keep blocks matching (JSON format)',
+    )
 
     args = parser.parse_args()
     option_values = {name: getattr(args, name) for name in options}
     pos = [getattr(args, name) for name, help in positional]
+
+    blk_filter = json.loads(args.filter)
+
+    def log_matches(log, pattern):
+        if not isinstance(pattern, dict):
+            if isinstance(pattern, str):
+                return fnmatch.fnmatchcase(str(log), pattern)
+            return log == pattern
+
+        return all(
+            k in log and log_matches(log[k], v)
+            for k, v in pattern.items()
+        )
+
+    def blk_filter_f(blk):
+        return all(
+            event in blk and all(log_matches(log, matcher) for log in blk[event])
+            for event, matcher in blk_filter.items()
+        )
 
     FILE_PARSERS = {
         None: __load_filepath,
@@ -60,6 +87,7 @@ def basemain(*, positional, options, description, action, manual_options={}):
     parser = FILE_PARSERS[args.benchsuite]
 
     pos_data = [parser(f) for f in pos]
+    pos_data = [l.keep_blocks_if(blk_filter_f) for l in pos_data]
 
     if args.output is None:
         outfile = sys.stdout

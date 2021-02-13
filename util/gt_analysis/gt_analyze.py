@@ -6,7 +6,7 @@ from analyze.lib import compile_times
 
 gt_analyze = analyze.analyze_all(
     compile_times.InstructionSchedulingTime,
-    block_stats.NodesExamined,
+    # block_stats.NodesExamined,
     block_stats.NumEnumerated,
     block_stats.NumNotOptimalAndImproved,
     block_stats.NumNotOptimalNotImproved,
