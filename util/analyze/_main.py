@@ -35,8 +35,12 @@ def basemain(*, positional, options, description, action, manual_options={}):
         if name in manual_options:
             parser.add_argument(
                 '--' + name, default=manual_options[name], help=help)
-        else:
+        elif isinstance(help, str):
             parser.add_argument('--' + name, help=help)
+        else:
+            assert isinstance(help, dict)
+            # "help" was actually a dictionary
+            parser.add_argument('--' + name, **help)
 
     parser.add_argument(
         '--benchsuite',
@@ -56,7 +60,8 @@ def basemain(*, positional, options, description, action, manual_options={}):
     )
 
     args = parser.parse_args()
-    option_values = {name: getattr(args, name) for name in options}
+    option_values = {name.replace(
+        '-', '_'): getattr(args, name.replace('-', '_')) for name in options}
     pos = [getattr(args, name) for name, help in positional]
 
     blk_filter = json.loads(args.filter)
@@ -74,7 +79,8 @@ def basemain(*, positional, options, description, action, manual_options={}):
 
     def blk_filter_f(blk):
         return all(
-            event in blk and all(log_matches(log, matcher) for log in blk[event])
+            event in blk and all(log_matches(log, matcher)
+                                 for log in blk[event])
             for event, matcher in blk_filter.items()
         )
 
