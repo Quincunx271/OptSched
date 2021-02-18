@@ -977,12 +977,10 @@ bool Enumerator::FindNxtFsblBrnch_(EnumTreeNode *&newNode) {
 
   stats::maxReadyListSize.SetMax(rdyInstCnt);
 
-  rdyLst_->ForEachReadyInstruction([](const SchedInstruction& Inst) {
-    Logger::Info("Inst %d has: LUC %d CP %d NID %d",
-      Inst.GetNum(),
-      Inst.GetLastUseCnt(),
-      Inst.GetCrtclPath(DIR_BKWRD),
-      Inst.GetNodeID());
+  rdyLst_->ForEachReadyInstruction([](const SchedInstruction &Inst) {
+    Logger::Info("Inst %d has: LUC %d CP %d NID %d", Inst.GetNum(),
+                 Inst.GetLastUseCnt(), Inst.GetCrtclPath(DIR_BKWRD),
+                 Inst.GetNodeID());
   });
 #endif
 

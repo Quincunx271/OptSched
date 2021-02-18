@@ -296,6 +296,13 @@ FUNC_RESULT SchedRegion::FindOptimalSchedule(
     }
   }
 
+  if (IsSeqListSched) {
+    rslt = applyGraphTransformations();
+
+    if (rslt != RES_SUCCESS)
+      return rslt;
+  }
+
   // This must be done after SetupForSchdulng() or UpdateSetupForSchdulng() to
   // avoid resetting lower bound values.
   if (!BbSchedulerEnabled)
@@ -980,6 +987,12 @@ static FUNC_RESULT applyGraphTransformation(DataDepGraph *DDG, GraphTrans *GT) {
     Logger::Error("Invalid DAG after graph transformations");
     return result;
   }
+
+  CmputAbslutUprBound_();
+  if (!BbSchedulerEnabled)
+    costLwrBound_ = CmputCostLwrBound();
+  else
+    CmputLwrBounds_(false);
 
   return result;
 }

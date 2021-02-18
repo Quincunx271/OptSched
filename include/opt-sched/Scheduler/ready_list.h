@@ -87,8 +87,8 @@ public:
   unsigned long CmputKey_(SchedInstruction *inst, bool isUpdate, bool &changed);
 
   template <typename InstructionVisitor>
-  void ForEachReadyInstruction(InstructionVisitor&& visitor) const {
-    for (const SchedInstruction& Inst : prirtyLst_) {
+  void ForEachReadyInstruction(InstructionVisitor &&visitor) const {
+    for (const SchedInstruction &Inst : prirtyLst_) {
       visitor(Inst);
     }
   }

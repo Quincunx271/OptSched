@@ -8,7 +8,7 @@
 
 using namespace llvm::opt_sched;
 
-#define IS_DEBUG_ILP_GRAPH_TRANS
+// #define IS_DEBUG_ILP_GRAPH_TRANS
 
 #ifdef IS_DEBUG_ILP_GRAPH_TRANS
 #define DEBUG_LOG(...) Logger::Info(__VA_ARGS__)
@@ -322,7 +322,8 @@ removeEdge(LinkedList<GraphEdge> &Succs, LinkedList<GraphEdge>::iterator it,
   GraphEdge &e = *it;
   it = Succs.RemoveAt(it);
   e.to->RemovePredFrom(e.from);
-  DEBUG_LOG("  Deleting GraphEdge* at %p: (%zu, %zu)", (void *)&e, e.from->GetNum(), e.to->GetNum());
+  DEBUG_LOG("  Deleting GraphEdge* at %p: (%zu, %zu)", (void *)&e,
+            e.from->GetNum(), e.to->GetNum());
   delete &e;
   ++stats.NumEdgesRemoved;
 

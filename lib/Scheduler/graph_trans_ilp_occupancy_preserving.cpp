@@ -70,11 +70,10 @@ FUNC_RESULT StaticNodeSupOccupancyPreservingILPTrans::ApplyTrans() {
   }
 
   Logger::Event("GraphTransOccupancyPreservingILPNodeSuperiorityFinished",
-    "superior_edges", Data.Stats.NumEdgesAdded,
-    "removed_edges", Data.Stats.NumEdgesRemoved,
-    "resource_edges", Data.Stats.NumResourceEdgesAdded,
-    "passed_ilp", NumPassedILP,
-    "failed_rp", NumFailedRP);
+                "superior_edges", Data.Stats.NumEdgesAdded, "removed_edges",
+                Data.Stats.NumEdgesRemoved, "resource_edges",
+                Data.Stats.NumResourceEdgesAdded, "passed_ilp", NumPassedILP,
+                "failed_rp", NumFailedRP);
 
   return RES_SUCCESS;
 }
