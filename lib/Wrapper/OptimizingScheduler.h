@@ -167,7 +167,7 @@ protected:
 
   // Run multiple passes of the static node superiority algorithm
   // (StaticNodeSup must be enabled).
-  bool MultiPassStaticNodeSup;
+  bool   MultiPassStaticNodeSup;
 
   // Should we run the LLVM converging scheduler as input to the enumerator.
   bool UseLLVMScheduler;
