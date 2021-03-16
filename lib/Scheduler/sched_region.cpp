@@ -245,7 +245,10 @@ FUNC_RESULT SchedRegion::FindOptimalSchedule(
 
   stats::problemSize.Record(dataDepGraph_->GetInstCnt());
 
+  Logger::Event("RunningSetupForScheduling", //
+                "need_transitive_closure", NeedTransitiveClosure);
   rslt = dataDepGraph_->SetupForSchdulng(NeedTransitiveClosure);
+  Logger::Event("RunningSetupForSchedulingFinished");
   if (rslt != RES_SUCCESS) {
     Logger::Info("Invalid input DAG");
     return rslt;
@@ -1019,7 +1022,13 @@ FUNC_RESULT SchedRegion::applyGraphTransformation(GraphTrans *GT,
 FUNC_RESULT SchedRegion::applyGraphTransformations(bool BbSchedulerEnabled) {
   FUNC_RESULT result = RES_SUCCESS;
 
-  for (auto &GT : *dataDepGraph_->GetGraphTrans()) {
+  auto &GraphTransformations = *dataDepGraph_->GetGraphTrans();
+  if (GraphTransformations.empty())
+    return result;
+
+  Logger::Event("GraphTransformationsStart");
+
+  for (auto &GT : GraphTransformations) {
     result = applyGraphTransformation(GT.get(), BbSchedulerEnabled);
 
     if (result != RES_SUCCESS)
@@ -1028,6 +1037,8 @@ FUNC_RESULT SchedRegion::applyGraphTransformations(bool BbSchedulerEnabled) {
     if (DumpDDGs_)
       dumpDDG(dataDepGraph_, DDGDumpPath_, GT->Name());
   }
+
+  Logger::Event("GraphTransformationsFinished");
 
   return result;
 }
