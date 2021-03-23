@@ -24,7 +24,7 @@ class NodesExamined(analyze.Analyzer):
 
     def calc(self, blocks):
         return sum(blk.single('NodeExamineCount')[
-                    'num_nodes'] for blk in blocks if 'NodeExamineCount' in blk)
+            'num_nodes'] for blk in blocks if 'NodeExamineCount' in blk)
 
 
 class NumBlocks(analyze.Analyzer):
@@ -35,9 +35,12 @@ class NumBlocks(analyze.Analyzer):
     def run_bench(self, args):
         logs = args[0]
 
-        num_blocks = _count(logs.all_blocks())
+        num_blocks = self.calc(logs.all_blocks())
 
         self.stat(num_blocks=num_blocks)
+
+    def calc(self, blocks):
+        return _count(blocks)
 
 
 class NumEnumerated(analyze.Analyzer):
@@ -49,9 +52,11 @@ class NumEnumerated(analyze.Analyzer):
         logs = args[0]
 
         self.stat(
-            num_enumerated=_count(blk for blk in logs.all_blocks()
-                                  if 'Enumerating' in blk)
+            num_enumerated=self.calc(logs.all_blocks())
         )
+
+    def calc(self, blocks):
+        return _count(blk for blk in blocks if 'Enumerating' in blk)
 
 
 class NumOptimalAndImproved(analyze.Analyzer):
@@ -63,13 +68,16 @@ class NumOptimalAndImproved(analyze.Analyzer):
     def run_bench(self, args):
         logs = args[0]
 
-        optimal = (blk for blk in logs.all_blocks()
+        self.stat(optimal_and_improved=self.calc(logs.all_blocks()))
+
+    def calc(self, blocks):
+        optimal = (blk for blk in blocks
                    if 'DagSolvedOptimally' in blk)
         optimal_and_improved = \
             (blk for blk in optimal
              if blk.single('DagSolvedOptimally')['cost_improvement'] > 0)
 
-        self.stat(optimal_and_improved=_count(optimal_and_improved))
+        return _count(optimal_and_improved)
 
 
 class NumOptimalNotImproved(analyze.Analyzer):
@@ -81,13 +89,16 @@ class NumOptimalNotImproved(analyze.Analyzer):
     def run_bench(self, args):
         logs = args[0]
 
-        optimal = (blk for blk in logs.all_blocks()
+        self.stat(optimal_and_not_improved=self.calc(logs.all_blocks()))
+
+    def calc(self, blocks):
+        optimal = (blk for blk in blocks
                    if 'DagSolvedOptimally' in blk)
         optimal_and_not_improved = \
             (blk for blk in optimal
              if blk.single('DagSolvedOptimally')['cost_improvement'] == 0)
 
-        self.stat(optimal_and_not_improved=_count(optimal_and_not_improved))
+        return _count(optimal_and_not_improved)
 
 
 class NumNotOptimalAndImproved(analyze.Analyzer):
@@ -99,13 +110,16 @@ class NumNotOptimalAndImproved(analyze.Analyzer):
     def run_bench(self, args):
         logs = args[0]
 
-        not_optimal = (blk for blk in logs.all_blocks()
+        self.stat(not_optimal_and_improved=self.calc(logs.all_blocks()))
+
+    def calc(self, blocks):
+        not_optimal = (blk for blk in blocks
                        if 'DagTimedOut' in blk)
         not_optimal_and_improved = \
             (blk for blk in not_optimal
              if blk.single('DagTimedOut')['cost_improvement'] > 0)
 
-        self.stat(not_optimal_and_improved=_count(not_optimal_and_improved))
+        return _count(not_optimal_and_improved)
 
 
 class NumNotOptimalNotImproved(analyze.Analyzer):
@@ -117,14 +131,16 @@ class NumNotOptimalNotImproved(analyze.Analyzer):
     def run_bench(self, args):
         logs = args[0]
 
-        not_optimal = (blk for blk in logs.all_blocks()
+        self.stat(not_optimal_and_not_improved=self.calc(logs.all_blocks()))
+
+    def calc(self, blocks):
+        not_optimal = (blk for blk in blocks
                        if 'DagTimedOut' in blk)
         not_optimal_and_not_improved = \
             (blk for blk in not_optimal
              if blk.single('DagTimedOut')['cost_improvement'] == 0)
 
-        self.stat(not_optimal_and_not_improved=_count(
-            not_optimal_and_not_improved))
+        return _count(not_optimal_and_not_improved)
 
 
 if __name__ == '__main__':

@@ -19,9 +19,11 @@ class InstructionSchedulingTime(analyze.Analyzer):
 
     def run_bench(self, args):
         logs = args[0]
-        time = sum(_block_time(blk) for blk in logs.all_blocks())
 
-        self.stat(sched_time=time)
+        self.stat(sched_time=self.calc(logs.all_blocks()))
+
+    def calc(self, blocks):
+        return sum(_block_time(blk) for blk in blocks)
 
 
 class TotalCompileTime(analyze.Analyzer):
