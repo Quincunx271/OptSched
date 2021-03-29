@@ -1125,14 +1125,16 @@ bool Enumerator::ProbeBranch_(SchedInstruction *inst, EnumTreeNode *&newNode,
     return false;
   }
 
-  fsbl = TightnLwrBounds_(inst);
-  state_.lwrBoundsTightnd = true;
+  if (!getIsTwoPass() || getIsSecondPass()) {
+    fsbl = TightnLwrBounds_(inst);
+    state_.lwrBoundsTightnd = true;
 
-  if (fsbl == false) {
+    if (fsbl == false) {
 #ifdef IS_DEBUG_INFSBLTY_TESTS
-    stats::rangeTighteningInfeasibilityHits++;
+      stats::rangeTighteningInfeasibilityHits++;
 #endif
-    return false;
+      return false;
+    }
   }
 
   state_.instFxd = true;
