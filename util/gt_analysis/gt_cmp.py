@@ -28,6 +28,12 @@ def _total_gt_elapsed(blk):
         - blk.single('GraphTransformationsStart')['time']
 
 
+def _enum_time(blk):
+    if 'DagSolvedOptimally' not in blk:
+        return 0
+    return blk.single('DagSolvedOptimally')['time'] - blk['Enumerating'][0]['time']
+
+
 class RawCombinedRpIlpGtTime(analyze.Analyzer):
     def run_bench(self, args):
         logs = args[0]
@@ -77,6 +83,8 @@ class GtCmp(analyze.Analyzer):
         self.stat(
             nogt_sched_time=sched_time.calc(nogt.all_blocks()),
             gt_sched_time=sched_time.calc(gt.all_blocks()),
+            nogt_enum_time = sum(_enum_time(blk) for blk in nogt.all_blocks()),
+            gt_enum_time = sum(_enum_time(blk) for blk in gt.all_blocks()),
             nogt_nodes_examined=nodesx.calc(nogt.all_blocks()),
             gt_nodes_examined=nodesx.calc(gt.all_blocks()),
             nogt_num_enumerated=num_enum.calc(nogt.all_blocks()),
