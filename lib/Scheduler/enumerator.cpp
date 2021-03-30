@@ -1219,8 +1219,10 @@ void Enumerator::RestoreCrntState_(SchedInstruction *inst,
     }
   }
 
-  if (state_.lwrBoundsTightnd) {
-    UnTightnLwrBounds_(inst);
+  if (!getIsTwoPass() || getIsSecondPass()) {
+    if (state_.lwrBoundsTightnd) {
+      UnTightnLwrBounds_(inst);
+    }
   }
 
   if (state_.instSchduld) {
