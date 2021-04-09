@@ -103,7 +103,8 @@ def basemain(*, positional, options, description, action, manual_options={}):
     try:
         action(outfile, pos_data, option_values)
     finally:
-        outfile.close()
+        if args.output is not None:
+            outfile.close()
 
 
 def main(analyzer_cls, **manual_options):

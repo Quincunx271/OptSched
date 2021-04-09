@@ -43,7 +43,7 @@ def _is_improved(before, after):
 
 
 def _is_timed_out(blk):
-    return 'DagTimedOut'
+    return 'DagTimedOut' in blk
 
 
 def _cost_improvement(before, after):
