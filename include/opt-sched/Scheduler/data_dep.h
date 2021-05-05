@@ -14,6 +14,8 @@ Last Update:  Mar. 2011
 #include "opt-sched/Scheduler/defines.h"
 #include "opt-sched/Scheduler/sched_basic_data.h"
 #include "llvm/ADT/SmallVector.h"
+#include "llvm/ADT/iterator.h"
+#include <cassert>
 #include <memory>
 
 namespace llvm {
@@ -572,6 +574,40 @@ public:
 };
 /*****************************************************************************/
 
+struct InstInfo {
+  InstCount inst;
+  InstCount cycle;
+  InstCount slot;
+};
+
+class InstScheduleIterator
+    : public llvm::iterator_facade_base<InstScheduleIterator,
+                                        std::input_iterator_tag, InstInfo> {
+public:
+  explicit InstScheduleIterator(InstCount SlotNum, const InstSchedule *Sched)
+      : slotNum_(normalize(SlotNum, Sched)), sched_(Sched) {}
+
+  bool operator==(const InstScheduleIterator &R) const {
+    assert(sched_ == R.sched_);
+    return slotNum_ == R.slotNum_;
+  }
+
+  InstInfo operator*() const;
+
+  InstScheduleIterator &operator++() {
+    slotNum_ = normalize(slotNum_, sched_);
+    return *this;
+  }
+
+  const InstSchedule *getInstSchedule() const { return sched_; }
+
+private:
+  InstCount slotNum_;
+  const InstSchedule *sched_;
+
+  static InstCount normalize(InstCount SlotNum, const InstSchedule *Sched);
+};
+
 // An instance of this class holds all the necessary information about an
 // instruction schedule. A scheduler starts with an empty object of this
 // class and fills it in as it progresses until it ends up with a complete
@@ -580,6 +616,8 @@ public:
 // per-cycle basis. For instance, the second slot in the third cycle of a
 // 4-issue machine is slot #9
 class InstSchedule {
+  friend class InstScheduleIterator;
+
 private:
   int issuRate_;
 
@@ -653,9 +691,12 @@ private:
   bool VerifySlots_(MachineModel *machMdl, DataDepGraph *dataDepGraph);
   bool VerifyDataDeps_(DataDepGraph *dataDepGraph);
   void GetCycleAndSlotNums_(InstCount globSlotNum, InstCount &cycleNum,
-                            InstCount &slotNum);
+                            InstCount &slotNum) const;
 
 public:
+  using const_iterator = InstScheduleIterator;
+  using iterator = const_iterator;
+
   InstSchedule(MachineModel *machMdl, DataDepGraph *dataDepGraph, bool vrfy);
   ~InstSchedule();
   bool operator==(InstSchedule &b) const;
@@ -686,6 +727,11 @@ public:
   InstCount GetNormSpillCost() const;
   void SetExtraSpillCost(SPILL_COST_FUNCTION Fn, InstCount cost);
   InstCount GetExtraSpillCost(SPILL_COST_FUNCTION Fn) const;
+
+  InstScheduleIterator begin() const { return InstScheduleIterator(0, this); }
+  InstScheduleIterator end() const {
+    return InstScheduleIterator(crntSlotNum_, this);
+  }
 
   void ResetInstIter();
   InstCount GetFrstInst(InstCount &cycleNum, InstCount &slotNum);

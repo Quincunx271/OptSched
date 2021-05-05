@@ -2703,6 +2703,22 @@ bool InstSchedule::RemoveLastInst() {
   return true;
 }
 
+InstCount InstScheduleIterator::normalize(InstCount SlotNum,
+                                          const InstSchedule *Sched) {
+  while (SlotNum < Sched->crntSlotNum_ &&
+         Sched->instInSlot_[SlotNum] == SCHD_STALL) {
+    SlotNum++;
+  }
+  return SlotNum;
+}
+
+InstInfo InstScheduleIterator::operator*() const {
+  InstInfo result{};
+  result.inst = sched_->instInSlot_[slotNum_];
+  sched_->GetCycleAndSlotNums_(slotNum_ - 1, result.cycle, result.slot);
+  return result;
+}
+
 void InstSchedule::ResetInstIter() { iterSlotNum_ = 0; }
 
 InstCount InstSchedule::GetFrstInst(InstCount &cycleNum, InstCount &slotNum) {
@@ -3044,7 +3060,7 @@ bool InstSchedule::AppendInst(SchedInstruction *inst) {
 
 void InstSchedule::GetCycleAndSlotNums_(InstCount globSlotNum,
                                         InstCount &cycleNum,
-                                        InstCount &slotNum) {
+                                        InstCount &slotNum) const {
   cycleNum = globSlotNum / issuRate_;
   slotNum = globSlotNum % issuRate_;
 }
