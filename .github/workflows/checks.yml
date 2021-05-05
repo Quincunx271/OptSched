@@ -2,7 +2,7 @@ name: Run Checks
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master, refactor/inst-schedule-iterator ]
   pull_request:
     branches: [ master ]
   issue_comment: # On PR issue comment
