@@ -498,19 +498,17 @@ void ScheduleDAGOptSched::schedule() {
   // Advance past initial DebugValues.
   CurrentTop = nextIfDebug(RegionBegin, RegionEnd);
   CurrentBottom = RegionEnd;
-  InstCount cycle, slot;
-  for (InstCount i = Sched->GetFrstInst(cycle, slot); i != INVALID_VALUE;
-       i = Sched->GetNxtInst(cycle, slot)) {
+  for (InstInfo inst : *Sched) {
     // Skip artificial instrs.
-    if (i > static_cast<int>(SUnits.size()) - 1)
+    if (inst.num > static_cast<int>(SUnits.size()) - 1)
       continue;
 
-    if (i == SCHD_STALL)
-      ScheduleNode(NULL, cycle);
+    if (inst.num == SCHD_STALL)
+      ScheduleNode(NULL, inst.cycle);
     else {
-      SUnit *unit = &SUnits[i];
+      SUnit *unit = &SUnits[inst.num];
       if (unit && unit->isInstr())
-        ScheduleNode(unit, cycle);
+        ScheduleNode(unit, inst.cycle);
     }
   }
   placeDebugValues();

@@ -750,11 +750,9 @@ void CheckHistNodeMatches(EnumTreeNode *const node,
 
 void PrintSchedule(InstSchedule *const sched,
                    Logger::LOG_LEVEL level = Logger::INFO) {
-  InstCount cycle, slot;
   std::stringstream s;
-  for (auto inst = sched->GetFrstInst(cycle, slot); inst != INVALID_VALUE;
-       inst = sched->GetNxtInst(cycle, slot)) {
-    s << inst << ' ';
+  for (InstInfo inst : *sched) {
+    s << inst.num << ' ';
   }
   Logger::Log(level, false, "Schedule: %s", s.str().c_str());
 }
@@ -857,12 +855,9 @@ void AppendAndCheckSuffixSchedules(
     // Before backtracking, reset the SchedRegion state to where it was before
     // concatenation.
     rgn_->InitForSchdulng();
-    InstCount cycleNum, slotNum;
-    for (auto instNum = crntSched_->GetFrstInst(cycleNum, slotNum);
-         instNum != INVALID_VALUE;
-         instNum = crntSched_->GetNxtInst(cycleNum, slotNum)) {
-      rgn_->SchdulInst(dataDepGraph_->GetInstByIndx(instNum), cycleNum, slotNum,
-                       false);
+    for (InstInfo inst : *crntSched_) {
+      rgn_->SchdulInst(dataDepGraph_->GetInstByIndx(inst.num), inst.cycle,
+                       inst.slot, false);
     }
   }
 }

@@ -575,7 +575,7 @@ public:
 /*****************************************************************************/
 
 struct InstInfo {
-  InstCount inst;
+  InstCount num;
   InstCount cycle;
   InstCount slot;
 };

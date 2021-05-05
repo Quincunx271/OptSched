@@ -488,16 +488,13 @@ FUNC_RESULT ACOScheduler::FindSchedule(InstSchedule *schedule_out,
 void ACOScheduler::UpdatePheromone(InstSchedule *schedule) {
   // I wish InstSchedule allowed you to just iterate over it, but it's got this
   // cycle and slot thing which needs to be accounted for
-  InstCount instNum, cycleNum, slotNum;
-  instNum = schedule->GetFrstInst(cycleNum, slotNum);
-
-  SchedInstruction *lastInst = NULL;
+  SchedInstruction *lastInst = nullptr;
   pheromone_t portion = schedule->GetCost() / (ScRelMax * 1.5);
   pheromone_t deposition =
       fmax((1 - portion) * MAX_DEPOSITION_MINUS_MIN, 0) + MIN_DEPOSITION;
 
-  while (instNum != INVALID_VALUE) {
-    SchedInstruction *inst = dataDepGraph_->GetInstByIndx(instNum);
+  for (InstInfo instInfo : *schedule) {
+    SchedInstruction *inst = dataDepGraph_->GetInstByIndx(instInfo.num);
 
     pheromone_t *pheromone = &Pheromone(lastInst, inst);
 #if USE_ACS
@@ -509,10 +506,7 @@ void ACOScheduler::UpdatePheromone(InstSchedule *schedule) {
     *pheromone += deposition;
 #endif
     lastInst = inst;
-
-    instNum = schedule->GetNxtInst(cycleNum, slotNum);
   }
-  schedule->ResetInstIter();
 
 #if !USE_ACS
   // decay pheromone
@@ -590,14 +584,10 @@ static void PrintInstruction(SchedInstruction *inst) {
 
 void PrintSchedule(InstSchedule *schedule) {
   std::cerr << schedule->GetCost() << ": ";
-  InstCount instNum, cycleNum, slotNum;
-  instNum = schedule->GetFrstInst(cycleNum, slotNum);
-  while (instNum != INVALID_VALUE) {
-    std::cerr << instNum << " ";
-    instNum = schedule->GetNxtInst(cycleNum, slotNum);
+  for (InstInfo inst : *schedule) {
+    std::cerr << inst.num << " ";
   }
   std::cerr << std::endl;
-  schedule->ResetInstIter();
 }
 
 void ACOScheduler::setInitialSched(InstSchedule *Sched) {

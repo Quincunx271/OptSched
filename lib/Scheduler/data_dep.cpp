@@ -2714,7 +2714,7 @@ InstCount InstScheduleIterator::normalize(InstCount SlotNum,
 
 InstInfo InstScheduleIterator::operator*() const {
   InstInfo result{};
-  result.inst = sched_->instInSlot_[slotNum_];
+  result.num = sched_->instInSlot_[slotNum_];
   sched_->GetCycleAndSlotNums_(slotNum_ - 1, result.cycle, result.slot);
   return result;
 }
