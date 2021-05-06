@@ -4,6 +4,7 @@
 // for setiosflags(), setprecision().
 #include "opt-sched/Scheduler/buffers.h"
 #include "opt-sched/Scheduler/logger.h"
+#include "llvm/ADT/STLExtras.h"
 #include "llvm/Support/ErrorHandling.h"
 #include <cassert>
 #include <iomanip>
@@ -11,19 +12,22 @@
 
 using namespace llvm::opt_sched;
 
-MachineModel::MachineModel(const string &modelFile) {
+std::shared_ptr<MachineModel>
+llvm::opt_sched::parseMachineModel(const std::string &ModelFile) {
+  auto Result = std::make_shared<MachineModel>();
+
   SpecsBuffer buf;
   char buffer[MAX_NAMESIZE];
 
-  buf.Load(modelFile.c_str());
+  buf.Load(ModelFile.c_str());
 
   buf.ReadSpec("MODEL_NAME:", buffer);
-  mdlName_ = buffer;
+  Result->ModelName = buffer;
 
-  issueRate_ = buf.ReadIntSpec("ISSUE_RATE:");
+  Result->IssueRate = buf.ReadIntSpec("ISSUE_RATE:");
 
-  issueTypes_.resize(buf.ReadIntSpec("ISSUE_TYPE_COUNT:"));
-  for (size_t j = 0; j < issueTypes_.size(); j++) {
+  Result->IssueTypes.resize(buf.ReadIntSpec("ISSUE_TYPE_COUNT:"));
+  for (IssueTypeInfo &Info : Result->IssueTypes) {
     int pieceCnt;
     char *strngs[INBUF_MAX_PIECES_PERLINE];
     int lngths[INBUF_MAX_PIECES_PERLINE];
@@ -32,21 +36,20 @@ MachineModel::MachineModel(const string &modelFile) {
     if (pieceCnt != 2)
       llvm::report_fatal_error("Invalid issue type spec", false);
 
-    issueTypes_[j].name = strngs[0];
-    issueTypes_[j].slotsCount = atoi(strngs[1]);
+    Info.Name = strngs[0];
+    Info.SlotsCount = atoi(strngs[1]);
   }
 
-  dependenceLatencies_[DEP_DATA] = 1; // Shouldn't be used!
-  dependenceLatencies_[DEP_ANTI] =
+  Result->DependenceLatencies[DEP_DATA] = 1; // Shouldn't be used!
+  Result->DependenceLatencies[DEP_ANTI] =
       (int16_t)buf.ReadIntSpec("DEP_LATENCY_ANTI:");
-  dependenceLatencies_[DEP_OUTPUT] =
+  Result->DependenceLatencies[DEP_OUTPUT] =
       (int16_t)buf.ReadIntSpec("DEP_LATENCY_OUTPUT:");
-  dependenceLatencies_[DEP_OTHER] =
+  Result->DependenceLatencies[DEP_OTHER] =
       (int16_t)buf.ReadIntSpec("DEP_LATENCY_OTHER:");
 
-  registerTypes_.resize(buf.ReadIntSpec("REG_TYPE_COUNT:"));
-
-  for (size_t i = 0; i < registerTypes_.size(); i++) {
+  Result->RegisterTypes.resize(buf.ReadIntSpec("REG_TYPE_COUNT:"));
+  for (RegTypeInfo &Info : Result->RegisterTypes) {
     int pieceCnt;
     char *strngs[INBUF_MAX_PIECES_PERLINE];
     int lngths[INBUF_MAX_PIECES_PERLINE];
@@ -56,175 +59,115 @@ MachineModel::MachineModel(const string &modelFile) {
       llvm::report_fatal_error("Invalid register type spec", false);
     }
 
-    registerTypes_[i].name = strngs[0];
-    registerTypes_[i].count = atoi(strngs[1]);
+    Info.Name = strngs[0];
+    Info.Count = atoi(strngs[1]);
   }
 
   // Read instruction types.
-  instTypes_.resize(buf.ReadIntSpec("INST_TYPE_COUNT:"));
-
-  for (vector<InstTypeInfo>::iterator it = instTypes_.begin();
-       it != instTypes_.end(); it++) {
+  Result->InstTypes.resize(buf.ReadIntSpec("INST_TYPE_COUNT:"));
+  for (InstTypeInfo &Info : Result->InstTypes) {
     buf.ReadSpec("INST_TYPE:", buffer);
-    it->name = buffer;
-    it->isCntxtDep = (it->name.find("_after_") != string::npos);
+    Info.Name = buffer;
+    Info.IsContextDependent = (Info.Name.find("_after_") != string::npos);
 
     buf.ReadSpec("ISSUE_TYPE:", buffer);
-    IssueType issuType = GetIssueTypeByName(buffer);
+    IssueType issuType = issueTypeByName(*Result, buffer);
 
     if (issuType == INVALID_ISSUE_TYPE) {
       llvm::report_fatal_error(std::string("Invalid issue type ") + buffer +
-                                   " for inst. type " + it->name,
+                                   " for inst. type " + Info.Name,
                                false);
     }
 
-    it->issuType = issuType;
-    it->ltncy = (int16_t)buf.ReadIntSpec("LATENCY:");
-    it->pipelined = buf.ReadFlagSpec("PIPELINED:", true);
-    it->blksCycle = buf.ReadFlagSpec("BLOCKS_CYCLE:", false);
-    it->sprtd = buf.ReadFlagSpec("SUPPORTED:", true);
+    Info.IssueType = issuType;
+    Info.Latency = (int16_t)buf.ReadIntSpec("LATENCY:");
+    Info.Pipelined = buf.ReadFlagSpec("PIPELINED:", true);
+    Info.BlocksCycle = buf.ReadFlagSpec("BLOCKS_CYCLE:", false);
+    Info.Supported = buf.ReadFlagSpec("SUPPORTED:", true);
   }
+
+  return Result;
 }
 
-InstType MachineModel::GetInstTypeByName(const string &typeName,
-                                         const string &prevName) const {
-  string composite = prevName.size() ? typeName + "_after_" + prevName : "";
-  for (size_t i = 0; i < instTypes_.size(); i++) {
-    if (instTypes_[i].isCntxtDep && instTypes_[i].name == composite) {
-      return (InstType)i;
-    } else if (!instTypes_[i].isCntxtDep && instTypes_[i].name == typeName) {
-      return (InstType)i;
-    }
+InstType llvm::opt_sched::instTypeByName(const MachineModel &Model,
+                                         llvm::StringRef typeName,
+                                         llvm::StringRef prevName) const {
+  std::string composite =
+      prevName.size() ? typeName + std::string("_after_") + prevName : "";
+  auto InstTypes = llvm::enumerate(Model.InstTypes);
+  auto It = llvm::find_if(InstTypes, [&composite, typeName](const auto &Info) {
+    return Info.value().IsContextDependent && Info.value().Name == composite ||
+           !Info.value().IsContextDependent && Info.value().Name == typeName;
+  });
+  if (It != InstTypes.end()) {
+    return It->value();
   }
-  //  Logger::Error("Unrecognized instruction type %s.", typeName.c_str());
   return INVALID_INST_TYPE;
 }
 
-int16_t MachineModel::GetRegTypeByName(const char *const regTypeName) const {
-  int16_t Type = INVALID_VALUE;
-  for (size_t i = 0; i < registerTypes_.size(); i++) {
-    if (regTypeName == registerTypes_[i].name) {
-      Type = (int16_t)i;
-      break;
-    }
-  }
-  assert(Type != INVALID_VALUE &&
+int16_t llvm::opt_sched::regTypeByName(const MachineModel &Model,
+                                       llvm::StringRef regTypeName) const {
+  auto RegTypes = llvm::enumerate(Model.RegisterTypes);
+  auto It = llvm::find_if(RegTypes, [regTypeName](const auto &Info) {
+    return Info.value().Name == regTypeName;
+  });
+  assert(It != RegTypes.end() &&
          "No register type with that name in machine model");
-  return Type;
+  return It->index();
 }
 
-IssueType
-MachineModel::GetIssueTypeByName(const char *const issuTypeName) const {
-  for (size_t i = 0; i < issueTypes_.size(); i++) {
-    if (issuTypeName == issueTypes_[i].name) {
-      return (InstType)i;
-    }
+IssueType llvm::opt_sched::issueTypeByName(const MachineModel &Model,
+                                           llvm::StringRef issuTypeName) const {
+  auto IssueTypes = llvm::enumerate(Model.IssueTypes);
+  auto It = llvm::find_if(IssueTypes, [issuTypeName](const auto &Info) {
+    return Info.value().Name == issuTypeName;
+  });
+  if (It != IssueTypes.end()) {
+    return It.index();
   }
 
   return INVALID_ISSUE_TYPE;
 }
 
-int MachineModel::GetPhysRegCnt(int16_t regType) const {
-  return registerTypes_[regType].count;
+bool llvm::opt_sched::isRealInst(const MachineModel &Model,
+                                 InstType instTypeCode) const {
+  return Model.IssueTypes[instTypeCode].Name != "NULL";
 }
 
-const string &MachineModel::GetRegTypeName(int16_t regType) const {
-  return registerTypes_[regType].name;
-}
-
-IssueType MachineModel::GetIssueType(InstType instTypeCode) const {
-  return instTypes_[instTypeCode].issuType;
-}
-
-bool MachineModel::IsPipelined(InstType instTypeCode) const {
-  return instTypes_[instTypeCode].pipelined;
-}
-
-bool MachineModel::IsSupported(InstType instTypeCode) const {
-  return instTypes_[instTypeCode].sprtd;
-}
-
-bool MachineModel::BlocksCycle(InstType instTypeCode) const {
-  return instTypes_[instTypeCode].blksCycle;
-}
-
-bool MachineModel::IsRealInst(InstType instTypeCode) const {
-  IssueType issuType = GetIssueType(instTypeCode);
-  return issueTypes_[issuType].name != "NULL";
-}
-
-int16_t MachineModel::GetLatency(InstType instTypeCode,
+int16_t llvm::opt_sched::latency(const MachineModel &Model,
+                                 InstType instTypeCode,
                                  DependenceType depType) const {
   if (depType == DEP_DATA && instTypeCode != INVALID_INST_TYPE) {
-    return instTypes_[instTypeCode].ltncy;
+    return Model.InstTypes[instTypeCode].Latency;
   } else {
-    return dependenceLatencies_[depType];
+    return Model.DependenceLatencies[depType];
   }
 }
 
-int MachineModel::GetSlotsPerCycle(IssueType issuType) const {
-  return issueTypes_[issuType].slotsCount;
+bool llvm::opt_sched::isBranch(const MachineModel &Model,
+                               InstType instTypeCode) const {
+  return Model.InstTypes[instTypeCode].Name == "br";
 }
 
-int MachineModel::GetSlotsPerCycle(int slotsPerCycle[]) const {
-  for (size_t i = 0; i < issueTypes_.size(); i++) {
-    slotsPerCycle[i] = issueTypes_[i].slotsCount;
-  }
-  return issueTypes_.size();
+bool llvm::opt_sched::isArtificial(const MachineModel &Model,
+                                   InstType instTypeCode) const {
+  return Model.InstTypes[instTypeCode].Name == "artificial";
 }
 
-const char *MachineModel::GetInstTypeNameByCode(InstType typeCode) const {
-  return instTypes_[typeCode].name.c_str();
+bool llvm::opt_sched::isCall(const MachineModel &Model,
+                             InstType instTypeCode) const {
+  return Model.InstTypes[instTypeCode].Name == "call";
 }
 
-const char *MachineModel::GetIssueTypeNameByCode(IssueType typeCode) const {
-  return issueTypes_[typeCode].name.c_str();
+bool llvm::opt_sched::isFloat(const MachineModel &Model,
+                              InstType instTypeCode) const {
+  return Model.InstTypes[instTypeCode].Name[0] == 'f';
 }
 
-bool MachineModel::IsBranch(InstType instTypeCode) const {
-  return instTypes_[instTypeCode].name == "br";
+InstType llvm::opt_sched::defaultInstType(const MachineModel &Model) const {
+  return instTypeByName(Model, "Default");
 }
 
-bool MachineModel::IsArtificial(InstType instTypeCode) const {
-  return instTypes_[instTypeCode].name == "artificial";
-}
-
-bool MachineModel::IsCall(InstType instTypeCode) const {
-  return instTypes_[instTypeCode].name == "call";
-}
-
-bool MachineModel::IsFloat(InstType instTypeCode) const {
-  return instTypes_[instTypeCode].name[0] == 'f';
-}
-
-void MachineModel::AddInstType(InstTypeInfo &instTypeInfo) {
-  // If this new instruction type is unpipelined notify the model
-  if (!instTypeInfo.pipelined)
-    includesUnpipelined_ = true;
-
-  instTypes_.push_back(std::move(instTypeInfo));
-}
-
-void MachineModel::addIssueType(IssueTypeInfo &IssueTypeInfo) {
-  issueTypes_.push_back(std::move(IssueTypeInfo));
-}
-
-InstType MachineModel::getDefaultInstType() const {
-  return GetInstTypeByName("Default");
-}
-
-InstType MachineModel::getDefaultIssueType() const {
-  return GetIssueTypeByName("Default");
-}
-
-const string &MachineModel::GetModelName() const { return mdlName_; }
-
-int MachineModel::GetInstTypeCnt() const { return instTypes_.size(); }
-
-int MachineModel::GetIssueTypeCnt() const { return issueTypes_.size(); }
-
-int MachineModel::GetIssueRate() const { return issueRate_; }
-
-int16_t MachineModel::GetRegTypeCnt() const {
-  return (int16_t)registerTypes_.size();
+InstType llvm::opt_sched::defaultIssueType(const MachineModel &Model) const {
+  return issueTypeByName(Model, "Default");
 }
