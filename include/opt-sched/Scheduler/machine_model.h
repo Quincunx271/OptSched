@@ -129,6 +129,8 @@ bool isFloat(const MachineModel &, InstType instTypeCode);
 
 InstType defaultInstType(const MachineModel &);
 
+bool isSimple(const MachineModel &);
+
 } // namespace opt_sched
 } // namespace llvm
 

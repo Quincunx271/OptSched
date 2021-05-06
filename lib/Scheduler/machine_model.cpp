@@ -91,7 +91,7 @@ llvm::opt_sched::parseMachineModel(const std::string &ModelFile) {
 
 InstType llvm::opt_sched::instTypeByName(const MachineModel &Model,
                                          llvm::StringRef typeName,
-                                         llvm::StringRef prevName) const {
+                                         llvm::StringRef prevName) {
   std::string composite =
       prevName.size() ? typeName + std::string("_after_") + prevName : "";
   auto InstTypes = llvm::enumerate(Model.InstTypes);
@@ -106,7 +106,7 @@ InstType llvm::opt_sched::instTypeByName(const MachineModel &Model,
 }
 
 int16_t llvm::opt_sched::regTypeByName(const MachineModel &Model,
-                                       llvm::StringRef regTypeName) const {
+                                       llvm::StringRef regTypeName) {
   auto RegTypes = llvm::enumerate(Model.RegisterTypes);
   auto It = llvm::find_if(RegTypes, [regTypeName](const auto &Info) {
     return Info.value().Name == regTypeName;
@@ -117,7 +117,7 @@ int16_t llvm::opt_sched::regTypeByName(const MachineModel &Model,
 }
 
 IssueType llvm::opt_sched::issueTypeByName(const MachineModel &Model,
-                                           llvm::StringRef issuTypeName) const {
+                                           llvm::StringRef issuTypeName) {
   auto IssueTypes = llvm::enumerate(Model.IssueTypes);
   auto It = llvm::find_if(IssueTypes, [issuTypeName](const auto &Info) {
     return Info.value().Name == issuTypeName;
@@ -130,13 +130,13 @@ IssueType llvm::opt_sched::issueTypeByName(const MachineModel &Model,
 }
 
 bool llvm::opt_sched::isRealInst(const MachineModel &Model,
-                                 InstType instTypeCode) const {
+                                 InstType instTypeCode) {
   return Model.IssueTypes[instTypeCode].Name != "NULL";
 }
 
 int16_t llvm::opt_sched::latency(const MachineModel &Model,
                                  InstType instTypeCode,
-                                 DependenceType depType) const {
+                                 DependenceType depType) {
   if (depType == DEP_DATA && instTypeCode != INVALID_INST_TYPE) {
     return Model.InstTypes[instTypeCode].Latency;
   } else {
@@ -145,29 +145,33 @@ int16_t llvm::opt_sched::latency(const MachineModel &Model,
 }
 
 bool llvm::opt_sched::isBranch(const MachineModel &Model,
-                               InstType instTypeCode) const {
+                               InstType instTypeCode) {
   return Model.InstTypes[instTypeCode].Name == "br";
 }
 
 bool llvm::opt_sched::isArtificial(const MachineModel &Model,
-                                   InstType instTypeCode) const {
+                                   InstType instTypeCode) {
   return Model.InstTypes[instTypeCode].Name == "artificial";
 }
 
-bool llvm::opt_sched::isCall(const MachineModel &Model,
-                             InstType instTypeCode) const {
+bool llvm::opt_sched::isCall(const MachineModel &Model, InstType instTypeCode) {
   return Model.InstTypes[instTypeCode].Name == "call";
 }
 
 bool llvm::opt_sched::isFloat(const MachineModel &Model,
-                              InstType instTypeCode) const {
+                              InstType instTypeCode) {
   return Model.InstTypes[instTypeCode].Name[0] == 'f';
 }
 
-InstType llvm::opt_sched::defaultInstType(const MachineModel &Model) const {
+InstType llvm::opt_sched::defaultInstType(const MachineModel &Model) {
   return instTypeByName(Model, "Default");
 }
 
-InstType llvm::opt_sched::defaultIssueType(const MachineModel &Model) const {
+InstType llvm::opt_sched::defaultIssueType(const MachineModel &Model) {
   return issueTypeByName(Model, "Default");
+}
+
+bool llvm::opt_sched::isSimple(const MachineModel &Model) {
+  return Model.IssueRate == 1 && Model.IssueTypes.size() == 1 &&
+         Model.IssueTypes[0].SlotsCount == 1 && !Model.IncludesUnpipelined;
 }
