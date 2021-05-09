@@ -2,7 +2,7 @@ name: Run Checks
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master, refactor/machine-model ]
   pull_request:
     branches: [ master ]
   issue_comment: # On PR issue comment
