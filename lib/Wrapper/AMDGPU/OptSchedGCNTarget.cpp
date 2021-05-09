@@ -64,20 +64,22 @@ namespace {
 
 class OptSchedGCNTarget : public OptSchedTarget {
 public:
-  std::unique_ptr<OptSchedMachineModel>
+  std::shared_ptr<const MachineModel>
   createMachineModel(const char *ConfigPath) override {
-    return llvm::make_unique<OptSchedMachineModel>(ConfigPath);
+    return parseMachineModel(ConfigPath);
   }
 
   std::unique_ptr<OptSchedDDGWrapperBase>
   createDDGWrapper(llvm::MachineSchedContext *Context, ScheduleDAGOptSched *DAG,
-                   OptSchedMachineModel *MM, LATENCY_PRECISION LatencyPrecision,
+                   std::shared_ptr<const MachineModel> MM,
+                   LATENCY_PRECISION LatencyPrecision,
                    const std::string &RegionID) override {
-    return llvm::make_unique<OptSchedDDGWrapperGCN>(Context, DAG, MM,
+    return llvm::make_unique<OptSchedDDGWrapperGCN>(Context, DAG, std::move(MM),
                                                     LatencyPrecision, RegionID);
   }
 
-  void initRegion(llvm::ScheduleDAGInstrs *DAG, MachineModel *MM_) override;
+  void initRegion(llvm::ScheduleDAGInstrs *DAG,
+                  std::shared_ptr<const MachineModel> MM_) override;
 
   void finalizeRegion(const InstSchedule *Schedule) override;
 
@@ -144,12 +146,12 @@ void OptSchedGCNTarget::dumpOccupancyInfo(const InstSchedule *Schedule) const {
 #endif
 
 void OptSchedGCNTarget::initRegion(llvm::ScheduleDAGInstrs *DAG_,
-                                   MachineModel *MM_) {
+                                   std::shared_ptr<const MachineModel> MM_) {
   DAG = static_cast<ScheduleDAGOptSched *>(DAG_);
   MF = &DAG->MF;
   MFI =
       const_cast<SIMachineFunctionInfo *>(MF->getInfo<SIMachineFunctionInfo>());
-  MM = MM_;
+  MM = std::move(MM_);
   ST = &MF->getSubtarget<GCNSubtarget>();
   MaxOccLDS = ST->getOccupancyWithLocalMemSize(*MF);
 

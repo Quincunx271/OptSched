@@ -34,7 +34,7 @@ SchedInstruction::SchedInstruction(InstCount num, const string &name,
                                    InstCount maxInstCnt, int nodeID,
                                    InstCount fileSchedOrder,
                                    InstCount fileSchedCycle, InstCount fileLB,
-                                   InstCount fileUB, MachineModel *model)
+                                   InstCount fileUB, const MachineModel &model)
     : GraphNode(num, maxInstCnt) {
   // Static data that is computed only once.
   name_ = name;

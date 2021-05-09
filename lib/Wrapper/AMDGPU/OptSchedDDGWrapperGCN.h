@@ -67,7 +67,8 @@ public:
   enum SubRegKind { SGPR32, VGPR32, TOTAL_KINDS };
 
   OptSchedDDGWrapperGCN(llvm::MachineSchedContext *Context,
-                        ScheduleDAGOptSched *DAG, OptSchedMachineModel *MM,
+                        ScheduleDAGOptSched *DAG,
+                        std::shared_ptr<const MachineModel> MM,
                         LATENCY_PRECISION LatencyPrecision,
                         const std::string &RegionID);
 

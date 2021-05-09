@@ -74,13 +74,14 @@ static std::string GetDDGDumpPath() {
   return DDGDumpPath;
 }
 
-SchedRegion::SchedRegion(MachineModel *machMdl, DataDepGraph *dataDepGraph,
-                         long rgnNum, int16_t sigHashSize, LB_ALG lbAlg,
+SchedRegion::SchedRegion(std::shared_ptr<const MachineModel> machMdl,
+                         DataDepGraph *dataDepGraph, long rgnNum,
+                         int16_t sigHashSize, LB_ALG lbAlg,
                          SchedPriorities hurstcPrirts,
                          SchedPriorities enumPrirts, bool vrfySched,
                          Pruning PruningStrategy, SchedulerType HeurSchedType,
-                         SPILL_COST_FUNCTION spillCostFunc) {
-  machMdl_ = machMdl;
+                         SPILL_COST_FUNCTION spillCostFunc)
+    : machMdl_(std::move(machMdl)) {
   dataDepGraph_ = dataDepGraph;
   rgnNum_ = rgnNum;
   sigHashSize_ = sigHashSize;
@@ -374,7 +375,7 @@ FUNC_RESULT SchedRegion::FindOptimalSchedule(
     auto regTypeCount = lstSched->GetPeakRegPressures(regPressures);
     InstCount sumPerp = 0;
     for (int i = 0; i < regTypeCount; ++i) {
-      int perp = regPressures[i] - machMdl_->GetPhysRegCnt(i);
+      int perp = regPressures[i] - machMdl_->RegisterTypes[i].size();
       if (perp > 0)
         sumPerp += perp;
     }
@@ -396,7 +397,7 @@ FUNC_RESULT SchedRegion::FindOptimalSchedule(
     auto regTypeCount = lstSched->GetPeakRegPressures(regPressures);
     InstCount sumPerp = 0;
     for (int i = 0; i < regTypeCount; ++i) {
-      int perp = regPressures[i] - machMdl_->GetPhysRegCnt(i);
+      int perp = regPressures[i] - machMdl_->RegisterTypes[i].size();
       if (perp > 0)
         sumPerp += perp;
     }
@@ -725,7 +726,7 @@ FUNC_RESULT SchedRegion::FindOptimalSchedule(
           auto regTypeCount = sched->GetPeakRegPressures(regPressures);
           InstCount sumPerp = 0;
           for (int i = 0; i < regTypeCount; ++i) {
-            int perp = regPressures[i] - machMdl_->GetPhysRegCnt(i);
+            int perp = regPressures[i] - machMdl_->RegisterTypes[i].size();
             if (perp > 0)
               sumPerp += perp;
           }

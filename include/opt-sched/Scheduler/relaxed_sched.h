@@ -94,9 +94,10 @@ protected:
   void Reset_(InstCount startIndx);
 
 public:
-  RelaxedScheduler(DataDepStruct *dataDepGraph, MachineModel *machMdl,
-                   InstCount uprBound, DIRECTION schedDir,
-                   RLXD_SCHED_TYPE schedType, InstCount maxInstCnt);
+  RelaxedScheduler(DataDepStruct *dataDepGraph,
+                   std::shared_ptr<const MachineModel>, InstCount uprBound,
+                   DIRECTION schedDir, RLXD_SCHED_TYPE schedType,
+                   InstCount maxInstCnt);
   virtual ~RelaxedScheduler();
 
   // Find a feasible relaxed schedule and return its length
@@ -118,9 +119,9 @@ private:
   bool FixInsts_(LinkedList<SchedInstruction> *fxdLst);
 
 public:
-  RJ_RelaxedScheduler(DataDepStruct *dataDepGraph, MachineModel *machMdl,
-                      InstCount uprBound, DIRECTION schedDir,
-                      RLXD_SCHED_TYPE schedType,
+  RJ_RelaxedScheduler(DataDepStruct *dataDepGraph,
+                      std::shared_ptr<const MachineModel>, InstCount uprBound,
+                      DIRECTION schedDir, RLXD_SCHED_TYPE schedType,
                       InstCount maxInstCnt = INVALID_VALUE);
   ~RJ_RelaxedScheduler();
 
@@ -164,8 +165,9 @@ private:
   InstCount CmputReleaseTime_(SchedInstruction *inst);
 
 public:
-  LC_RelaxedScheduler(DataDepStruct *dataDepGraph, MachineModel *machMdl,
-                      InstCount uprBound, DIRECTION schedDir);
+  LC_RelaxedScheduler(DataDepStruct *dataDepGraph,
+                      std::shared_ptr<const MachineModel>, InstCount uprBound,
+                      DIRECTION schedDir);
   ~LC_RelaxedScheduler();
 
   // Find a relaxed schedule of all instructions and return its length
@@ -220,8 +222,9 @@ private:
                    InstCount trgtCycle);
 
 public:
-  LPP_RelaxedScheduler(DataDepStruct *dataDepGraph, MachineModel *machMdl,
-                       InstCount uprBound, DIRECTION schedDir);
+  LPP_RelaxedScheduler(DataDepStruct *dataDepGraph,
+                       std::shared_ptr<const MachineModel>, InstCount uprBound,
+                       DIRECTION schedDir);
   ~LPP_RelaxedScheduler();
 
   // Find a minimum-length relaxed schedule of all instructions and return its

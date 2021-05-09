@@ -73,7 +73,7 @@ protected:
   std::unique_ptr<OptSchedTarget> OST;
 
   // into the OptSched machine model
-  std::unique_ptr<OptSchedMachineModel> MM;
+  std::shared_ptr<MachineModel> MM;
 
   // A list of functions that are indicated as candidates for the
   // OptScheduler

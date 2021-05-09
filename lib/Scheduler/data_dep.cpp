@@ -36,9 +36,9 @@ static const char *GetDependenceTypeName(DependenceType depType) {
   llvm_unreachable("Unknown dependence type!");
 }
 
-DataDepStruct::DataDepStruct(MachineModel *machMdl) {
-  machMdl_ = machMdl;
-  issuTypeCnt_ = (int16_t)machMdl->GetIssueTypeCnt();
+DataDepStruct::DataDepStruct(std::shared_ptr<const MachineModel> machMdl)
+    : machMdl_(std::move(machMdl)) {
+  issuTypeCnt_ = (int16_t)machMdl->IssueTypes.size();
   instCntPerIssuType_ = new InstCount[issuTypeCnt_];
 
   for (int16_t i = 0; i < issuTypeCnt_; i++) {
@@ -97,10 +97,7 @@ InstCount DataDepStruct::CmputRsrcLwrBound_() {
   if (GetInstCnt() == 0)
     return 0;
 
-  int *slotsPerIssuType;
-  slotsPerIssuType = new int[issuTypeCnt_];
-
-  machMdl_->GetSlotsPerCycle(slotsPerIssuType);
+  const auto slotsPerIssuType = allSlotsPerCycle(*machMdl_);
 
   for (InstCount i = 0; i < issuTypeCnt_; i++) {
     instCntPerIssuType_[i] = 0;
@@ -124,7 +121,6 @@ InstCount DataDepStruct::CmputRsrcLwrBound_() {
 
   assert(rsrcLwrBound != INVALID_VALUE);
   assert(rsrcLwrBound >= 1);
-  delete[] slotsPerIssuType;
   return rsrcLwrBound;
 }
 
@@ -144,12 +140,12 @@ InstCount DataDepStruct::CmputAbslutUprBound_() {
   return schedUprBound_;
 }
 
-DataDepGraph::DataDepGraph(MachineModel *machMdl, LATENCY_PRECISION ltncyPrcsn)
-    : DataDepStruct(machMdl) {
+DataDepGraph::DataDepGraph(std::shared_ptr<const MachineModel> machMdl,
+                           LATENCY_PRECISION ltncyPrcsn)
+    : DataDepStruct(std::move(machMdl)) {
   int i;
 
   type_ = DGT_FULL;
-  machMdl_ = machMdl;
   useFileLtncs_ = true;
   weight_ = 1.0;
   outptDags_ = ODG_ALL;
@@ -180,7 +176,7 @@ DataDepGraph::DataDepGraph(MachineModel *machMdl, LATENCY_PRECISION ltncyPrcsn)
   wasSetupForSchduling_ = false;
   strcpy(dagID_, "unknown");
 
-  instTypeCnt_ = (int16_t)machMdl->GetInstTypeCnt();
+  instTypeCnt_ = (int16_t)machMdl->InstTypes.size();
   instCntPerType_ = new InstCount[instTypeCnt_];
 
   for (i = 0; i < instTypeCnt_; i++) {
@@ -197,7 +193,7 @@ DataDepGraph::DataDepGraph(MachineModel *machMdl, LATENCY_PRECISION ltncyPrcsn)
   entryInstCnt_ = 0;
   exitInstCnt_ = 0;
 
-  RegFiles = llvm::make_unique<RegisterFile[]>(machMdl_->GetRegTypeCnt());
+  RegFiles = llvm::make_unique<RegisterFile[]>(machMdl_->RegisterTypes.size());
 }
 
 DataDepGraph::~DataDepGraph() {
@@ -223,7 +219,7 @@ FUNC_RESULT DataDepGraph::SetupForSchdulng(bool cmputTrnstvClsr) {
     SchedInstruction *inst = insts_[i];
     inst->SetupForSchdulng(instCnt_, cmputTrnstvClsr, cmputTrnstvClsr);
     InstType instType = inst->GetInstType();
-    IssueType issuType = machMdl_->GetIssueType(instType);
+    IssueType issuType = machMdl_->InstTypes[instType].IssueType;
     assert(issuType < issuTypeCnt_);
     inst->SetIssueType(issuType);
     instCntPerIssuType_[issuType]++;
@@ -268,7 +264,7 @@ FUNC_RESULT DataDepGraph::UpdateSetupForSchdulng(bool cmputTrnstvClsr) {
     SchedInstruction *inst = insts_[i];
     inst->SetupForSchdulng(instCnt_, cmputTrnstvClsr, cmputTrnstvClsr);
     InstType instType = inst->GetInstType();
-    IssueType issuType = machMdl_->GetIssueType(instType);
+    IssueType issuType = machMdl_->InstTypes[instType].IssueType;
     assert(issuType < issuTypeCnt_);
     inst->SetIssueType(issuType);
 
@@ -438,7 +434,7 @@ FUNC_RESULT DataDepGraph::ReadFrmFile(SpecsBuffer *buf,
     buf->GetNxtVldLine(pieceCnt, strngs, lngths); // skip the nodes line
   }
 
-  rslt = ParseF2Nodes_(buf, machMdl_);
+  rslt = ParseF2Nodes_(buf);
 
   if (rslt == RES_END) {
     endOfFileReached = true;
@@ -448,7 +444,7 @@ FUNC_RESULT DataDepGraph::ReadFrmFile(SpecsBuffer *buf,
     return rslt;
   }
 
-  rslt = ParseF2Edges_(buf, machMdl_);
+  rslt = ParseF2Edges_(buf);
 
   if (rslt == RES_END) {
     endOfFileReached = true;
@@ -517,8 +513,7 @@ FUNC_RESULT DataDepGraph::ParseF2Blocks_(SpecsBuffer *buf) {
   return RES_SUCCESS;
 }
 
-FUNC_RESULT DataDepGraph::ParseF2Nodes_(SpecsBuffer *buf,
-                                        MachineModel *machMdl) {
+FUNC_RESULT DataDepGraph::ParseF2Nodes_(SpecsBuffer *buf) {
   NXTLINE_TYPE nxtLine;
   InstCount i;
   InstCount nodeNum;
@@ -543,7 +538,7 @@ FUNC_RESULT DataDepGraph::ParseF2Nodes_(SpecsBuffer *buf,
     if (rslt != RES_SUCCESS)
       break;
 
-    if (isTraceFormat_ && machMdl->IsBranch(instType)) {
+    if (isTraceFormat_ && isBranch(*machMdl_, instType)) {
       // TODO(max): Remove this. It's reading and discarding irrelevant data.
       buf->ReadIntSpec("On-trace_Prob");
     }
@@ -555,7 +550,7 @@ FUNC_RESULT DataDepGraph::ParseF2Nodes_(SpecsBuffer *buf,
 
     int nodeID = 0;
 
-    if (machMdl_->IsArtificial(instType)) {
+    if (isArtificial(*machMdl_, instType)) {
       if (i == 0) { // root
         fileSchedOrder = 0;
         fileSchedCycle = 0;
@@ -571,14 +566,14 @@ FUNC_RESULT DataDepGraph::ParseF2Nodes_(SpecsBuffer *buf,
       maxFileSchedCycle = std::max(maxFileSchedCycle, fileSchedCycle);
     }
 
-    if (machMdl_->IsRealInst(instType)) {
+    if (isRealInst(*machMdl_, instType)) {
       realInstCnt_++;
     }
 
     int blkNum = lastBlkNum_;
 
     if (dagFileFormat_ == DFF_TR) {
-      if (!machMdl_->IsArtificial(instType)) {
+      if (!isArtificial(*machMdl_, instType)) {
         blkNum = buf->ReadIntSpec("block_num");
       }
 
@@ -592,7 +587,7 @@ FUNC_RESULT DataDepGraph::ParseF2Nodes_(SpecsBuffer *buf,
 
       lastBlkNum_ = blkNum;
 
-      if (machMdl_->IsBranch(instType)) {
+      if (isBranch(*machMdl_, instType)) {
         if (blkNum == blkNumForLastBranch) {
           includesNonStandardBlock_ = true;
           Logger::Info("Non-standard basic block: "
@@ -608,8 +603,7 @@ FUNC_RESULT DataDepGraph::ParseF2Nodes_(SpecsBuffer *buf,
                 fileSchedCycle, fileInstLwrBound, fileInstUprBound, blkNum);
 
     instCntPerType_[instType]++;
-    stats::instructionTypeCounts.Increment(
-        machMdl->GetInstTypeNameByCode(instType));
+    stats::instructionTypeCounts.Increment(machMdl_->InstTypes[instType].Name);
   }
 
   if (rslt == RES_SUCCESS) {
@@ -656,7 +650,7 @@ FUNC_RESULT DataDepGraph::ReadInstName_(SpecsBuffer *buf, int i, char *instName,
   */
 
   rmvDblQuotes(strngs[2], lngths[2], instName);
-  instType = machMdl_->GetInstTypeByName(instName, prevInstName);
+  instType = instTypeByName(*machMdl_, instName, prevInstName);
 
   if (instType == INVALID_INST_TYPE) {
     Logger::Error("Invalid inst type %s for node #%d", instName, nodeNum);
@@ -666,15 +660,15 @@ FUNC_RESULT DataDepGraph::ReadInstName_(SpecsBuffer *buf, int i, char *instName,
 
   strcpy(prevInstName, instName);
 
-  if (machMdl_->IsPipelined(instType) == false) {
+  if (!machMdl_->InstTypes[instType].Pipelined) {
     includesUnpipelined_ = true;
   }
 
-  if (machMdl_->IsSupported(instType) == false) {
+  if (!machMdl_->InstTypes[instType].Supported) {
     includesUnsupported_ = true;
   }
 
-  if (machMdl_->IsCall(instType)) {
+  if (isCall(*machMdl_, instType)) {
     includesCall_ = true;
   }
 
@@ -731,8 +725,7 @@ InstCount DataDepGraph::GetAdjustedFileSchedCycle(InstCount instNum) {
   return adjstdSchedCycle;
 }
 
-FUNC_RESULT DataDepGraph::ParseF2Edges_(SpecsBuffer *buf,
-                                        MachineModel *machMdl) {
+FUNC_RESULT DataDepGraph::ParseF2Edges_(SpecsBuffer *buf) {
   int pieceCnt;
   char *strngs[INBUF_MAX_PIECES_PERLINE];
   int lngths[INBUF_MAX_PIECES_PERLINE];
@@ -775,7 +768,7 @@ FUNC_RESULT DataDepGraph::ParseF2Edges_(SpecsBuffer *buf,
         ltncy = atoi(strngs[4]);
       } else {
         InstType frmInstType = insts_[frmNodeNum]->GetInstType();
-        ltncy = machMdl->GetLatency(frmInstType, depType);
+        ltncy = latency(*machMdl_, frmInstType, depType);
       }
 
       CreateEdge_(frmNodeNum, toNodeNum, ltncy, depType);
@@ -831,7 +824,7 @@ SchedInstruction *DataDepGraph::CreateNode_(
   SchedInstruction *newInstPtr;
   newInstPtr = new SchedInstruction(instNum, instName, instType, opCode,
                                     2 * instCnt_, nodeID, fileSchedOrder,
-                                    fileSchedCycle, fileLB, fileUB, machMdl_);
+                                    fileSchedCycle, fileLB, fileUB, *machMdl_);
   if (instNum < 0 || instNum >= instCnt_)
     llvm::report_fatal_error("Invalid instruction number", false);
   //  Logger::Info("Instruction order = %d, instCnt_ = %d", fileSchedOrder,
@@ -867,7 +860,7 @@ GraphEdge *DataDepGraph::CreateEdge(SchedInstruction *frmNode,
   stats::dependenceTypeLatencies.Add(GetDependenceTypeName(depType), ltncy);
   if (depType == DEP_DATA) {
     stats::instructionTypeLatencies.Add(
-        machMdl_->GetInstTypeNameByCode(frmNode->GetInstType()), ltncy);
+        machMdl_->InstTypes[frmNode->GetInstType()].Name, ltncy);
   }
 #endif
 
@@ -920,8 +913,7 @@ void DataDepGraph::CreateEdge_(InstCount frmNodeNum, InstCount toNodeNum,
   stats::dependenceTypeLatencies.Add(GetDependenceTypeName(depType), ltncy);
   if (depType == DEP_DATA) {
     InstType inst = ((SchedInstruction *)frmNode)->GetInstType();
-    stats::instructionTypeLatencies.Add(machMdl_->GetInstTypeNameByCode(inst),
-                                        ltncy);
+    stats::instructionTypeLatencies.Add(machMdl_->InstTypes[inst].Name, ltncy);
   }
 #endif
 
@@ -1046,7 +1038,7 @@ FUNC_RESULT DataDepGraph::WriteToFile(FILE *file, FUNC_RESULT rslt,
   strcpy(titleStrng, "dag");
 
   fprintf(file, "%s %d \"%s\"\n", titleStrng, instCnt_,
-          machMdl_->GetModelName().c_str());
+          machMdl_->ModelName.c_str());
 
   fprintf(file, "{\n");
 
@@ -1085,7 +1077,7 @@ void DataDepGraph::WriteNodeInfoToF2File_(FILE *file) {
       fprintf(file, "\"%s\"\n", inst->GetName());
     }
 
-    if (inst->GetInstType() != machMdl_->GetInstTypeByName("artificial")) {
+    if (inst->GetInstType() != instTypeByName(*machMdl_, "artificial")) {
       fprintf(file, "    sched_order %d\n", inst->GetFileSchedOrder());
       fprintf(file, "    issue_cycle %d\n", inst->GetFileSchedCycle());
     }
@@ -1198,7 +1190,7 @@ void DataDepGraph::PrintInstTypeInfo(FILE *file) {
   fprintf(file, "\n\nInst. Types:");
 
   for (i = 0; i < instTypeCnt_; i++) {
-    fprintf(file, "\n%s: %d", machMdl_->GetInstTypeNameByCode(i),
+    fprintf(file, "\n%s: %d", machMdl_->InstTypes[i].Name.c_str(),
             instCntPerType_[i]);
   }
 }
@@ -1232,7 +1224,7 @@ void DataDepGraph::CountDeps(InstCount &totDepCnt, InstCount &crossDepCnt) {
          child != NULL;
          child = inst->GetNxtScsr(NULL, &ltncy, &depType)) {
       if (depType == DEP_DATA) {
-        if (machMdl_->IsFloat(inst->GetInstType())) {
+        if (isFloat(*machMdl_, inst->GetInstType())) {
           fpDefCnt++;
         } else {
           intDefCnt++;
@@ -1263,7 +1255,7 @@ void DataDepGraph::AddDefsAndUses(RegisterFile regFiles[]) {
         if (reg == NULL) {
           int16_t regType;
           int* regCntPtr;
-          if (machMdl_->IsFloat(inst->GetInstType())) {
+          if (isFloat(*machMdl_, inst->GetInstType())) {
             regType = 1;
             regCntPtr = &fpRegCnt;
           } else {
@@ -1308,8 +1300,8 @@ InstCount DataDepGraph::GetRltvCrtclPath(SchedInstruction *ref,
 }
 
 DataDepSubGraph::DataDepSubGraph(DataDepGraph *fullGraph, InstCount maxInstCnt,
-                                 MachineModel *machMdl)
-    : DataDepStruct(machMdl) {
+                                 std::shared_ptr<const MachineModel> machMdl)
+    : DataDepStruct(std::move(machMdl)) {
   InstCount i;
 
   fullGraph_ = fullGraph;
@@ -1517,21 +1509,21 @@ void DataDepSubGraph::InitForSchdulng(bool clearAll) {
 }
 
 void DataDepSubGraph::CreateRootAndLeafInsts_() {
-  InstType instType = machMdl_->GetInstTypeByName("artificial");
-  IssueType issuType = machMdl_->GetIssueType(instType);
+  InstType instType = instTypeByName(*machMdl_, "artificial");
+  IssueType issuType = machMdl_->InstTypes[instType].IssueType;
   assert(0 <= issuType && issuType < issuTypeCnt_);
 
   assert(rootInst_ == NULL && leafInst_ == NULL);
 
   rootInst_ =
       new SchedInstruction(INVALID_VALUE, "root", instType, " ", maxInstCnt_, 0,
-                           INVALID_VALUE, INVALID_VALUE, 0, 0, machMdl_);
+                           INVALID_VALUE, INVALID_VALUE, 0, 0, *machMdl_);
 
   rootInst_->SetIssueType(issuType);
 
   leafInst_ =
       new SchedInstruction(INVALID_VALUE, "leaf", instType, " ", maxInstCnt_, 0,
-                           INVALID_VALUE, INVALID_VALUE, 0, 0, machMdl_);
+                           INVALID_VALUE, INVALID_VALUE, 0, 0, *machMdl_);
 
   leafInst_->SetIssueType(issuType);
 
@@ -1666,7 +1658,7 @@ void DataDepSubGraph::AddExtrnlInst(SchedInstruction *inst) {
 }
 
 InstCount DataDepSubGraph::GetAvlblSlots(IssueType issuType) {
-  int slotsPerCycle = machMdl_->GetSlotsPerCycle(issuType);
+  int slotsPerCycle = machMdl_->IssueTypes[issuType].SlotsCount;
   assert(schedLwrBound_ >= 2);
   int totSlots = (schedLwrBound_ - 2) * slotsPerCycle;
   int avlblSlots = totSlots - instCntPerIssuType_[issuType];
@@ -2408,7 +2400,7 @@ InstCount DataDepSubGraph::CmputTwoInstDynmcLwrBound_() {
 
   IssueType inst1IssuType = inst1->GetIssueType();
   IssueType inst2IssuType = inst2->GetIssueType();
-  int16_t issuRate = (int16_t)machMdl_->GetIssueRate();
+  int16_t issuRate = (int16_t)machMdl_->IssueRate;
   InstCount rsrcLB;
 
   if (issuRate == 1) {
@@ -2418,7 +2410,7 @@ InstCount DataDepSubGraph::CmputTwoInstDynmcLwrBound_() {
       rsrcLB = 1;
     } else {
       int16_t slotsPerCycle =
-          (int16_t)machMdl_->GetSlotsPerCycle(inst1IssuType);
+          (int16_t)machMdl_->IssueTypes[inst1IssuType].SlotsCount;
       rsrcLB = slotsPerCycle < 2 ? 2 : 1;
     }
   }
@@ -2596,10 +2588,10 @@ InstCount DataDepSubGraph::GetDistFrmLeaf(SchedInstruction *inst) {
   return distFrmLeaf;
 }
 
-InstSchedule::InstSchedule(MachineModel *machMdl, DataDepGraph *dataDepGraph,
-                           bool vrfy) {
+InstSchedule::InstSchedule(std::shared_ptr<const MachineModel> machMdl,
+                           DataDepGraph *dataDepGraph, bool vrfy) {
   machMdl_ = machMdl;
-  issuRate_ = machMdl->GetIssueRate();
+  issuRate_ = machMdl->IssueRate;
   totInstCnt_ = dataDepGraph->GetInstCnt();
   schedUprBound_ = dataDepGraph->GetAbslutSchedUprBound();
   totSlotCnt_ = schedUprBound_ * issuRate_;
@@ -2608,7 +2600,7 @@ InstSchedule::InstSchedule(MachineModel *machMdl, DataDepGraph *dataDepGraph,
   instInSlot_ = new InstCount[totSlotCnt_];
   slotForInst_ = new InstCount[totInstCnt_];
   spillCosts_ = new InstCount[totInstCnt_];
-  peakRegPressures_ = new InstCount[machMdl->GetRegTypeCnt()];
+  peakRegPressures_ = new InstCount[machMdl->RegisterTypes.size()];
 
   InstCount i;
 
@@ -2776,7 +2768,7 @@ void InstSchedule::SetSpillCosts(InstCount spillCosts[]) {
 
 void InstSchedule::SetPeakRegPressures(InstCount peakRegPressures[]) {
 
-  for (InstCount i = 0; i < machMdl_->GetRegTypeCnt(); i++) {
+  for (InstCount i = 0; i < machMdl_->RegisterTypes.size(); i++) {
     peakRegPressures_[i] = peakRegPressures[i];
   }
 }
@@ -2784,7 +2776,7 @@ void InstSchedule::SetPeakRegPressures(InstCount peakRegPressures[]) {
 InstCount
 InstSchedule::GetPeakRegPressures(const InstCount *&regPressures) const {
   regPressures = peakRegPressures_;
-  return machMdl_->GetRegTypeCnt();
+  return machMdl_->RegisterTypes.size();
 }
 
 InstCount InstSchedule::GetSpillCost(InstCount stepNum) {
@@ -2839,9 +2831,10 @@ void InstSchedule::Print(std::ostream &out, const char *const label) {
 void InstSchedule::PrintRegPressures() const {
   Logger::Info("OptSched max reg pressures:");
   InstCount i;
-  for (i = 0; i < machMdl_->GetRegTypeCnt(); i++) {
-    Logger::Info("%s: Peak %d Limit %d", machMdl_->GetRegTypeName(i).c_str(),
-                 peakRegPressures_[i], machMdl_->GetPhysRegCnt(i));
+  for (i = 0; i < machMdl_->RegisterTypes.size(); i++) {
+    Logger::Info("%s: Peak %d Limit %d",
+                 machMdl_->RegisterTypes[i].Name.c_str(), peakRegPressures_[i],
+                 machMdl_->RegisterTypes[i].Count);
   }
 }
 #endif
@@ -2866,7 +2859,7 @@ void InstSchedule::PrintInstList(FILE *file, DataDepGraph *dataDepGraph,
 #endif
 }
 
-bool InstSchedule::Verify(MachineModel *machMdl, DataDepGraph *dataDepGraph) {
+bool InstSchedule::Verify(DataDepGraph *dataDepGraph) {
   if (schduldInstCnt_ < totInstCnt_) {
     Logger::Error("Invalid schedule: too few scheduled instructions: %d of %d",
                   schduldInstCnt_, totInstCnt_);
@@ -2886,7 +2879,7 @@ bool InstSchedule::Verify(MachineModel *machMdl, DataDepGraph *dataDepGraph) {
     }
   }
 
-  if (!VerifySlots_(machMdl, dataDepGraph))
+  if (!VerifySlots_(dataDepGraph))
     return false;
   if (!VerifyDataDeps_(dataDepGraph))
     return false;
@@ -2907,16 +2900,13 @@ bool InstSchedule::Verify(MachineModel *machMdl, DataDepGraph *dataDepGraph) {
   return true;
 }
 
-bool InstSchedule::VerifySlots_(MachineModel *machMdl,
-                                DataDepGraph *dataDepGraph) {
+bool InstSchedule::VerifySlots_(DataDepGraph *dataDepGraph) {
   InstCount i;
-  int slotsPerCycle[MAX_ISSUTYPE_CNT];
+  const auto slotsPerCycle = allSlotsPerCycle(*machMdl_);
   int filledSlotsPerCycle[MAX_ISSUTYPE_CNT];
-  int issuTypeCnt;
+  int issuTypeCnt = (int)slotsPerCycle.size();
   InstCount cycleNum, localSlotNum, globalSlotNum;
   InstCount schduldInstCnt = 0;
-
-  issuTypeCnt = machMdl->GetSlotsPerCycle(slotsPerCycle);
 
   for (cycleNum = 0, globalSlotNum = 0; globalSlotNum < crntSlotNum_;
        cycleNum++) {

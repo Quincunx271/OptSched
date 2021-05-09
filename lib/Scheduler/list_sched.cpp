@@ -7,9 +7,10 @@
 
 using namespace llvm::opt_sched;
 
-ListScheduler::ListScheduler(DataDepGraph *dataDepGraph, MachineModel *machMdl,
+ListScheduler::ListScheduler(DataDepGraph *dataDepGraph,
+                             std::shared_ptr<const MachineModel> machMdl,
                              InstCount schedUprBound, SchedPriorities prirts)
-    : ConstrainedScheduler(dataDepGraph, machMdl, schedUprBound) {
+    : ConstrainedScheduler(dataDepGraph, std::move(machMdl), schedUprBound) {
   crntSched_ = NULL;
 
   prirts_ = prirts;
@@ -83,11 +84,10 @@ FUNC_RESULT ListScheduler::FindSchedule(InstSchedule *sched, SchedRegion *rgn) {
   return RES_SUCCESS;
 }
 
-SequentialListScheduler::SequentialListScheduler(DataDepGraph *dataDepGraph,
-                                                 MachineModel *machMdl,
-                                                 InstCount schedUprBound,
-                                                 SchedPriorities prirts)
-    : ListScheduler(dataDepGraph, machMdl, schedUprBound, prirts) {}
+SequentialListScheduler::SequentialListScheduler(
+    DataDepGraph *dataDepGraph, std::shared_ptr<const MachineModel> machMdl,
+    InstCount schedUprBound, SchedPriorities prirts)
+    : ListScheduler(dataDepGraph, std::move(machMdl), schedUprBound, prirts) {}
 
 bool SequentialListScheduler::ChkInstLglty_(SchedInstruction *inst) const {
   if (IsTriviallyLegal_(inst))

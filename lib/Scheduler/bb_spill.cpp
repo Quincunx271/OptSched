@@ -142,7 +142,7 @@ void BBWithSpill::CmputSchedUprBound_() {
   // than the known one
   int maxLngthIncrmnt = (GetBestCost() - 1) / schedCostFactor_;
 
-  if (machMdl_->IsSimple() && dataDepGraph_->GetMaxLtncy() <= 1) {
+  if (isSimple(*machMdl_) && dataDepGraph_->GetMaxLtncy() <= 1) {
 #if defined(IS_DEBUG_DAG) || defined(IS_DEBUG_SIMPLE_DAGS)
     Logger::Info("Simple DAG with max latency of one or less.");
 #endif
@@ -741,7 +741,7 @@ void BBWithSpill::UnschdulInst(SchedInstruction *inst, InstCount cycleNum,
                                InstCount slotNum, EnumTreeNode *trgtNode) {
   if (slotNum == 0) {
     crntCycleNum_ = cycleNum - 1;
-    crntSlotNum_ = machMdl_->GetIssueRate() - 1;
+    crntSlotNum_ = machMdl_->IssueRate - 1;
   } else {
     crntCycleNum_ = cycleNum;
     crntSlotNum_ = slotNum - 1;
@@ -881,7 +881,8 @@ InstCount BBWithSpill::CmputCostForFunction(SPILL_COST_FUNCTION SpillCF) {
   case SCF_PEAK_PER_TYPE: {
     InstCount SC = 0;
     for (int i = 0; i < regTypeCnt_; i++)
-      SC += std::max(0, peakRegPressures_[i] - machMdl_->GetPhysRegCnt(i));
+      SC +=
+          std::max(0, peakRegPressures_[i] - machMdl_->RegisterTypes[i].size());
     return SC;
   }
   default: {
@@ -890,7 +891,7 @@ InstCount BBWithSpill::CmputCostForFunction(SPILL_COST_FUNCTION SpillCF) {
     InstCount SC = 0;
     std::for_each(regPressures_.begin(), regPressures_.end(),
                   [&](InstCount RP) {
-                    SC += std::max(0, RP - machMdl_->GetPhysRegCnt(i++));
+                    SC += std::max(0, RP - machMdl_->RegisterTypes[i++].size()));
                   });
     return SC;
   }

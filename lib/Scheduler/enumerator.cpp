@@ -188,7 +188,7 @@ void EnumTreeNode::SetRsrvSlots(int16_t rsrvSlotCnt, ReserveSlot *rsrvSlots) {
     return;
   }
 
-  int issuRate = enumrtr_->machMdl_->GetIssueRate();
+  int issuRate = enumrtr_->machMdl_->IssueRate;
 
   rsrvSlots_ = new ReserveSlot[issuRate];
 
@@ -432,7 +432,8 @@ EnumTreeNode::ExaminedInst::~ExaminedInst() {
 /****************************************************************************/
 /****************************************************************************/
 
-Enumerator::Enumerator(DataDepGraph *dataDepGraph, MachineModel *machMdl,
+Enumerator::Enumerator(DataDepGraph *dataDepGraph,
+                       std::shared_ptr<const MachineModel> machMdl,
                        InstCount schedUprBound, int16_t sigHashSize,
                        SchedPriorities prirts, Pruning PruningStrategy,
                        bool SchedForRPOnly, bool enblStallEnum,
@@ -1877,14 +1878,17 @@ void Enumerator::PrintLog_() {
 bool Enumerator::EnumStall_() { return enblStallEnum_; }
 /*****************************************************************************/
 
-LengthEnumerator::LengthEnumerator(
-    DataDepGraph *dataDepGraph, MachineModel *machMdl, InstCount schedUprBound,
-    int16_t sigHashSize, SchedPriorities prirts, Pruning PruningStrategy,
-    bool SchedForRPOnly, bool enblStallEnum, Milliseconds timeout,
-    InstCount preFxdInstCnt, SchedInstruction *preFxdInsts[])
-    : Enumerator(dataDepGraph, machMdl, schedUprBound, sigHashSize, prirts,
-                 PruningStrategy, SchedForRPOnly, enblStallEnum, timeout,
-                 preFxdInstCnt, preFxdInsts) {
+LengthEnumerator::LengthEnumerator(DataDepGraph *dataDepGraph,
+                                   std::shared_ptr<const MachineModel> machMdl,
+                                   InstCount schedUprBound, int16_t sigHashSize,
+                                   SchedPriorities prirts,
+                                   Pruning PruningStrategy, bool SchedForRPOnly,
+                                   bool enblStallEnum, Milliseconds timeout,
+                                   InstCount preFxdInstCnt,
+                                   SchedInstruction *preFxdInsts[])
+    : Enumerator(dataDepGraph, std::move(machMdl), schedUprBound, sigHashSize,
+                 prirts, PruningStrategy, SchedForRPOnly, enblStallEnum,
+                 timeout, preFxdInstCnt, preFxdInsts) {
   SetupAllocators_();
   tmpHstryNode_ = new HistEnumTreeNode;
 }
@@ -1965,14 +1969,14 @@ void LengthEnumerator::FreeHistNode_(HistEnumTreeNode *histNode) {
 /*****************************************************************************/
 
 LengthCostEnumerator::LengthCostEnumerator(
-    DataDepGraph *dataDepGraph, MachineModel *machMdl, InstCount schedUprBound,
-    int16_t sigHashSize, SchedPriorities prirts, Pruning PruningStrategy,
-    bool SchedForRPOnly, bool enblStallEnum, Milliseconds timeout,
-    SPILL_COST_FUNCTION spillCostFunc, InstCount preFxdInstCnt,
-    SchedInstruction *preFxdInsts[])
-    : Enumerator(dataDepGraph, machMdl, schedUprBound, sigHashSize, prirts,
-                 PruningStrategy, SchedForRPOnly, enblStallEnum, timeout,
-                 preFxdInstCnt, preFxdInsts) {
+    DataDepGraph *dataDepGraph, std::shared_ptr<const MachineModel> machMdl,
+    InstCount schedUprBound, int16_t sigHashSize, SchedPriorities prirts,
+    Pruning PruningStrategy, bool SchedForRPOnly, bool enblStallEnum,
+    Milliseconds timeout, SPILL_COST_FUNCTION spillCostFunc,
+    InstCount preFxdInstCnt, SchedInstruction *preFxdInsts[])
+    : Enumerator(dataDepGraph, std::move(machMdl), schedUprBound, sigHashSize,
+                 prirts, PruningStrategy, SchedForRPOnly, enblStallEnum,
+                 timeout, preFxdInstCnt, preFxdInsts) {
   SetupAllocators_();
 
   costChkCnt_ = 0;

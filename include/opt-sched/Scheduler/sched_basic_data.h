@@ -141,7 +141,8 @@ public:
   SchedInstruction(InstCount num, const string &name, InstType instType,
                    const string &opCode, InstCount maxInstCnt, int nodeID,
                    InstCount fileSchedCycle, InstCount fileSchedOrder,
-                   InstCount fileLB, InstCount fileUB, MachineModel *model);
+                   InstCount fileLB, InstCount fileUB,
+                   const MachineModel &model);
   // Deallocates the memory used by the instruction and destroys the object.
   ~SchedInstruction();
 

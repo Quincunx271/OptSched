@@ -53,7 +53,8 @@ class InstScheduler {
 public:
   // Constructs a scheduler for the given machine and dependence graph, with
   // the specified upper bound.
-  InstScheduler(DataDepStruct *dataDepGraph, MachineModel *machMdl,
+  InstScheduler(DataDepStruct *dataDepGraph,
+                std::shared_ptr<const MachineModel> machMdl,
                 InstCount schedUprBound);
   // Deallocates memory used by the scheduler.
   virtual ~InstScheduler();
@@ -62,7 +63,7 @@ public:
 
 protected:
   // A pointer to the machine which this scheduler uses
-  MachineModel *machMdl_;
+  std::shared_ptr<const MachineModel> machMdl_;
 
   // The issue rate of the underlying machine model.
   // TODO(ghassan): Eliminate.
@@ -72,7 +73,7 @@ protected:
   // The maximum number of total issue slots per cycle, for all issue types.
   int issuSlotCnt_;
   // How many slots of each issue type the machine has per cycle.
-  int *slotsPerTypePerCycle_;
+  llvm::SmallVector<int, MAX_ISSUTYPE_CNT> slotsPerTypePerCycle_;
   // How many instructions of each issue type does the dependence graph
   // contain.
   InstCount *instCntPerIssuType_;
@@ -104,7 +105,8 @@ class ConstrainedScheduler : public InstScheduler {
 public:
   // Constructs a constrained scheduler for the given machine and dependence
   // graph, with the specified upper bound.
-  ConstrainedScheduler(DataDepGraph *dataDepGraph, MachineModel *machMdl,
+  ConstrainedScheduler(DataDepGraph *dataDepGraph,
+                       std::shared_ptr<const MachineModel> machMdl,
                        InstCount schedUprBound);
   // Deallocates memory used by the scheduler.
   virtual ~ConstrainedScheduler();

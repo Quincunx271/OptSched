@@ -25,12 +25,12 @@ namespace opt_sched {
 
 class LLVMRegTypeFilter;
 class ScheduleDAGOptSched;
-class OptSchedMachineModel;
 
 class OptSchedDDGWrapperBasic : public DataDepGraph {
 public:
   OptSchedDDGWrapperBasic(llvm::MachineSchedContext *Context,
-                          ScheduleDAGOptSched *DAG, OptSchedMachineModel *MM,
+                          ScheduleDAGOptSched *DAG,
+                          std::shared_ptr<const MachineModel> MM,
                           LATENCY_PRECISION LatencyPrecision,
                           const std::string &RegionID);
 
@@ -52,9 +52,6 @@ public:
   void convertRegFiles() override;
 
 protected:
-  // A convenience machMdl_ pointer casted to OptSchedMachineModel*.
-  OptSchedMachineModel *MM;
-
   // The LLVM scheduler root class, used to access environment
   // and target info.
   const llvm::MachineSchedContext *Contex;
@@ -150,7 +147,7 @@ protected:
 // threshold don't track that register.
 class LLVMRegTypeFilter {
 private:
-  const MachineModel *MM;
+  std::shared_ptr<const MachineModel> MM;
   const llvm::TargetRegisterInfo *TRI;
   const std::vector<unsigned> &RegionPressure;
   float RegFilterFactor;
@@ -162,7 +159,8 @@ private:
   void FindPSetsToFilter();
 
 public:
-  LLVMRegTypeFilter(const MachineModel *MM, const llvm::TargetRegisterInfo *TRI,
+  LLVMRegTypeFilter(std::shared_ptr<const MachineModel> MM,
+                    const llvm::TargetRegisterInfo *TRI,
                     const std::vector<unsigned> &RegionPressure,
                     float RegFilterFactor = .7f);
   ~LLVMRegTypeFilter() = default;

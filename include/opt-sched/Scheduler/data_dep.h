@@ -108,7 +108,7 @@ class GraphTrans;
 class DataDepStruct {
 public:
   // TODO(max): Document.
-  DataDepStruct(MachineModel *machMdl);
+  DataDepStruct(std::shared_ptr<const MachineModel> machMdl);
   // TODO(max): Document.
   virtual ~DataDepStruct();
 
@@ -137,7 +137,7 @@ public:
 
 protected:
   // A pointer to the machine which this graph uses.
-  MachineModel *machMdl_;
+  std::shared_ptr<const MachineModel> machMdl_;
 
   DEP_GRAPH_TYPE type_;
 
@@ -173,7 +173,8 @@ class DataDepGraph : public llvm::opt_sched::OptSchedDDGWrapperBase,
                      public DirAcycGraph,
                      public DataDepStruct {
 public:
-  DataDepGraph(MachineModel *machMdl, LATENCY_PRECISION ltncyPcsn);
+  DataDepGraph(std::shared_ptr<const MachineModel> machMdl,
+               LATENCY_PRECISION ltncyPcsn);
   virtual ~DataDepGraph();
 
   // Reads the data dependence graph from a text file.
@@ -284,9 +285,9 @@ public:
   void PrintEdgeCntPerLtncyInfo();
 
   int16_t GetMaxUseCnt() { return maxUseCnt_; }
-  int16_t GetRegTypeCnt() { return machMdl_->GetRegTypeCnt(); }
+  int16_t GetRegTypeCnt() { return (int16_t)machMdl_->RegisterTypes.size(); }
   int GetPhysRegCnt(int16_t regType) {
-    return machMdl_->GetPhysRegCnt(regType);
+    return machMdl_->RegisterTypes[regType].Count;
   }
 
   RegisterFile *getRegFiles() { return RegFiles.get(); }
@@ -334,8 +335,6 @@ protected:
   // A list of DDG mutations
   SmallVector<std::unique_ptr<GraphTrans>, 0> graphTrans_;
 
-  MachineModel *machMdl_;
-
   bool backTrackEnbl_;
 
   char dagID_[MAX_NAMESIZE];
@@ -375,8 +374,8 @@ protected:
   std::unique_ptr<RegisterFile[]> RegFiles;
 
   void AllocArrays_(InstCount instCnt);
-  FUNC_RESULT ParseF2Nodes_(SpecsBuffer *specsBuf, MachineModel *machMdl);
-  FUNC_RESULT ParseF2Edges_(SpecsBuffer *specsBuf, MachineModel *machMdl);
+  FUNC_RESULT ParseF2Nodes_(SpecsBuffer *specsBuf);
+  FUNC_RESULT ParseF2Edges_(SpecsBuffer *specsBuf);
   FUNC_RESULT ParseF2Blocks_(SpecsBuffer *buf);
 
   FUNC_RESULT ReadInstName_(SpecsBuffer *buf, int i, char *instName,
@@ -532,7 +531,7 @@ protected:
 
 public:
   DataDepSubGraph(DataDepGraph *fullGraph, InstCount maxInstCnt,
-                  MachineModel *machMdl);
+                  std::shared_ptr<const MachineModel> machMdl);
   virtual ~DataDepSubGraph();
   void InitForSchdulng(bool clearAll);
   void SetupForDynmcLwrBounds(InstCount schedUprBound);
@@ -646,17 +645,18 @@ private:
   // by the reg allocator
   int spillCnddtCnt_;
 
-  MachineModel *machMdl_;
+  std::shared_ptr<const MachineModel> machMdl_;
 
   bool vrfy_;
 
-  bool VerifySlots_(MachineModel *machMdl, DataDepGraph *dataDepGraph);
+  bool VerifySlots_(DataDepGraph *dataDepGraph);
   bool VerifyDataDeps_(DataDepGraph *dataDepGraph);
   void GetCycleAndSlotNums_(InstCount globSlotNum, InstCount &cycleNum,
                             InstCount &slotNum);
 
 public:
-  InstSchedule(MachineModel *machMdl, DataDepGraph *dataDepGraph, bool vrfy);
+  InstSchedule(std::shared_ptr<const MachineModel> machMdl,
+               DataDepGraph *dataDepGraph, bool vrfy);
   ~InstSchedule();
   bool operator==(InstSchedule &b) const;
 
@@ -710,7 +710,7 @@ public:
   void PrintInstList(FILE *file, DataDepGraph *dataDepGraph,
                      const char *title) const;
   void PrintRegPressures() const;
-  bool Verify(MachineModel *machMdl, DataDepGraph *dataDepGraph);
+  bool Verify(DataDepGraph *dataDepGraph);
   void PrintClassData();
 };
 /*****************************************************************************/

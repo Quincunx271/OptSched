@@ -41,16 +41,16 @@ static Printable printOptSchedReg(const Register *Reg,
 #endif
 
 static std::unique_ptr<LLVMRegTypeFilter> createLLVMRegTypeFilter(
-    const MachineModel *MM, const llvm::TargetRegisterInfo *TRI,
+    std::shared_ptr<const MachineModel> MM, const llvm::TargetRegisterInfo *TRI,
     const std::vector<unsigned> &RegionPressure, float RegFilterFactor = .7f) {
 
-  return std::unique_ptr<LLVMRegTypeFilter>(
-      new LLVMRegTypeFilter(MM, TRI, RegionPressure, RegFilterFactor));
+  return std::unique_ptr<LLVMRegTypeFilter>(new LLVMRegTypeFilter(
+      std::move(MM), TRI, RegionPressure, RegFilterFactor));
 }
 
 OptSchedDDGWrapperBasic::OptSchedDDGWrapperBasic(
     MachineSchedContext *Context, ScheduleDAGOptSched *DAG,
-    OptSchedMachineModel *MM, LATENCY_PRECISION LatencyPrecision,
+    std::shared_ptr<const MachineModel> MM, LATENCY_PRECISION LatencyPrecision,
     const std::string &RegionID)
     : DataDepGraph(MM, LatencyPrecision), MM(MM), Contex(Context), DAG(DAG),
       RTFilter(nullptr) {
@@ -534,9 +534,9 @@ void OptSchedDDGWrapperBasic::countBoundaryLiveness(
 }
 
 LLVMRegTypeFilter::LLVMRegTypeFilter(
-    const MachineModel *MM, const llvm::TargetRegisterInfo *TRI,
+    std::shared_ptr<const MachineModel> MM, const llvm::TargetRegisterInfo *TRI,
     const std::vector<unsigned> &RegionPressure, float RegFilterFactor)
-    : MM(MM), TRI(TRI), RegionPressure(RegionPressure),
+    : MM(std::move(MM)), TRI(TRI), RegionPressure(RegionPressure),
       RegFilterFactor(RegFilterFactor) {
   FindPSetsToFilter();
 }

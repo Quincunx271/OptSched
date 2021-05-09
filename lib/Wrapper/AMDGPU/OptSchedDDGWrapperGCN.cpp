@@ -17,12 +17,12 @@
 using namespace llvm;
 using namespace llvm::opt_sched;
 
-OptSchedDDGWrapperGCN::OptSchedDDGWrapperGCN(MachineSchedContext *Context,
-                                             ScheduleDAGOptSched *DAG,
-                                             OptSchedMachineModel *MM,
-                                             LATENCY_PRECISION LatencyPrecision,
-                                             const std::string &RegionID)
-    : OptSchedDDGWrapperBasic(Context, DAG, MM, LatencyPrecision, RegionID),
+OptSchedDDGWrapperGCN::OptSchedDDGWrapperGCN(
+    MachineSchedContext *Context, ScheduleDAGOptSched *DAG,
+    std::shared_ptr<const MachineModel> MM, LATENCY_PRECISION LatencyPrecision,
+    const std::string &RegionID)
+    : OptSchedDDGWrapperBasic(Context, DAG, std::move(MM), LatencyPrecision,
+                              RegionID),
       SUnits(DAG->SUnits), LIS(DAG->getLIS()), MRI(DAG->MRI) {}
 
 namespace {

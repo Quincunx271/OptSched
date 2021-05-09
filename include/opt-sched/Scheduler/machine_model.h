@@ -112,7 +112,7 @@ struct MachineModel {
 std::shared_ptr<MachineModel> parseMachineModel(const std::string &ModelFile);
 
 InstType instTypeByName(const MachineModel &, llvm::StringRef typeName,
-                        llvm::StringRef prevName);
+                        llvm::StringRef prevName = "");
 
 int16_t regTypeByName(const MachineModel &, llvm::StringRef regTypeName);
 
@@ -130,6 +130,8 @@ bool isFloat(const MachineModel &, InstType instTypeCode);
 InstType defaultInstType(const MachineModel &);
 
 bool isSimple(const MachineModel &);
+
+llvm::SmallVector<int, MAX_ISSUTYPE_CNT> allSlotsPerCycle(const MachineModel &);
 
 } // namespace opt_sched
 } // namespace llvm

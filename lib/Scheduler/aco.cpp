@@ -50,10 +50,10 @@ double RandDouble(double min, double max) {
 //#endif
 
 ACOScheduler::ACOScheduler(DataDepGraph *dataDepGraph,
-                           MachineModel *machineModel, InstCount upperBound,
-                           SchedPriorities priorities, bool vrfySched,
-                           bool IsPostBB)
-    : ConstrainedScheduler(dataDepGraph, machineModel, upperBound) {
+                           std::shared_ptr<const MachineModel> machineModel,
+                           InstCount upperBound, SchedPriorities priorities,
+                           bool vrfySched, bool IsPostBB)
+    : ConstrainedScheduler(dataDepGraph, std::move(machineModel), upperBound) {
   VrfySched_ = vrfySched;
   this->IsPostBB = IsPostBB;
   prirts_ = priorities;

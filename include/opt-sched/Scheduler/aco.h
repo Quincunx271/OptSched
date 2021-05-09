@@ -37,7 +37,8 @@ struct Choice {
 
 class ACOScheduler : public ConstrainedScheduler {
 public:
-  ACOScheduler(DataDepGraph *dataDepGraph, MachineModel *machineModel,
+  ACOScheduler(DataDepGraph *dataDepGraph,
+               std::shared_ptr<const MachineModel> machineModel,
                InstCount upperBound, SchedPriorities priorities, bool vrfySched,
                bool IsPostBB);
   virtual ~ACOScheduler();

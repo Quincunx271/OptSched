@@ -22,20 +22,22 @@ namespace {
 
 class OptSchedGenericTarget : public OptSchedTarget {
 public:
-  std::unique_ptr<OptSchedMachineModel>
+  std::shared_ptr<MachineModel>
   createMachineModel(const char *ConfigPath) override {
-    return llvm::make_unique<OptSchedMachineModel>(ConfigPath);
+    return parseMachineModel(ConfigPath);
   }
 
   std::unique_ptr<OptSchedDDGWrapperBase>
   createDDGWrapper(llvm::MachineSchedContext *Context, ScheduleDAGOptSched *DAG,
-                   OptSchedMachineModel *MM, LATENCY_PRECISION LatencyPrecision,
+                   std::shared_ptr<const MachineModel> MM,
+                   LATENCY_PRECISION LatencyPrecision,
                    const std::string &RegionID) override {
     return llvm::make_unique<OptSchedDDGWrapperBasic>(
-        Context, DAG, MM, LatencyPrecision, RegionID);
+        Context, DAG, std::move(MM), LatencyPrecision, RegionID);
   }
 
-  void initRegion(llvm::ScheduleDAGInstrs *DAG, MachineModel *MM_) override {
+  void initRegion(llvm::ScheduleDAGInstrs *DAG,
+                  std::shared_ptr<const MachineModel> MM_) override {
     MM = MM_;
   }
   void finalizeRegion(const InstSchedule *Schedule) override {}

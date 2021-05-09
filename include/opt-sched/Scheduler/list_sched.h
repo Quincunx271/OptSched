@@ -19,7 +19,8 @@ class ListScheduler : public ConstrainedScheduler {
 public:
   // Creates a list scheduler for the given dependence graph, machine and
   // schedule upper bound, using the specified heuristic.
-  ListScheduler(DataDepGraph *dataDepGraph, MachineModel *machMdl,
+  ListScheduler(DataDepGraph *dataDepGraph,
+                std::shared_ptr<const MachineModel> machMdl,
                 InstCount schedUprBound, SchedPriorities prirts);
   virtual ~ListScheduler();
 
@@ -41,7 +42,8 @@ protected:
 // regardless of latency or machine model constraints.
 class SequentialListScheduler : public ListScheduler {
 public:
-  SequentialListScheduler(DataDepGraph *dataDepGraph, MachineModel *machMdl,
+  SequentialListScheduler(DataDepGraph *dataDepGraph,
+                          std::shared_ptr<const MachineModel> machMdl,
                           InstCount schedUprBound, SchedPriorities prirts);
 
 private:

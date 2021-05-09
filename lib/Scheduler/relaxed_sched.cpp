@@ -6,11 +6,11 @@
 using namespace llvm::opt_sched;
 
 RelaxedScheduler::RelaxedScheduler(DataDepStruct *dataDepGraph,
-                                   MachineModel *machMdl,
+                                   std::shared_ptr<const MachineModel> machMdl,
                                    InstCount schedUprBound, DIRECTION mainDir,
                                    RLXD_SCHED_TYPE schedType,
                                    InstCount maxInstCnt)
-    : InstScheduler(dataDepGraph, machMdl, schedUprBound) {
+    : InstScheduler(dataDepGraph, std::move(machMdl), schedUprBound) {
   dataDepGraph_ = dataDepGraph;
   mainDir_ = mainDir;
   schedDir_ = mainDir_;
@@ -248,10 +248,11 @@ void RelaxedScheduler::ClearFxng() {
 /*****************************************************************************/
 
 RJ_RelaxedScheduler::RJ_RelaxedScheduler(
-    DataDepStruct *dataDepGraph, MachineModel *machMdl, InstCount schedUprBound,
-    DIRECTION mainDir, RLXD_SCHED_TYPE type, InstCount maxInstCnt)
-    : RelaxedScheduler(dataDepGraph, machMdl, schedUprBound, mainDir, type,
-                       maxInstCnt) {
+    DataDepStruct *dataDepGraph, std::shared_ptr<const MachineModel> machMdl,
+    InstCount schedUprBound, DIRECTION mainDir, RLXD_SCHED_TYPE type,
+    InstCount maxInstCnt)
+    : RelaxedScheduler(dataDepGraph, std::move(machMdl), schedUprBound, mainDir,
+                       type, maxInstCnt) {
   assert(instLst_->GetElmntCnt() == 0);
 }
 /*****************************************************************************/
@@ -585,12 +586,11 @@ void RJ_RelaxedScheduler::UnFixInst(SchedInstruction *inst, InstCount cycle) {
 }
 /*****************************************************************************/
 
-LC_RelaxedScheduler::LC_RelaxedScheduler(DataDepStruct *dataDepGraph,
-                                         MachineModel *machMdl,
-                                         InstCount schedUprBound,
-                                         DIRECTION mainDir)
-    : RelaxedScheduler(dataDepGraph, machMdl, schedUprBound, mainDir, RST_STTC,
-                       INVALID_VALUE) {
+LC_RelaxedScheduler::LC_RelaxedScheduler(
+    DataDepStruct *dataDepGraph, std::shared_ptr<const MachineModel> machMdl,
+    InstCount schedUprBound, DIRECTION mainDir)
+    : RelaxedScheduler(dataDepGraph, std::move(machMdl), schedUprBound, mainDir,
+                       RST_STTC, INVALID_VALUE) {
   // TEMP: Support for dynamic scheduling has not been implemented yet
   assert(schedType_ == RST_STTC);
 
@@ -754,12 +754,11 @@ InstCount LC_RelaxedScheduler::CmputReleaseTime_(SchedInstruction *inst) {
 }
 /*****************************************************************************/
 
-LPP_RelaxedScheduler::LPP_RelaxedScheduler(DataDepStruct *dataDepGraph,
-                                           MachineModel *machMdl,
-                                           InstCount schedUprBound,
-                                           DIRECTION mainDir)
-    : RelaxedScheduler(dataDepGraph, machMdl, schedUprBound, mainDir, RST_STTC,
-                       INVALID_VALUE) {
+LPP_RelaxedScheduler::LPP_RelaxedScheduler(
+    DataDepStruct *dataDepGraph, std::shared_ptr<const MachineModel> machMdl,
+    InstCount schedUprBound, DIRECTION mainDir)
+    : RelaxedScheduler(dataDepGraph, std::move(machMdl), schedUprBound, mainDir,
+                       RST_STTC, INVALID_VALUE) {
 
   // TEMP: The new implementation for LPP has not been completed yet
   assert(false);

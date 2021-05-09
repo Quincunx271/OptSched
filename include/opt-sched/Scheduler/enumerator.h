@@ -542,7 +542,8 @@ protected:
   virtual void InitNewNode_(EnumTreeNode *newNode);
 
 public:
-  Enumerator(DataDepGraph *dataDepGraph, MachineModel *machMdl,
+  Enumerator(DataDepGraph *dataDepGraph,
+             std::shared_ptr<const MachineModel> machMdl,
              InstCount schedUprBound, int16_t sigHashSize,
              SchedPriorities prirts, Pruning PruningStrategy,
              bool SchedForRPOnly, bool enblStallEnum, Milliseconds timeout,
@@ -587,7 +588,8 @@ private:
   void FreeHistNode_(HistEnumTreeNode *histNode);
 
 public:
-  LengthEnumerator(DataDepGraph *dataDepGraph, MachineModel *machMdl,
+  LengthEnumerator(DataDepGraph *dataDepGraph,
+                   std::shared_ptr<const MachineModel> machMdl,
                    InstCount schedUprBound, int16_t sigHashSize,
                    SchedPriorities prirts, Pruning PruningStrategy,
                    bool SchedForRPOnly, bool enblStallEnum,
@@ -643,7 +645,8 @@ private:
   void InitNewNode_(EnumTreeNode *newNode);
 
 public:
-  LengthCostEnumerator(DataDepGraph *dataDepGraph, MachineModel *machMdl,
+  LengthCostEnumerator(DataDepGraph *dataDepGraph,
+                       std::shared_ptr<const MachineModel> machMdl,
                        InstCount schedUprBound, int16_t sigHashSize,
                        SchedPriorities prirts, Pruning PruningStrategy,
                        bool SchedForRPOnly, bool enblStallEnum,

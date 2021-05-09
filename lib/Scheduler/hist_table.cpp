@@ -39,7 +39,7 @@ void HistEnumTreeNode::SetRsrvSlots_(EnumTreeNode *node) {
   if (node->rsrvSlots_ == NULL)
     return;
 
-  int issuRate = node->enumrtr_->machMdl_->GetIssueRate();
+  int issuRate = node->enumrtr_->machMdl_->IssueRate;
 
   rsrvSlots_ = new ReserveSlot[issuRate];
 
@@ -202,7 +202,7 @@ bool HistEnumTreeNode::DoesDominate_(EnumTreeNode *node,
     if (node->rsrvSlots_ == NULL)
       return false;
 
-    int issuRate = node->enumrtr_->machMdl_->GetIssueRate();
+    int issuRate = node->enumrtr_->machMdl_->IssueRate;
     for (int i = 0; i < issuRate; i++) {
       if (rsrvSlots_[i].strtCycle != INVALID_VALUE) {
         if (node->rsrvSlots_[i].strtCycle == INVALID_VALUE ||
@@ -285,8 +285,8 @@ void HistEnumTreeNode::CmputNxtAvlblCycles_(Enumerator *enumrtr,
   InstCount time;
   InstCount cycleNum = crntCycle;
 
-  MachineModel *machMdl = enumrtr->machMdl_;
-  int issuTypeCnt = machMdl->GetIssueTypeCnt();
+  const MachineModel &machMdl = *enumrtr->machMdl_;
+  int issuTypeCnt = machMdl->IssueTypes.size();
 
   for (int i = 0; i < issuTypeCnt; i++) {
     instsPerType[i] = 0;
@@ -307,7 +307,7 @@ void HistEnumTreeNode::CmputNxtAvlblCycles_(Enumerator *enumrtr,
     assert(issuType < issuTypeCnt);
     instsPerType[issuType]++;
 
-    if (instsPerType[issuType] == machMdl->GetSlotsPerCycle(issuType)) {
+    if (instsPerType[issuType] == machMdl->IssueTypes[issuType].SlotsCount) {
       nxtAvlblCycles[issuType] = crntCycle + 1;
     }
   }

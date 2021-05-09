@@ -25,7 +25,7 @@ namespace {
 
 #if !defined(NDEBUG) || defined(LLVM_ENABLE_DUMP)
 LLVM_DUMP_METHOD
-void dumpInstType(InstTypeInfo &instType, MachineModel *mm) {
+void dumpInstType(InstTypeInfo &instType, const MachineModel &mm) {
   Logger::Info("Adding new instruction type.\n \
                 Name: %s\n \
                 Is Context Dependent: %s\n \
@@ -55,9 +55,6 @@ createCortexA53MMGenerator(const llvm::ScheduleDAGInstrs *dag,
 }
 
 } // end anonymous namespace
-
-OptSchedMachineModel::OptSchedMachineModel(const char *configFile)
-    : MachineModel(configFile), shouldGenerateMM(false), MMGen(nullptr) {}
 
 void OptSchedMachineModel::convertMachineModel(
     const ScheduleDAGInstrs &Dag, const RegisterClassInfo *RegClassInfo) {

@@ -18,25 +18,25 @@
 
 namespace llvm {
 namespace opt_sched {
-
-class OptSchedMachineModel;
 class ScheduleDAGOptSched;
 
 class OptSchedTarget {
 public:
-  MachineModel *MM;
+  std::shared_ptr<const MachineModel> MM;
 
   virtual ~OptSchedTarget() = default;
 
-  virtual std::unique_ptr<OptSchedMachineModel>
+  virtual std::shared_ptr<MachineModel>
   createMachineModel(const char *configFile) = 0;
 
   virtual std::unique_ptr<OptSchedDDGWrapperBase>
   createDDGWrapper(MachineSchedContext *Context, ScheduleDAGOptSched *DAG,
-                   OptSchedMachineModel *MM, LATENCY_PRECISION LatencyPrecision,
+                   std::shared_ptr<const MachineModel> MM,
+                   LATENCY_PRECISION LatencyPrecision,
                    const std::string &RegionID) = 0;
 
-  virtual void initRegion(ScheduleDAGInstrs *DAG, MachineModel *MM) = 0;
+  virtual void initRegion(ScheduleDAGInstrs *DAG,
+                          std::shared_ptr<const MachineModel> MM) = 0;
   virtual void finalizeRegion(const InstSchedule *Schedule) = 0;
   // FIXME: This is a shortcut to doing the proper thing and creating a RP class
   // that targets can override. It's hard to justify spending the extra time

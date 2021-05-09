@@ -44,8 +44,9 @@ class ListScheduler;
 class SchedRegion {
 public:
   // TODO(max): Document.
-  SchedRegion(MachineModel *machMdl, DataDepGraph *dataDepGraph, long rgnNum,
-              int16_t sigHashSize, LB_ALG lbAlg, SchedPriorities hurstcPrirts,
+  SchedRegion(std::shared_ptr<const MachineModel> machMdl,
+              DataDepGraph *dataDepGraph, long rgnNum, int16_t sigHashSize,
+              LB_ALG lbAlg, SchedPriorities hurstcPrirts,
               SchedPriorities enumPrirts, bool vrfySched,
               Pruning PruningStrategy, SchedulerType HeurSchedType,
               SPILL_COST_FUNCTION spillCostFunc = SCF_PERP);
@@ -215,7 +216,7 @@ protected:
   // The dependence graph of this region.
   DataDepGraph *dataDepGraph_;
   // The machine model used by this region.
-  MachineModel *machMdl_;
+  std::shared_ptr<const MachineModel> machMdl_;
 
   // The schedule currently used by the enumerator
   InstSchedule *enumCrntSched_;

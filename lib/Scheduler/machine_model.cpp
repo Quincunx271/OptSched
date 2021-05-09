@@ -8,6 +8,7 @@
 #include "llvm/Support/ErrorHandling.h"
 #include <cassert>
 #include <iomanip>
+#include <iterator>
 #include <string>
 
 using namespace llvm::opt_sched;
@@ -174,4 +175,13 @@ InstType llvm::opt_sched::defaultIssueType(const MachineModel &Model) {
 bool llvm::opt_sched::isSimple(const MachineModel &Model) {
   return Model.IssueRate == 1 && Model.IssueTypes.size() == 1 &&
          Model.IssueTypes[0].SlotsCount == 1 && !Model.IncludesUnpipelined;
+}
+
+llvm::SmallVector<int, MAX_ISSUTYPE_CNT>
+allSlotsPerCycle(const MachineModel &Model) {
+  llvm::SmallVector<int, MAX_ISSUTYPE_CNT> result;
+  result.resize(Model.IssueTypes.size());
+  llvm::transform(Model.IssueTypes, std::back_inserter(result),
+                  [](const IssueTypeInfo &Info) { return Info.SlotsCount; });
+  return result;
 }

@@ -7,11 +7,12 @@
 
 using namespace llvm::opt_sched;
 
-InstScheduler::InstScheduler(DataDepStruct *dataDepGraph, MachineModel *machMdl,
-                             InstCount schedUprBound) {
+InstScheduler::InstScheduler(DataDepStruct *dataDepGraph,
+                             std::shared_ptr<const MachineModel> machMdl,
+                             InstCount schedUprBound)
+    : machMdl_(std::move(machMdl)) {
   assert(dataDepGraph != NULL);
-  assert(machMdl != NULL);
-  machMdl_ = machMdl;
+  assert(machMdl_ != NULL);
 
   schedUprBound_ = schedUprBound;
 
@@ -22,15 +23,16 @@ InstScheduler::InstScheduler(DataDepStruct *dataDepGraph, MachineModel *machMdl,
   rootInst_ = dataDepGraph->GetRootInst();
   leafInst_ = dataDepGraph->GetLeafInst();
 
-  issuRate_ = machMdl_->GetIssueRate();
-  issuTypeCnt_ = machMdl_->GetIssueTypeCnt();
+  issuRate_ = machMdl_->IssueRate;
+  issuTypeCnt_ = machMdl_->IssueTypes.size();
 
   schduldInstCnt_ = 0;
 
   slotsPerTypePerCycle_ = new int[issuTypeCnt_];
   instCntPerIssuType_ = new InstCount[issuTypeCnt_];
 
-  issuTypeCnt_ = machMdl_->GetSlotsPerCycle(slotsPerTypePerCycle_);
+  slotsPerTypePerCycle_ = allSlotsPerCycle(*machMdl_);
+  issuTypeCnt_ = (int)slotsPerTypePerCycle_.size();
 
   dataDepGraph->GetInstCntPerIssuType(instCntPerIssuType_);
 
@@ -59,10 +61,10 @@ void ConstrainedScheduler::ResetRsrvSlots_() {
   rsrvSlotCnt_ = 0;
 }
 
-ConstrainedScheduler::ConstrainedScheduler(DataDepGraph *dataDepGraph,
-                                           MachineModel *machMdl,
-                                           InstCount schedUprBound)
-    : InstScheduler(dataDepGraph, machMdl, schedUprBound) {
+ConstrainedScheduler::ConstrainedScheduler(
+    DataDepGraph *dataDepGraph, std::shared_ptr<const MachineModel> machMdl,
+    InstCount schedUprBound)
+    : InstScheduler(dataDepGraph, std::move(machMdl), schedUprBound) {
   dataDepGraph_ = dataDepGraph;
 
   // Allocate the array of first-ready lists - one list per cycle.
@@ -246,7 +248,7 @@ bool ConstrainedScheduler::MovToNxtSlot_(SchedInstruction *inst) {
     return true;
   } else {
     crntSlotNum_++;
-    if (inst && machMdl_->IsRealInst(inst->GetInstType()))
+    if (inst && isRealInst(*machMdl_, inst->GetInstType()))
       crntRealSlotNum_++;
     return false;
   }
@@ -262,7 +264,7 @@ bool ConstrainedScheduler::MovToPrevSlot_(int prevRealSlotNum) {
     return true;
   } else {
     crntSlotNum_--;
-    // if (inst && machMdl_->IsRealInst(inst->GetInstType()))
+    // if (inst && isRealInst(*machMdl_, inst->GetInstType()))
     // crntRealSlotNum_--;
     return false;
   }
