@@ -78,8 +78,8 @@ jobs:
 
     - name: Acquire LLVM
       run: |
-        wget https://github.com/Quincunx271/CSUS-llvm-project/releases/download/optsched-artifacts/llvm-release-asserts.tgz
-        tar -xvf llvm-release-asserts.tgz
+        wget https://github.com/Quincunx271/CSUS-llvm-project/releases/download/optsched-artifacts/llvm-release-asserts-ubuntu-18.04.tar.gz
+        tar -xvf llvm-release-asserts-ubuntu-18.04.tar.gz
 
     - name: Set up ccache
       uses: actions/cache@v1.1.0
@@ -163,24 +163,18 @@ jobs:
         wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
 
         sudo add-apt-repository "deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-9 main"
-        sudo add-apt-repository "deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-7 main"
         sudo apt-get update
 
         # Install clang-tidy
         sudo apt-get install clang-tidy-9
 
-        # Install tblgen so that we don't have to build it. The version must match the version of LLVM
-        # which we are building.
-        sudo apt-get install llvm-7-tools
-
         # Install Ninja
         sudo apt-get install ninja-build
 
-    - uses: actions/checkout@v2
-      with:
-        repository: CSUS-LLVM/llvm-project
-        ref: release/7.x
-        path: llvm-project
+    - name: Acquire LLVM
+      run: |
+        wget https://github.com/Quincunx271/CSUS-llvm-project/releases/download/optsched-artifacts/llvm-release-asserts-ubuntu-18.04.tar.gz
+        tar -xvf llvm-release-asserts-ubuntu-18.04.tar.gz
 
     - name: Setup Compilation Database
       id: compiledb
@@ -188,18 +182,12 @@ jobs:
         mkdir build-tidy && cd build-tidy
 
         # We configure because we want to set up a compilation database.
-        cmake ../llvm-project/llvm -GNinja -DCMAKE_BUILD_TYPE=Debug                    \
+        cmake .. -GNinja -DCMAKE_BUILD_TYPE=Debug                                      \
+            -DLLVM_DIR=$(cd ..; pwd)/install/lib/cmake/llvm                            \
             -DCMAKE_CXX_COMPILER=g++                                                   \
             -DCMAKE_C_COMPILER=gcc                                                     \
             -DCMAKE_EXPORT_COMPILE_COMMANDS=ON                                         \
-            '-DLLVM_TARGETS_TO_BUILD=X86;AMDGPU'                                       \
-            -DLLVM_TABLEGEN=$(which llvm-tblgen-7)                                     \
-            -DLLVM_EXTERNAL_PROJECTS=OptSched                                          \
-            -DLLVM_EXTERNAL_OPTSCHED_SOURCE_DIR=$(cd .. && pwd)                        \
             -DOPTSCHED_ENABLE_AMDGPU=ON
-
-        # Generate relevant "source" files so that clang-tidy knows where to find them.
-        cmake --build . --target X86CommonTableGen intrinsics_gen AttributeCompatFuncTableGen AMDGPUCommonTableGen
 
         # Export the path to the compilation database.
         echo "::set-output name=dbjson::$PWD/compile_commands.json"
