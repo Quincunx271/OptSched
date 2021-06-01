@@ -993,6 +993,10 @@ bool Enumerator::FindNxtFsblBrnch_(EnumTreeNode *&newNode) {
 #endif
 
     if (i == brnchCnt - 1) {
+      if (!(!getIsTwoPass() || getIsSecondPass())) {
+        return false;
+      }
+      
       // then we only have the option of scheduling a stall
       assert(isEmptyNode == false || brnchCnt == 1);
       inst = NULL;
@@ -1546,6 +1550,7 @@ bool Enumerator::WasDmnntSubProbExmnd_(SchedInstruction *,
   stats::historyListSize.Record(listSize);
   mostRecentMatchingHistNode_ = nullptr;
   bool mostRecentMatchWasSet = false;
+  bool IsSecondPass = getIsTwoPass() && getIsSecondPass();
 
   for (exNode = exmndSubProbs_->GetLastMatch(newNode->GetSig()); exNode != NULL;
        exNode = exmndSubProbs_->GetPrevMatch()) {
@@ -1561,7 +1566,7 @@ bool Enumerator::WasDmnntSubProbExmnd_(SchedInstruction *,
         mostRecentMatchWasSet = true;
       }
 
-      if (exNode->DoesDominate(newNode, this)) {
+      if (exNode->DoesDominate(newNode, this, IsSecondPass)) {
 
 #ifdef IS_DEBUG_SPD
         Logger::Info("Node %d is dominated. Partial scheds:",
