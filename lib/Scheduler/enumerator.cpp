@@ -1550,7 +1550,6 @@ bool Enumerator::WasDmnntSubProbExmnd_(SchedInstruction *,
   stats::historyListSize.Record(listSize);
   mostRecentMatchingHistNode_ = nullptr;
   bool mostRecentMatchWasSet = false;
-  bool IsSecondPass = getIsTwoPass() && getIsSecondPass();
 
   for (exNode = exmndSubProbs_->GetLastMatch(newNode->GetSig()); exNode != NULL;
        exNode = exmndSubProbs_->GetPrevMatch()) {
@@ -1566,7 +1565,7 @@ bool Enumerator::WasDmnntSubProbExmnd_(SchedInstruction *,
         mostRecentMatchWasSet = true;
       }
 
-      if (exNode->DoesDominate(newNode, this, IsSecondPass)) {
+      if (exNode->DoesDominate(newNode, this)) {
 
 #ifdef IS_DEBUG_SPD
         Logger::Info("Node %d is dominated. Partial scheds:",
