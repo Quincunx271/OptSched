@@ -993,6 +993,10 @@ bool Enumerator::FindNxtFsblBrnch_(EnumTreeNode *&newNode) {
 #endif
 
     if (i == brnchCnt - 1) {
+      if (!(!getIsTwoPass() || getIsSecondPass())) {
+        return false;
+      }
+      
       // then we only have the option of scheduling a stall
       assert(isEmptyNode == false || brnchCnt == 1);
       inst = NULL;
