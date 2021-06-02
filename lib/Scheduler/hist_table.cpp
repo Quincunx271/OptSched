@@ -214,7 +214,7 @@ bool HistEnumTreeNode::DoesDominate_(EnumTreeNode *node,
 
   bool isAbslutDmnnt = true;
 
-  if (enumrtr->getIsSecondPass())
+  if (enumrtr->getIsSecondPass()) {
     InstCount entryCnt;
     InstCount minTimeToExmn = GetMinTimeToExmn_(thisTime, enumrtr);
   
