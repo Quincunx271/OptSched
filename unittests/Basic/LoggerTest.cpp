@@ -38,4 +38,25 @@ TEST_F(LoggerTest, EmptyEventIncludesOnlyTime) {
                   R"(EVENT: \{"event_id": "SomeEventID", "time": [0-9]+\})"
                   "\n"));
 }
+
+template <typename T, T V> struct value_t { static constexpr auto value = V; };
+
+#define CX(...) (+value_t<decltype(__VA_ARGS__), (__VA_ARGS__)>::value)
+
+TEST(Logger, fnv1a_works_for_some_basic_strings) {
+  EXPECT_EQ(0xcbf29ce484222325ull, CX(Logger::detail::fnv1a("")));
+  EXPECT_EQ(0x6ef05bd7cc857c54ull, CX(Logger::detail::fnv1a("Hello, World!")));
+  EXPECT_EQ(0xaf639d4c8601817full, CX(Logger::detail::fnv1a(" ")));
+  EXPECT_EQ(0x835de747d2297216ull, CX(Logger::detail::fnv1a("0s$mBsJ^2X")));
+  EXPECT_EQ(
+      0xa55cd0397ebd239dull,
+      CX(Logger::detail::fnv1a(
+          "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do "
+          "eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim "
+          "ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut "
+          "aliquip ex ea commodo consequat. Duis aute irure dolor in "
+          "reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla "
+          "pariatur. Excepteur sint occaecat cupidatat non proident, sunt in "
+          "culpa qui officia deserunt mollit anim id est laborum.")));
+}
 } // namespace

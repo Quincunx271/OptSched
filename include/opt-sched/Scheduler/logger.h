@@ -59,6 +59,24 @@ void Info(const char *format_string, ...);
 void Summary(const char *format_string, ...);
 
 namespace detail {
+template <size_t N>
+constexpr uint64_t fnv1a_impl(const char (&ToHash)[N], uint64_t Hash,
+                              size_t Index) {
+  return (Index < N - 1) // Stop at null terminator
+             ? fnv1a_impl(ToHash,
+                          static_cast<uint64_t>(ToHash[Index] ^ Hash) *
+                              1099511628211ull // FNV prime
+                          ,
+                          Index + 1)
+             : Hash;
+}
+
+// For string literals only
+template <size_t N> constexpr uint64_t fnv1a(const char (&ToHash)[N]) {
+  return detail::fnv1a_impl(ToHash, 0xcbf29ce484222325ull, // FNV offset basis
+                            0);
+}
+
 // TODO: When we get C++17, get rid of EventAttrType and EventAttrValue in favor
 // of a std::variant.
 
