@@ -999,6 +999,10 @@ bool Enumerator::FindNxtFsblBrnch_(EnumTreeNode *&newNode) {
 #endif
 
     if (i == brnchCnt - 1) {
+      if (!(!getIsTwoPass() || getIsSecondPass())) {
+        return false;
+      }
+
       // then we only have the option of scheduling a stall
       assert(isEmptyNode == false || brnchCnt == 1);
       inst = NULL;
@@ -1131,14 +1135,16 @@ bool Enumerator::ProbeBranch_(SchedInstruction *inst, EnumTreeNode *&newNode,
     return false;
   }
 
-  fsbl = TightnLwrBounds_(inst);
-  state_.lwrBoundsTightnd = true;
+  if (!getIsTwoPass() || getIsSecondPass()) {
+    fsbl = TightnLwrBounds_(inst);
+    state_.lwrBoundsTightnd = true;
 
-  if (fsbl == false) {
+    if (fsbl == false) {
 #ifdef IS_DEBUG_INFSBLTY_TESTS
-    stats::rangeTighteningInfeasibilityHits++;
+      stats::rangeTighteningInfeasibilityHits++;
 #endif
-    return false;
+      return false;
+    }
   }
 
   state_.instFxd = true;
@@ -1223,8 +1229,10 @@ void Enumerator::RestoreCrntState_(SchedInstruction *inst,
     }
   }
 
-  if (state_.lwrBoundsTightnd) {
-    UnTightnLwrBounds_(inst);
+  if (!getIsTwoPass() || getIsSecondPass()) {
+    if (state_.lwrBoundsTightnd) {
+      UnTightnLwrBounds_(inst);
+    }
   }
 
   if (state_.instSchduld) {
