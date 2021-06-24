@@ -1,3 +1,7 @@
+import re
+from .imports.import_utils import _parse_events
+
+
 class Logs:
     '''
     Abstracts a log file as a collection of benchmarks
@@ -59,23 +63,35 @@ class Benchmark:
      - bench.blocks: the Blocks in this benchmark
     '''
 
-    def __init__(self, info, blocks):
+    def __init__(self, info, raw_log, pred=lambda _: True, filenamere=None):
         self.name = info['name']
         self.info = info
-        self.blocks = blocks
+        self.raw_log = raw_log
+        self.__pred = pred
+        self.__filenamere = re.compile(filenamere)
 
     def __iter__(self):
-        return iter(self.blocks)
+        filenames = list(self.__filenamere.finditer(self.raw_log))
+        for raw_log in self.raw_log.split('INFO: ********** Opt Scheduling **********'):
+            events = _parse_events(raw_log)
+            info = {
+                'name': events['ProcessDag'][0]['name'],
+                'file': None,
+                'benchmark': self.name,
+            }
+            blk = Block(info, events)
+            if self.__pred(blk):
+                yield blk
 
     @property
     def benchmarks(self):
         return (self,)
 
     def __repr__(self):
-        return f'<Benchmark({self.info}, {len(self.blocks)} blocks)>'
+        return f'<Benchmark({self.info}, {sum(1 for _ in self)} blocks)>'
 
     def keep_blocks_if(self, p):
-        return Benchmark(self.info, [blk for blk in self.blocks if p(blk)])
+        return Benchmark(self.info, self.raw_log, lambda b: self.__pred(b) and p(b))
 
 
 class Block:
