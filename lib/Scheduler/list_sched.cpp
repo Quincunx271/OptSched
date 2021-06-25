@@ -159,9 +159,9 @@ void ListScheduler::UpdtRdyLst_(InstCount cycleNum, int slotNum) {
 }
 
 StallSchedulingListScheduler::StallSchedulingListScheduler(
-    DataDepGraph *dataDepGraph, MachineModel *machMdl, InstCount schedUprBound,
-    SchedPriorities prirts)
-    : ListScheduler(dataDepGraph, machMdl, schedUprBound, prirts) {}
+    DataDepGraph *dataDepGraph, std::shared_ptr<const MachineModel> machMdl,
+    InstCount schedUprBound, SchedPriorities prirts)
+    : ListScheduler(dataDepGraph, std::move(machMdl), schedUprBound, prirts) {}
 
 SchedInstruction *StallSchedulingListScheduler::PickInst() const {
   unsigned long CurrentHeuristic;

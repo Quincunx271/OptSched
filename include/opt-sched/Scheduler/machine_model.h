@@ -128,6 +128,7 @@ bool isCall(const MachineModel &, InstType instTypeCode);
 bool isFloat(const MachineModel &, InstType instTypeCode);
 
 InstType defaultInstType(const MachineModel &);
+InstType defaultIssueType(const MachineModel &);
 
 bool isSimple(const MachineModel &);
 

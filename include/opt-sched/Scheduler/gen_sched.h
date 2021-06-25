@@ -76,7 +76,7 @@ protected:
   llvm::SmallVector<int, MAX_ISSUTYPE_CNT> slotsPerTypePerCycle_;
   // How many instructions of each issue type does the dependence graph
   // contain.
-  InstCount *instCntPerIssuType_;
+  llvm::SmallVector<InstCount, MAX_ISSUTYPE_CNT> instCntPerIssuType_;
 
   // The total number of instructions to be scheduled.
   InstCount totInstCnt_;

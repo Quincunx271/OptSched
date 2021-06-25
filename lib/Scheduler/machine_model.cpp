@@ -69,7 +69,7 @@ llvm::opt_sched::parseMachineModel(const std::string &ModelFile) {
   for (InstTypeInfo &Info : Result->InstTypes) {
     buf.ReadSpec("INST_TYPE:", buffer);
     Info.Name = buffer;
-    Info.IsContextDependent = (Info.Name.find("_after_") != string::npos);
+    Info.IsContextDependent = (Info.Name.find("_after_") != std::string::npos);
 
     buf.ReadSpec("ISSUE_TYPE:", buffer);
     IssueType issuType = issueTypeByName(*Result, buffer);
@@ -93,15 +93,17 @@ llvm::opt_sched::parseMachineModel(const std::string &ModelFile) {
 InstType llvm::opt_sched::instTypeByName(const MachineModel &Model,
                                          llvm::StringRef typeName,
                                          llvm::StringRef prevName) {
-  std::string composite =
-      prevName.size() ? typeName + std::string("_after_") + prevName : "";
+  std::string composite = prevName.size()
+                              ? std::string(typeName) + std::string("_after_") +
+                                    std::string(prevName)
+                              : "";
   auto InstTypes = llvm::enumerate(Model.InstTypes);
   auto It = llvm::find_if(InstTypes, [&composite, typeName](const auto &Info) {
     return Info.value().IsContextDependent && Info.value().Name == composite ||
            !Info.value().IsContextDependent && Info.value().Name == typeName;
   });
   if (It != InstTypes.end()) {
-    return It->value();
+    return (*It).index();
   }
   return INVALID_INST_TYPE;
 }
@@ -114,7 +116,7 @@ int16_t llvm::opt_sched::regTypeByName(const MachineModel &Model,
   });
   assert(It != RegTypes.end() &&
          "No register type with that name in machine model");
-  return It->index();
+  return (*It).index();
 }
 
 IssueType llvm::opt_sched::issueTypeByName(const MachineModel &Model,
@@ -124,7 +126,7 @@ IssueType llvm::opt_sched::issueTypeByName(const MachineModel &Model,
     return Info.value().Name == issuTypeName;
   });
   if (It != IssueTypes.end()) {
-    return It.index();
+    return (*It).index();
   }
 
   return INVALID_ISSUE_TYPE;

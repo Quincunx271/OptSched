@@ -62,8 +62,8 @@ private:
 class StallSchedulingListScheduler : public ListScheduler {
 public:
   StallSchedulingListScheduler(DataDepGraph *dataDepGraph,
-                               MachineModel *machMdl, InstCount schedUprBound,
-                               SchedPriorities prirts);
+                               std::shared_ptr<const MachineModel> machMdl,
+                               InstCount schedUprBound, SchedPriorities prirts);
 
   SchedInstruction *PickInst() const;
 };

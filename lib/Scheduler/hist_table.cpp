@@ -286,7 +286,7 @@ void HistEnumTreeNode::CmputNxtAvlblCycles_(Enumerator *enumrtr,
   InstCount cycleNum = crntCycle;
 
   const MachineModel &machMdl = *enumrtr->machMdl_;
-  int issuTypeCnt = machMdl->IssueTypes.size();
+  int issuTypeCnt = machMdl.IssueTypes.size();
 
   for (int i = 0; i < issuTypeCnt; i++) {
     instsPerType[i] = 0;
@@ -307,7 +307,7 @@ void HistEnumTreeNode::CmputNxtAvlblCycles_(Enumerator *enumrtr,
     assert(issuType < issuTypeCnt);
     instsPerType[issuType]++;
 
-    if (instsPerType[issuType] == machMdl->IssueTypes[issuType].SlotsCount) {
+    if (instsPerType[issuType] == machMdl.IssueTypes[issuType].SlotsCount) {
       nxtAvlblCycles[issuType] = crntCycle + 1;
     }
   }

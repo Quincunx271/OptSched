@@ -58,7 +58,7 @@ BBWithSpill::BBWithSpill(const OptSchedTarget *OST_, DataDepGraph *dataDepGraph,
   trackLiveRangeLngths_ = true;
   NeedsComputeSLIL = (spillCostFunc == SCF_SLIL);
 
-  regTypeCnt_ = OST->MM->GetRegTypeCnt();
+  regTypeCnt_ = OST->MM->RegisterTypes.size();
   regFiles_ = dataDepGraph->getRegFiles();
   liveRegs_ = new WeightedBitVector[regTypeCnt_];
   livePhysRegs_ = new WeightedBitVector[regTypeCnt_];

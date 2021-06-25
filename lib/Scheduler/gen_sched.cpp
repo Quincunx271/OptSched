@@ -28,21 +28,18 @@ InstScheduler::InstScheduler(DataDepStruct *dataDepGraph,
 
   schduldInstCnt_ = 0;
 
-  slotsPerTypePerCycle_ = new int[issuTypeCnt_];
-  instCntPerIssuType_ = new InstCount[issuTypeCnt_];
+  slotsPerTypePerCycle_.resize(issuTypeCnt_);
+  instCntPerIssuType_.resize(issuTypeCnt_);
 
   slotsPerTypePerCycle_ = allSlotsPerCycle(*machMdl_);
   issuTypeCnt_ = (int)slotsPerTypePerCycle_.size();
 
-  dataDepGraph->GetInstCntPerIssuType(instCntPerIssuType_);
+  dataDepGraph->GetInstCntPerIssuType(instCntPerIssuType_.data());
 
   includesUnpipelined_ = dataDepGraph->IncludesUnpipelined();
 }
 
-InstScheduler::~InstScheduler() {
-  delete[] slotsPerTypePerCycle_;
-  delete[] instCntPerIssuType_;
-}
+InstScheduler::~InstScheduler() = default;
 
 void ConstrainedScheduler::AllocRsrvSlots_() {
   rsrvSlots_ = new ReserveSlot[issuRate_];
